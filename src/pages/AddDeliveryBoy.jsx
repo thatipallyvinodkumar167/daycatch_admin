@@ -113,25 +113,21 @@ const AddDeliveryBoy = () => {
     try {
       const data = new FormData();
       
-      data.append("boyName", formData.name);
-      data.append("boyMobile", formData.phone);
-      data.append("boyEmail", formData.email);
-      data.append("boyPassword", formData.password);
-      data.append("city", formData.city); // Make sure this is an ObjectId ID during real use!
-      data.append("idType", formData.idType);
-      data.append("idNumber", formData.idNumber);
-      data.append("boyAddress", formData.address);
-      data.append("status", "Active");
-      
-      if (formData.stores && formData.stores.length > 0) {
-        data.append("store", formData.stores[0]); // Form payload references a single string ID
-      }
+      const payload = {
+        boyName: formData.name,
+        boyMobile: formData.phone,
+        boyEmail: formData.email,
+        boyPassword: formData.password,
+        city: formData.city, // Wait until these IDs match backend strings/ObjectIds
+        idType: formData.idType,
+        idNumber: formData.idNumber,
+        boyAddress: formData.address,
+        status: "Active",
+        store: formData.stores && formData.stores.length > 0 ? formData.stores[0] : "",
+        idImage: idImage ? idImage.name : "placeholder_image.jpg" // Some APIs test upload as simple string names like your snippet earlier "nag_aadhar.jpg"
+      };
 
-      if (idImage) {
-        data.append("idImage", idImage);
-      }
-
-      const response = await addDeliveryBoy(data);
+      const response = await addDeliveryBoy(payload);
 
       console.log("Add Delivery Boy Response:", response.data);
       alert("Delivery Boy added successfully!");

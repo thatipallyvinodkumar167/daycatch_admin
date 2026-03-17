@@ -1,9 +1,9 @@
 import api from "./api";
 
 // Delivery Boy API calls
-export const addDeliveryBoy = async (formData) => {
-  return await api.post("/deliveryBoy/addDeliveryBoy", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+export const addDeliveryBoy = async (payload) => {
+  return await api.post("/deliveryBoy/addDeliveryBoy", payload, {
+    headers: { "Content-Type": "application/json" },
   });
 };
 
