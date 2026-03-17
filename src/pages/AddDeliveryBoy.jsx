@@ -36,6 +36,7 @@ const AddDeliveryBoy = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    email: "",
     password: "",
     city: "",
     idType: "",
@@ -112,20 +113,21 @@ const AddDeliveryBoy = () => {
     try {
       const data = new FormData();
       
-      // Append basic fields
-      data.append("name", formData.name);
-      data.append("phone", formData.phone);
-      data.append("password", formData.password);
-      data.append("city", formData.city);
+      // Append basic fields mapped to backend expectations
+      data.append("boyName", formData.name);
+      data.append("boyMobile", formData.phone);
+      data.append("boyEmail", formData.email);
+      data.append("boyPassword", formData.password);
+      data.append("city", formData.city); // assuming this stays city
       data.append("idType", formData.idType);
       data.append("idNumber", formData.idNumber);
-      data.append("address", formData.address);
+      data.append("boyAddress", formData.address);
       data.append("status", "Active");
 
       // Append stores individually
       if (formData.stores && formData.stores.length > 0) {
         formData.stores.forEach(store => {
-          data.append("stores[]", store); // Try array notation or just "stores"
+          data.append("store", store); // Node/Express usually parses repeated fields as array without []
         });
       }
 
@@ -196,6 +198,22 @@ const AddDeliveryBoy = () => {
                   name="phone"
                   placeholder="Enter phone number..."
                   value={formData.phone}
+                  onChange={handleChange}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                />
+              </Grid>
+
+              {/* Boy Email */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
+                  Boy Email
+                </Typography>
+                <TextField
+                  fullWidth
+                  name="email"
+                  type="email"
+                  placeholder="Enter email address..."
+                  value={formData.email}
                   onChange={handleChange}
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                 />

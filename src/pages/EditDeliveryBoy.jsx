@@ -38,6 +38,7 @@ const EditDeliveryBoy = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    email: "",
     password: "",
     city: "",
     idType: "",
@@ -85,9 +86,10 @@ const EditDeliveryBoy = () => {
 
         if (found) {
           setFormData({
-            name: found.name || "",
-            phone: found.phone || "",
-            password: found.password || "",
+            name: found.boyName || found.name || "",
+            phone: found.boyMobile || found.phone || "",
+            email: found.boyEmail || found.email || "",
+            password: found.boyPassword || found.password || "",
             city: found.city || "",
             idType: found.idType || "",
             idNumber: found.idNumber || "",
@@ -140,17 +142,19 @@ const EditDeliveryBoy = () => {
     try {
       const data = new FormData();
       
-      data.append("name", formData.name);
-      data.append("phone", formData.phone);
-      data.append("password", formData.password);
-      data.append("city", formData.city);
+      // Append basic fields mapped to backend expectations
+      data.append("boyName", formData.name);
+      data.append("boyMobile", formData.phone);
+      data.append("boyEmail", formData.email);
+      data.append("boyPassword", formData.password);
+      data.append("city", formData.city); // assuming this stays city
       data.append("idType", formData.idType);
       data.append("idNumber", formData.idNumber);
-      data.append("address", formData.address);
+      data.append("boyAddress", formData.address);
 
       if (formData.stores && formData.stores.length > 0) {
         formData.stores.forEach(store => {
-          data.append("stores[]", store);
+          data.append("store", store); // Node/Express usually parses repeated fields as array without []
         });
       }
 
@@ -227,6 +231,21 @@ const EditDeliveryBoy = () => {
                   fullWidth
                   name="phone"
                   value={formData.phone}
+                  onChange={handleChange}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                />
+              </Grid>
+
+              {/* Boy Email */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
+                  Boy Email
+                </Typography>
+                <TextField
+                  fullWidth
+                  name="email"
+                  type="email"
+                  value={formData.email}
                   onChange={handleChange}
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                 />
