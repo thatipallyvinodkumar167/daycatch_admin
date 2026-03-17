@@ -11,9 +11,9 @@ export const getAllDeliveryBoys = async () => {
   return await api.get("/deliveryBoy/getAllDeliveryBoy");
 };
 
-export const updateDeliveryBoy = async (id, formData) => {
-  return await api.put(`/deliveryBoy/updateDeliveryBoy/${id}`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+export const updateDeliveryBoy = async (id, payload) => {
+  return await api.put(`/deliveryBoy/updateDeliveryBoy/${id}`, payload, {
+    headers: { "Content-Type": "application/json" },
   });
 };
 

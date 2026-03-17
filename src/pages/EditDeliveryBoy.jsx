@@ -50,30 +50,19 @@ const EditDeliveryBoy = () => {
   const [existingImageUrl, setExistingImageUrl] = useState("");
 
   const cities = [
-    "Hyderabad",
-    "Kurnool",
-    "Vijayawada",
-    "Warrangal",
-    "Guntur",
-    "Mangalgiri",
-    "Khammam",
-    "Nellore"
+    { name: "Hyderabad", _id: "69b78e59c52e71920fa867ac" },
+    { name: "Kurnool", _id: "69b78e59c52e71920fa867ac" }
   ];
 
   const idTypes = [
-    "Aadhar Card",
+    "Aadhar",
     "PAN Card",
     "Business Proof"
   ];
 
   const storeList = [
-    "Hyderabad Store",
-    "Vijayawada Store",
-    "Kurnool Store",
-    "Khammam Store",
-    "Guntur Store",
-    "Mangalgiri Store",
-    "Warrangal Store"
+    { name: "Hyderabad Store", _id: "69b7ac7bad9d8224d7a970d7" },
+    { name: "Vijayawada Store", _id: "69b7ac7bad9d8224d7a970d7" }
   ];
 
   useEffect(() => {
@@ -90,11 +79,11 @@ const EditDeliveryBoy = () => {
             phone: found.boyMobile || found.phone || "",
             email: found.boyEmail || found.email || "",
             password: found.boyPassword || found.password || "",
-            city: found.city || "",
+            city: typeof found.city === 'object' ? found.city._id : (found.city || ""),
             idType: found.idType || "",
             idNumber: found.idNumber || "",
-            address: found.address || "",
-            stores: found.stores || [],
+            address: found.boyAddress || found.address || "",
+            stores: found.store ? (Array.isArray(found.store) ? found.store : [typeof found.store === 'object' ? found.store._id : found.store]) : (found.stores || []),
           });
           if (found.idImage) setExistingImageUrl(found.idImage);
         }
@@ -140,25 +129,21 @@ const EditDeliveryBoy = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const data = new FormData();
-      
-      // Append basic fields mapped to backend expectations
-      data.append("boyName", formData.name);
-      data.append("boyMobile", formData.phone);
-      data.append("boyEmail", formData.email);
-      data.append("boyPassword", formData.password);
-      data.append("city", formData.city); // assuming this stays city
-      data.append("idType", formData.idType);
-      data.append("idNumber", formData.idNumber);
-      data.append("boyAddress", formData.address);
+      const payload = {
+        boyName: formData.name,
+        boyMobile: formData.phone,
+        boyEmail: formData.email,
+        boyPassword: formData.password,
+        city: formData.city,
+        idType: formData.idType,
+        idNumber: formData.idNumber,
+        boyAddress: formData.address,
+        status: "Active",
+        store: formData.stores && formData.stores.length > 0 ? formData.stores[0] : "",
+        idImage: idImage ? idImage.name : (existingImageUrl || "placeholder_image.jpg")
+      };
 
-      if (formData.stores && formData.stores.length > 0) {
-        data.append("store", formData.stores[0]); // Using the first store as string value based on backend requirements
-      }
-
-      if (idImage) data.append("idImage", idImage);
-
-      const response = await updateDeliveryBoy(id, data);
+      const response = await updateDeliveryBoy(id, payload);
 
       console.log("Update Delivery Boy Response:", response.data);
       alert("Delivery Boy updated successfully!");
@@ -277,8 +262,9 @@ const EditDeliveryBoy = () => {
                     sx={{ borderRadius: "8px" }}
                     input={<OutlinedInput />}
                   >
+                    <MenuItem value="" disabled>Select City</MenuItem>
                     {cities.map(city => (
-                      <MenuItem key={city} value={city}>{city}</MenuItem>
+                      <MenuItem key={city._id} value={city._id}>{city.name}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -385,17 +371,25 @@ const EditDeliveryBoy = () => {
                     onChange={handleStoreChange}
                     sx={{ borderRadius: "8px" }}
                     input={<OutlinedInput />}
-                    renderValue={(selected) => selected.join(', ')}
+                    renderValue={(selected) => {
+                      if (!selected || selected.length === 0) {
+                        return <Typography color="textSecondary">Select Stores</Typography>;
+                      }
+                      const selectedStoreNames = storeList
+                        .filter(store => selected.includes(store._id))
+                        .map(store => store.name);
+                      return selectedStoreNames.join(', ');
+                    }}
                     MenuProps={MenuProps}
                   >
                     <MenuItem value="all">
-                        <Checkbox checked={formData.stores.length === storeList.length} indeterminate={formData.stores.length > 0 && formData.stores.length < storeList.length} />
+                        <Checkbox checked={formData.stores.length === storeList.length && storeList.length > 0} indeterminate={formData.stores.length > 0 && formData.stores.length < storeList.length} />
                         <ListItemText primary="Select all" />
                     </MenuItem>
                     {storeList.map(store => (
-                      <MenuItem key={store} value={store}>
-                        <Checkbox checked={formData.stores.indexOf(store) > -1} />
-                        <ListItemText primary={store} />
+                      <MenuItem key={store._id} value={store._id}>
+                        <Checkbox checked={formData.stores.indexOf(store._id) > -1} />
+                        <ListItemText primary={store.name} />
                       </MenuItem>
                     ))}
                   </Select>

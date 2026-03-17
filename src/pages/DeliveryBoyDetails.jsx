@@ -11,8 +11,8 @@ import {
   Stack,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { getAllDeliveryBoys } from "../api/deliveryBoyApi";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 const DeliveryBoyDetails = () => {
   const { id } = useParams();
@@ -23,20 +23,25 @@ const DeliveryBoyDetails = () => {
   useEffect(() => {
     const fetchBoy = async () => {
       try {
-        const response = await axios.get(`https://jsonplaceholder.typicode.com/users/${id}`);
-        // Mocking extra details based on new field structure
-        setBoy({
-          ...response.data,
-          status: "Active",
-          city: "Vijayawada",
-          idType: "Aadhar Card",
-          idNumber: "1234-5678-9012",
-          addressLine: response.data.address.suite + ", " + response.data.address.street + ", " + response.data.address.city,
-          stores: ["Hyderabad Store", "Vijayawada Store"],
-          orders: Math.floor(Math.random() * 100) + 1,
-          joinDate: "2024-01-15",
-          totalEarnings: "₹15,400",
-        });
+        const response = await getAllDeliveryBoys();
+        const list = Array.isArray(response.data.data) ? response.data.data : (response.data || []);
+        const found = list.find(b => String(b._id) === String(id) || String(b.id) === String(id));
+
+        if (found) {
+          setBoy({
+            name: found.boyName || found.name || "N/A",
+            phone: found.boyMobile || found.phone || "N/A",
+            email: found.boyEmail || found.email || "N/A",
+            status: found.status || "Active",
+            city: found.city?.cityName || found.city || "N/A",
+            idType: found.idType || "Aadhar",
+            idNumber: found.idNumber || "N/A",
+            addressLine: found.boyAddress || found.address || "N/A",
+            stores: found.store ? (Array.isArray(found.store) ? found.store : [found.store]) : [],
+            idImage: found.idImage || "",
+            createdAt: found.createdAt ? new Date(found.createdAt).toLocaleDateString() : "N/A",
+          });
+        }
         setLoading(false);
       } catch (error) {
         console.error("Error fetching delivery boy details:", error);

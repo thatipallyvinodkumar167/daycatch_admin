@@ -47,30 +47,19 @@ const AddDeliveryBoy = () => {
   const [idImage, setIdImage] = useState(null);
 
   const cities = [
-    "Hyderabad",
-    "Kurnool",
-    "Vijayawada",
-    "Warrangal",
-    "Guntur",
-    "Mangalgiri",
-    "Khammam",
-    "Nellore"
+    { name: "Hyderabad", _id: "69b78e59c52e71920fa867ac" },
+    { name: "Kurnool", _id: "69b78e59c52e71920fa867ac" } // Fallback using the same ID for now just to test
   ];
 
   const idTypes = [
-    "Aadhar Card",
+    "Aadhar",
     "PAN Card",
     "Business Proof"
   ];
 
   const storeList = [
-    "Hyderabad Store",
-    "Vijayawada Store",
-    "Kurnool Store",
-    "Khammam Store",
-    "Guntur Store",
-    "Mangalgiri Store",
-    "Warrangal Store"
+    { name: "Hyderabad Store", _id: "69b7ac7bad9d8224d7a970d7" },
+    { name: "Vijayawada Store", _id: "69b7ac7bad9d8224d7a970d7" }
   ];
 
   const handleChange = (e) => {
@@ -168,7 +157,7 @@ const AddDeliveryBoy = () => {
               {/* Boy Name */}
               <Grid item xs={12} md={6}>
                 <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Boy Name
+                   Name
                 </Typography>
                 <TextField
                   fullWidth
@@ -183,7 +172,7 @@ const AddDeliveryBoy = () => {
               {/* Boy Phone */}
               <Grid item xs={12} md={6}>
                 <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Boy Phone
+                   Phone
                 </Typography>
                 <TextField
                   fullWidth
@@ -198,7 +187,7 @@ const AddDeliveryBoy = () => {
               {/* Boy Email */}
               <Grid item xs={12} md={6}>
                 <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Boy Email
+                   Email
                 </Typography>
                 <TextField
                   fullWidth
@@ -243,7 +232,7 @@ const AddDeliveryBoy = () => {
                   >
                     <MenuItem value="" disabled>Select City</MenuItem>
                     {cities.map(city => (
-                      <MenuItem key={city} value={city}>{city}</MenuItem>
+                      <MenuItem key={city._id} value={city._id}>{city.name}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -355,6 +344,10 @@ const AddDeliveryBoy = () => {
                         return <Typography color="textSecondary">Select Stores</Typography>;
                       }
                       return selected.join(', ');
+                      const selectedStoreNames = storeList
+                        .filter(store => selected.includes(store._id))
+                        .map(store => store.name);
+                      return selectedStoreNames.join(', ');
                     }}
                     MenuProps={MenuProps}
                   >
@@ -362,10 +355,10 @@ const AddDeliveryBoy = () => {
                         <Checkbox checked={formData.stores.length === storeList.length} indeterminate={formData.stores.length > 0 && formData.stores.length < storeList.length} />
                         <ListItemText primary="Select all" />
                     </MenuItem>
-                    {storeList.map(store => (
-                      <MenuItem key={store} value={store}>
-                        <Checkbox checked={formData.stores.indexOf(store) > -1} />
-                        <ListItemText primary={store} />
+                    {storeList.map((store) => (
+                      <MenuItem key={store._id} value={store._id}>
+                        <Checkbox checked={formData.stores.indexOf(store._id) > -1} />
+                        <ListItemText primary={store.name} />
                       </MenuItem>
                     ))}
                   </Select>
