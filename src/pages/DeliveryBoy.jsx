@@ -19,7 +19,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { getAllDeliveryBoys, deleteDeliveryBoy } from "../api/deliveryBoyApi";
 
 const DeliveryBoy = () => {
   const navigate = useNavigate();
@@ -33,9 +33,7 @@ const DeliveryBoy = () => {
 
   const fetchDeliveryBoys = async () => {
     try {
-      const response = await axios.get(
-        "https://daycatch-backend-1.onrender.com/api/deliveryBoy/getAllDeliveryBoy"
-      );
+      const response = await getAllDeliveryBoys();
       // Support both array response and {data:[]} wrapper
       const list = Array.isArray(response.data) ? response.data : (response.data.data || []);
       setDeliveryBoys(list);
@@ -54,9 +52,7 @@ const DeliveryBoy = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this delivery boy?")) {
       try {
-        await axios.delete(
-          `https://daycatch-backend-1.onrender.com/api/deliveryBoy/deleteDeliveryBoy/${id}`
-        );
+        await deleteDeliveryBoy(id);
         setDeliveryBoys(prev => prev.filter(item => item._id !== id && item.id !== id));
         alert("Delivery boy deleted successfully!");
       } catch (error) {

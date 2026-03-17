@@ -15,7 +15,8 @@ import {
   OutlinedInput,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
+import { addDeliveryBoy } from "../api/deliveryBoyApi";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 const ITEM_HEIGHT = 48;
@@ -110,26 +111,35 @@ const AddDeliveryBoy = () => {
     setIsSubmitting(true);
     try {
       const data = new FormData();
-      Object.keys(formData).forEach(key => {
-          if (key === "stores") {
-              data.append(key, JSON.stringify(formData[key]));
-          } else {
-              data.append(key, formData[key]);
-          }
-      });
+      
+      // Append basic fields
+      data.append("name", formData.name);
+      data.append("phone", formData.phone);
+      data.append("password", formData.password);
+      data.append("city", formData.city);
+      data.append("idType", formData.idType);
+      data.append("idNumber", formData.idNumber);
+      data.append("address", formData.address);
+      data.append("status", "Active");
+
+      // Append stores individually
+      if (formData.stores && formData.stores.length > 0) {
+        formData.stores.forEach(store => {
+          data.append("stores[]", store); // Try array notation or just "stores"
+        });
+      }
+
       if (idImage) data.append("idImage", idImage);
 
-      await axios.post(
-        "https://daycatch-backend-1.onrender.com/api/deliveryBoy/addDeliveryBoy",
-        data,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+      const response = await addDeliveryBoy(data);
 
+      console.log("Add Delivery Boy Response:", response.data);
       alert("Delivery Boy added successfully!");
       navigate("/delivery-boy-list");
     } catch (error) {
       console.error("Error adding delivery boy:", error);
-      alert(error?.response?.data?.message || "Failed to add delivery boy.");
+      const serverMessage = error?.response?.data?.message || error?.response?.data?.error;
+      alert(serverMessage || "Failed to add delivery boy (Server Error 500). Please check if all fields are valid.");
     } finally {
       setIsSubmitting(false);
     }

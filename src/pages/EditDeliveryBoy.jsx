@@ -16,7 +16,7 @@ import {
   OutlinedInput,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { getAllDeliveryBoys, updateDeliveryBoy } from "../api/deliveryBoyApi";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 const ITEM_HEIGHT = 48;
@@ -79,9 +79,7 @@ const EditDeliveryBoy = () => {
     const fetchBoy = async () => {
       try {
         // Fetch all boys and find the one matching the ID
-        const response = await axios.get(
-          "https://daycatch-backend-1.onrender.com/api/deliveryBoy/getAllDeliveryBoy"
-        );
+        const response = await getAllDeliveryBoys();
         const list = Array.isArray(response.data) ? response.data : (response.data.data || []);
         const found = list.find(b => String(b._id) === String(id) || String(b.id) === String(id));
 
@@ -141,26 +139,32 @@ const EditDeliveryBoy = () => {
     setIsSubmitting(true);
     try {
       const data = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key === "stores") {
-            data.append(key, JSON.stringify(formData[key]));
-        } else {
-            data.append(key, formData[key]);
-        }
-      });
+      
+      data.append("name", formData.name);
+      data.append("phone", formData.phone);
+      data.append("password", formData.password);
+      data.append("city", formData.city);
+      data.append("idType", formData.idType);
+      data.append("idNumber", formData.idNumber);
+      data.append("address", formData.address);
+
+      if (formData.stores && formData.stores.length > 0) {
+        formData.stores.forEach(store => {
+          data.append("stores[]", store);
+        });
+      }
+
       if (idImage) data.append("idImage", idImage);
 
-      await axios.put(
-        `https://daycatch-backend-1.onrender.com/api/deliveryBoy/updateDeliveryBoy/${id}`,
-        data,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+      const response = await updateDeliveryBoy(id, data);
 
+      console.log("Update Delivery Boy Response:", response.data);
       alert("Delivery Boy updated successfully!");
       navigate("/delivery-boy-list");
     } catch (error) {
       console.error("Error updating delivery boy:", error);
-      alert(error?.response?.data?.message || "Failed to update delivery boy.");
+      const serverMessage = error?.response?.data?.message || error?.response?.data?.error;
+      alert(serverMessage || "Failed to update delivery boy.");
     } finally {
       setIsSubmitting(false);
     }
