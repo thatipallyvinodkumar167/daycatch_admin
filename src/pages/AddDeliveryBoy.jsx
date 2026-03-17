@@ -343,7 +343,6 @@ const AddDeliveryBoy = () => {
                       if (selected.length === 0) {
                         return <Typography color="textSecondary">Select Stores</Typography>;
                       }
-                      return selected.join(', ');
                       const selectedStoreNames = storeList
                         .filter(store => selected.includes(store._id))
                         .map(store => store.name);
