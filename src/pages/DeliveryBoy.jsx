@@ -34,8 +34,9 @@ const DeliveryBoy = () => {
   const fetchDeliveryBoys = async () => {
     try {
       const response = await getAllDeliveryBoys();
-      // Support both array response and {data:[]} wrapper
-      const list = Array.isArray(response.data) ? response.data : (response.data.data || []);
+      // The API returns the array directly inside response.data
+      const list = Array.isArray(response.data.data) ? response.data.data :
+                   Array.isArray(response.data) ? response.data : [];
       setDeliveryBoys(list);
     } catch (error) {
       console.error("Error fetching delivery boys:", error);
@@ -44,8 +45,8 @@ const DeliveryBoy = () => {
 
   const filteredBoys = React.useMemo(() => {
     return deliveryBoys.filter((item) =>
-      item.name?.toLowerCase().includes(search.toLowerCase().trim()) ||
-      item.phone?.toLowerCase().includes(search.toLowerCase().trim())
+      (item.boyName || item.name)?.toLowerCase().includes(search.toLowerCase().trim()) ||
+      (item.boyMobile || item.phone)?.toLowerCase().includes(search.toLowerCase().trim())
     );
   }, [deliveryBoys, search]);
 
@@ -159,13 +160,13 @@ const DeliveryBoy = () => {
                       {index + 1}
                     </TableCell>
                     <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>
-                      {item.name}
+                      {item.boyName || item.name}
                     </TableCell>
                     <TableCell sx={{ color: "#475467" }}>
-                      {item.phone}
+                      {item.boyMobile || item.phone}
                     </TableCell>
                     <TableCell sx={{ color: "#475467", fontStyle: "italic", fontSize: "12px" }}>
-                      {item.password || "—"}
+                      {item.boyPassword || item.password || "—"}
                     </TableCell>
                     <TableCell>
                       <Chip 

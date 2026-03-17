@@ -111,8 +111,6 @@ const AddDeliveryBoy = () => {
 
     setIsSubmitting(true);
     try {
-      const data = new FormData();
-      
       const payload = {
         boyName: formData.name,
         boyMobile: formData.phone,
