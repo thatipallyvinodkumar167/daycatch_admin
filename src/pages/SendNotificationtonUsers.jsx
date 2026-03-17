@@ -10,10 +10,9 @@ import {
   MenuItem,
   FormControl,
   Select,
-  InputLabel,
-  Snackbar,
   Alert,
   Chip,
+  Snackbar,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import ImageIcon from "@mui/icons-material/Image";

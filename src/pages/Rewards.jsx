@@ -33,32 +33,32 @@ const Rewards = () => {
   const [newRule, setNewRule] = useState({ cartValue: "", points: "" });
 
   useEffect(() => {
+    const fetchRewards = async () => {
+      try {
+        const response = await axios.get(
+          "https://jsonplaceholder.typicode.com/posts?_limit=8"
+        );
+        
+        const formattedData = response.data.map((item, index) => ({
+          id: item.id,
+          cartValue: 500 + (index * 250),
+          rewardPoints: 10 + (index * 5),
+        }));
+
+        setRewards(formattedData);
+      } catch (error) {
+        console.error("Error fetching rewards:", error);
+      }
+    };
+
     if (rewards.length === 0) {
       fetchRewards();
     }
-  }, []);
+  }, [rewards.length]);
 
   useEffect(() => {
     localStorage.setItem("daycatch_reward_rules", JSON.stringify(rewards));
   }, [rewards]);
-
-  const fetchRewards = async () => {
-    try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/posts?_limit=8"
-      );
-      
-      const formattedData = response.data.map((item, index) => ({
-        id: item.id,
-        cartValue: 500 + (index * 250),
-        rewardPoints: 10 + (index * 5),
-      }));
-
-      setRewards(formattedData);
-    } catch (error) {
-      console.error("Error fetching rewards:", error);
-    }
-  };
 
   const filteredRewards = rewards.filter((item) =>
     item.cartValue.toString().includes(search.trim()) ||

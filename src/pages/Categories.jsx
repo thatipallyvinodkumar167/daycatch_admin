@@ -13,18 +13,15 @@ import {
   Button,
   Stack,
   IconButton,
-  Tooltip,
   Avatar,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import CategoryIcon from "@mui/icons-material/Category";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Categories = () => {
-  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [newCategory, setNewCategory] = useState("");

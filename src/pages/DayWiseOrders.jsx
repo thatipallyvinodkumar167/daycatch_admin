@@ -26,30 +26,29 @@ const DayWiseOrders = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
 
   useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await axios.get(
+          "https://jsonplaceholder.typicode.com/users?_limit=9"
+        );
+        
+        const formattedData = response.data.map((user, index) => ({
+          id: index + 1,
+          cartId: `ORD-DAY-${8000 + user.id}`,
+          cartPrice: `₹${Math.floor(Math.random() * 3000) + 400}`,
+          userName: user.name,
+          userPhone: user.phone.split(" ")[0],
+          deliveryDate: selectedDate,
+          status: index % 4 === 0 ? "Pending" : "Completed",
+        }));
+
+        setOrders(formattedData);
+      } catch (error) {
+        console.error("Error fetching day wise orders:", error);
+      }
+    };
     fetchOrders();
   }, [selectedDate]);
-
-  const fetchOrders = async () => {
-    try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users?_limit=9"
-      );
-      
-      const formattedData = response.data.map((user, index) => ({
-        id: index + 1,
-        cartId: `ORD-DAY-${8000 + user.id}`,
-        cartPrice: `₹${Math.floor(Math.random() * 3000) + 400}`,
-        userName: user.name,
-        userPhone: user.phone.split(" ")[0],
-        deliveryDate: selectedDate,
-        status: index % 4 === 0 ? "Pending" : "Completed",
-      }));
-
-      setOrders(formattedData);
-    } catch (error) {
-      console.error("Error fetching day wise orders:", error);
-    }
-  };
 
   const filteredOrders = orders.filter((order) =>
     order.cartId.toLowerCase().includes(search.toLowerCase()) ||

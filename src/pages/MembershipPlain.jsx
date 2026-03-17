@@ -24,7 +24,6 @@ import CardMembershipIcon from "@mui/icons-material/CardMembership";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
 const MembershipPlain = () => {
   const navigate = useNavigate();

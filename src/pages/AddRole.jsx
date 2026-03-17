@@ -12,7 +12,6 @@ import {
   Divider,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 
 const AddRole = () => {
   const navigate = useNavigate();

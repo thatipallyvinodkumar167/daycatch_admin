@@ -39,32 +39,32 @@ const modalStyle = {
   p: 4,
 };
 
+const citiesList = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Ahmedabad", "Chennai"];
+
 const AreaSociety = () => {
   const [areas, setAreas] = useState([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [newArea, setNewArea] = useState({ name: "", city: "" });
 
-  const citiesList = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Ahmedabad", "Chennai"];
-
   useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const response = await axios.get("https://jsonplaceholder.typicode.com/users?_limit=8");
+        const formattedData = response.data.map((user, index) => ({
+          id: index + 1,
+          name: `Society ${String.fromCharCode(65 + index)}`,
+          city: citiesList[index % citiesList.length],
+          status: "Active"
+        }));
+        setAreas(formattedData);
+      } catch (error) {
+        console.error("Error fetching areas:", error);
+      }
+    };
+
     fetchAreas();
   }, []);
-
-  const fetchAreas = async () => {
-    try {
-      const response = await axios.get("https://jsonplaceholder.typicode.com/users?_limit=8");
-      const formattedData = response.data.map((user, index) => ({
-        id: index + 1,
-        name: `Society ${String.fromCharCode(65 + index)}`,
-        city: citiesList[index % citiesList.length],
-        status: "Active"
-      }));
-      setAreas(formattedData);
-    } catch (error) {
-      console.error("Error fetching areas:", error);
-    }
-  };
 
   const handleAdd = () => {
     if (newArea.name && newArea.city) {

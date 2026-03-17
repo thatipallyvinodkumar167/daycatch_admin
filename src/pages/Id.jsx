@@ -19,7 +19,6 @@ import {
   DialogContent,
   DialogActions,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
 } from "@mui/material";
@@ -27,7 +26,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import FingerprintIcon from "@mui/icons-material/Fingerprint";
-import axios from "axios";
 
 const Id = () => {
   const [ids, setIds] = useState([]);

@@ -25,7 +25,6 @@ import DeliveryDiningIcon from "@mui/icons-material/DeliveryDining";
 import PeopleIcon from "@mui/icons-material/People";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import InventoryIcon from "@mui/icons-material/Inventory";
 
 const Reports = () => {
   const [activeTab, setActiveTab] = useState("main");
@@ -61,35 +60,6 @@ const Reports = () => {
     }
   ];
 
-  const StatsCard = ({ title, value, icon }) => (
-    <Paper sx={{ 
-        p: 3, 
-        borderRadius: "20px", 
-        boxShadow: "0 10px 30px rgba(0,0,0,0.02)", 
-        borderLeft: "6px solid #2d60ff",
-        display: "flex",
-        alignItems: "center",
-        gap: 3,
-        width: "fit-content",
-        minWidth: "260px",
-        backgroundColor: "white"
-    }}>
-        <Box sx={{ 
-            p: 2, 
-            borderRadius: "14px", 
-            bgcolor: "#e9edf7", 
-            display: "flex", 
-            justifyContent: "center", 
-            alignItems: "center" 
-        }}>
-            {icon}
-        </Box>
-        <Box>
-            <Typography variant="body2" fontWeight="700" color="#a3aed0" sx={{ mb: 0.5, textTransform: "uppercase", fontSize: "0.75rem", letterSpacing: "1px" }}>{title}</Typography>
-            <Typography variant="h4" fontWeight="800" color="#1b2559">{value}</Typography>
-        </Box>
-    </Paper>
-  );
 
   const renderTable = (headers, data, title, isTopDelivery = false, isTopStore = false, isTopUser = false) => (
     <Box>

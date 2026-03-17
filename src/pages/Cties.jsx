@@ -45,31 +45,31 @@ const Cities = () => {
   const [newCity, setNewCity] = useState("");
 
   useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        // Using users as a source for dummy names
+        await axios.get("https://jsonplaceholder.typicode.com/users");
+        const cityList = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Ahmedabad", "Chennai", "Kolkata", "Surat", "Pune", "Jaipur"];
+        const formattedData = cityList.map((city, index) => ({
+          id: index + 1,
+          cityId: `CTY-${100 + index}`,
+          name: city,
+          status: "Active"
+        }));
+        setCities(formattedData);
+      } catch (error) {
+        console.error("Error fetching cities:", error);
+      }
+    };
+
     if (cities.length === 0) {
       fetchCities();
     }
-  }, []);
+  }, [cities.length]);
 
   useEffect(() => {
     localStorage.setItem("daycatch_cities", JSON.stringify(cities));
   }, [cities]);
-
-  const fetchCities = async () => {
-    try {
-      // Using users as a source for dummy names
-      const response = await axios.get("https://jsonplaceholder.typicode.com/users");
-      const cityList = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Ahmedabad", "Chennai", "Kolkata", "Surat", "Pune", "Jaipur"];
-      const formattedData = cityList.map((city, index) => ({
-        id: index + 1,
-        cityId: `CTY-${100 + index}`,
-        name: city,
-        status: "Active"
-      }));
-      setCities(formattedData);
-    } catch (error) {
-      console.error("Error fetching cities:", error);
-    }
-  };
 
   const handleAdd = () => {
     if (newCity.trim()) {

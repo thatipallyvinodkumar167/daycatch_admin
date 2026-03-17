@@ -16,7 +16,6 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import DeliveryDiningIcon from "@mui/icons-material/DeliveryDining";
 import axios from "axios";
 
 const DriverNotifications = () => {

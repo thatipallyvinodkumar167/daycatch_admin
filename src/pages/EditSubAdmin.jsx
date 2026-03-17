@@ -19,7 +19,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import axios from "axios";
 
 const EditSubAdmin = () => {
   const navigate = useNavigate();
@@ -37,52 +36,50 @@ const EditSubAdmin = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const mockRoles = [
+          { id: 1, name: "Manager" },
+          { id: 2, name: "Editor" },
+          { id: 3, name: "Support" },
+          { id: 4, name: "Inventory Manager" },
+          { id: 5, name: "Delivery Lead" },
+        ];
+        setRoles(mockRoles);
+      } catch (error) {
+        console.error("Error fetching roles:", error);
+      }
+    };
+
+    const fetchAdminDetails = async () => {
+      try {
+        setLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const mockAdmin = {
+          name: "John Doe",
+          email: "john@example.com",
+          roleName: "Manager",
+          image: `https://i.pravatar.cc/150?u=${id}`
+        };
+        
+        setFormData(prev => ({
+          ...prev,
+          name: mockAdmin.name,
+          email: mockAdmin.email,
+          roleName: mockAdmin.roleName,
+        }));
+        setImagePreview(mockAdmin.image);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching admin details:", error);
+        setLoading(false);
+      }
+    };
+
     fetchRoles();
     fetchAdminDetails();
   }, [id]);
-
-  const fetchRoles = async () => {
-    try {
-      const mockRoles = [
-        { id: 1, name: "Manager" },
-        { id: 2, name: "Editor" },
-        { id: 3, name: "Support" },
-        { id: 4, name: "Inventory Manager" },
-        { id: 5, name: "Delivery Lead" },
-      ];
-      setRoles(mockRoles);
-    } catch (error) {
-      console.error("Error fetching roles:", error);
-    }
-  };
-
-  const fetchAdminDetails = async () => {
-    try {
-      // Simulate fetching admin details from fake API
-      // In a real app: const response = await axios.get(`/api/sub-admin/${id}`);
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockAdmin = {
-        name: "John Doe",
-        email: "john@example.com",
-        roleName: "Manager",
-        image: `https://i.pravatar.cc/150?u=${id}`
-      };
-      
-      setFormData({
-        ...formData,
-        name: mockAdmin.name,
-        email: mockAdmin.email,
-        roleName: mockAdmin.roleName,
-      });
-      setImagePreview(mockAdmin.image);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching admin details:", error);
-      setLoading(false);
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

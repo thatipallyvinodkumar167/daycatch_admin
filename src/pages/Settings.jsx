@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  Avatar,
   Box,
   Typography,
   Paper,
@@ -8,7 +7,6 @@ import {
   Button,
   Stack,
   Grid,
-  Divider,
   Switch,
   IconButton,
   List,

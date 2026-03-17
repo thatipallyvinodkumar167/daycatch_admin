@@ -12,12 +12,10 @@ import {
   TextField,
   Stack,
   IconButton,
-  Tooltip,
   Chip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import StorefrontIcon from "@mui/icons-material/Storefront";
 import axios from "axios";
 
 const StoreNotifications = () => {
