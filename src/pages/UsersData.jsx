@@ -21,6 +21,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PersonIcon from "@mui/icons-material/Person";
+import BlockIcon from "@mui/icons-material/Block";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import axios from "axios";
 
 const UsersData = () => {
@@ -58,6 +60,16 @@ const UsersData = () => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       setUsers(prev => prev.filter(user => user.id !== id));
     }
+  };
+
+  const handleToggleStatus = (id) => {
+    setUsers(prev =>
+      prev.map(user =>
+        user.id === id
+          ? { ...user, status: user.status === "Active" ? "Blocked" : "Active" }
+          : user
+      )
+    );
   };
 
   const filteredUsers = users.filter((user) =>
@@ -115,37 +127,50 @@ const UsersData = () => {
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>USER</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CONTACT</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>REG. DATE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>VERIFIED</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>#</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>USER NAME</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>USER PHONE</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>USER EMAIL</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>REG. DATE</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>IS VERIFIED</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>STATUS</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>DETAILS</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px", pr: 4 }}>ACTIONS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                     No Users Found
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredUsers.map((user, index) => (
                   <TableRow key={user.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
+                    {/* # */}
                     <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{index + 1}</TableCell>
+
+                    {/* User Name */}
                     <TableCell>
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        <Avatar src={user.avatar} sx={{ width: 36, height: 36 }} />
-                        <Typography variant="body2" fontWeight="700" color="#1b2559">{user.name}</Typography>
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} />
+                        <Typography variant="body2" fontWeight="700" color="#1b2559" noWrap sx={{ maxWidth: 130 }}>
+                          {user.name}
+                        </Typography>
                       </Stack>
                     </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="600" color="#1b2559">{user.phone}</Typography>
-                      <Typography variant="caption" color="textSecondary">{user.email}</Typography>
-                    </TableCell>
+
+                    {/* User Phone */}
+                    <TableCell sx={{ color: "#475467", fontWeight: "500" }}>{user.phone}</TableCell>
+
+                    {/* User Email */}
+                    <TableCell sx={{ color: "#475467", fontSize: "13px" }}>{user.email}</TableCell>
+
+                    {/* Registration Date */}
                     <TableCell sx={{ color: "#475467" }}>{user.regDate}</TableCell>
+
+                    {/* Is Verified */}
                     <TableCell>
                       {user.isVerified ? (
                         <Chip label="Verified" size="small" sx={{ backgroundColor: "#e6f9ed", color: "#24d164", fontWeight: "700" }} />
@@ -153,37 +178,52 @@ const UsersData = () => {
                         <Chip label="Unverified" size="small" sx={{ backgroundColor: "#fff1f0", color: "#ff4d49", fontWeight: "700" }} />
                       )}
                     </TableCell>
+
+                    {/* Active / Block status */}
                     <TableCell>
                       <Chip
                         label={user.status}
                         size="small"
+                        onClick={() => handleToggleStatus(user.id)}
                         sx={{ 
                           backgroundColor: user.status === "Active" ? "#e6f9ed" : "#fff1f0", 
                           color: user.status === "Active" ? "#24d164" : "#ff4d49", 
-                          fontWeight: "700" 
+                          fontWeight: "700",
+                          cursor: "pointer",
+                          "&:hover": { opacity: 0.85 }
                         }}
                       />
                     </TableCell>
+
+                    {/* Details */}
+                    <TableCell>
+                      <Tooltip title="View Details">
+                        <IconButton size="small" sx={{ 
+                            backgroundColor: "#2d60ff", 
+                            color: "#fff", 
+                            borderRadius: "10px",
+                            "&:hover": { backgroundColor: "#2046cc" }
+                        }}>
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+
+                    {/* Actions */}
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title="View Details">
-                          <IconButton size="small" sx={{ 
-                                backgroundColor: "#2d60ff", 
-                                color: "#fff", 
-                                borderRadius: "10px",
-                                "&:hover": { backgroundColor: "#2046cc" }
-                            }}>
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit User">
-                          <IconButton size="small" sx={{ 
-                                backgroundColor: "#00d26a", 
-                                color: "#fff", 
-                                borderRadius: "10px",
-                                "&:hover": { backgroundColor: "#00b85c" }
-                            }}>
-                            <EditIcon fontSize="small" />
+                        <Tooltip title={user.status === "Active" ? "Block User" : "Unblock User"}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleToggleStatus(user.id)}
+                            sx={{
+                              backgroundColor: user.status === "Active" ? "#ff4d49" : "#00d26a",
+                              color: "#fff",
+                              borderRadius: "10px",
+                              "&:hover": { backgroundColor: user.status === "Active" ? "#e03e3e" : "#00b85c" }
+                            }}
+                          >
+                            {user.status === "Active" ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Delete User">

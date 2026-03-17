@@ -34,20 +34,11 @@ const DeliveryBoy = () => {
   const fetchDeliveryBoys = async () => {
     try {
       const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users"
+        "https://daycatch-backend-1.onrender.com/api/deliveryBoy/getAllDeliveryBoy"
       );
-      
-      // Map fake data to our requested columns
-      const formattedData = response.data.map((item, index) => ({
-        id: item.id,
-        name: item.name,
-        phone: item.phone,
-        password: `db@pass${item.id}`, // Dummy password
-        status: index % 3 === 0 ? "Inactive" : "Active",
-        orders: Math.floor(Math.random() * 100) + 1,
-      }));
-
-      setDeliveryBoys(formattedData);
+      // Support both array response and {data:[]} wrapper
+      const list = Array.isArray(response.data) ? response.data : (response.data.data || []);
+      setDeliveryBoys(list);
     } catch (error) {
       console.error("Error fetching delivery boys:", error);
     }
@@ -60,10 +51,18 @@ const DeliveryBoy = () => {
     );
   }, [deliveryBoys, search]);
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this delivery boy?")) {
-      setDeliveryBoys(prev => prev.filter(item => item.id !== id));
-      alert("Delivery boy removed successfully!");
+      try {
+        await axios.delete(
+          `https://daycatch-backend-1.onrender.com/api/deliveryBoy/deleteDeliveryBoy/${id}`
+        );
+        setDeliveryBoys(prev => prev.filter(item => item._id !== id && item.id !== id));
+        alert("Delivery boy deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting delivery boy:", error);
+        alert("Failed to delete delivery boy.");
+      }
     }
   };
 
@@ -157,7 +156,7 @@ const DeliveryBoy = () => {
               ) : (
                 filteredBoys.map((item, index) => (
                   <TableRow 
-                    key={item.id} 
+                    key={item._id || item.id} 
                     sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}
                   >
                     <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>
@@ -170,15 +169,15 @@ const DeliveryBoy = () => {
                       {item.phone}
                     </TableCell>
                     <TableCell sx={{ color: "#475467", fontStyle: "italic", fontSize: "12px" }}>
-                      {item.password}
+                      {item.password || "—"}
                     </TableCell>
                     <TableCell>
                       <Chip 
-                        label={item.status} 
+                        label={item.status || "Active"} 
                         size="small"
                         sx={{ 
-                          backgroundColor: item.status === "Active" ? "#e6f9ed" : "#fff1f0",
-                          color: item.status === "Active" ? "#24d164" : "#ff4d49",
+                          backgroundColor: item.status === "Inactive" ? "#fff1f0" : "#e6f9ed",
+                          color: item.status === "Inactive" ? "#ff4d49" : "#24d164",
                           fontWeight: "700",
                           borderRadius: "6px"
                         }} 
@@ -186,7 +185,7 @@ const DeliveryBoy = () => {
                     </TableCell>
                     <TableCell>
                       <Typography 
-                        onClick={() => navigate(`/delivery-boy-list/orders/${item.id}`)}
+                        onClick={() => navigate(`/delivery-boy-list/orders/${item._id || item.id}`)}
                         sx={{ 
                             color: "#2d60ff", 
                             fontWeight: "700", 
@@ -194,13 +193,13 @@ const DeliveryBoy = () => {
                             "&:hover": { textDecoration: "underline" }
                         }}
                       >
-                        {item.orders}
+                        {item.orders ?? 0}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
                       <IconButton 
                         size="small"
-                        onClick={() => navigate(`/delivery-boy-list/details/${item.id}`)}
+                        onClick={() => navigate(`/delivery-boy-list/details/${item._id || item.id}`)}
                         sx={{ 
                           backgroundColor: "#2d60ff", 
                           color: "white",
@@ -214,7 +213,7 @@ const DeliveryBoy = () => {
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <IconButton 
-                          onClick={() => navigate(`/delivery-boy-list/edit/${item.id}`)}
+                          onClick={() => navigate(`/delivery-boy-list/edit/${item._id || item.id}`)}
                           sx={{ 
                             backgroundColor: "#00d26a", 
                             color: "white",
@@ -225,7 +224,7 @@ const DeliveryBoy = () => {
                           <EditIcon fontSize="small" />
                         </IconButton>
                         <IconButton 
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => handleDelete(item._id || item.id)}
                           sx={{ 
                             backgroundColor: "#ff4d49", 
                             color: "white",

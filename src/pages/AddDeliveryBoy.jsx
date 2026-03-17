@@ -119,13 +119,17 @@ const AddDeliveryBoy = () => {
       });
       if (idImage) data.append("idImage", idImage);
 
-      await axios.post("https://jsonplaceholder.typicode.com/posts", data);
+      await axios.post(
+        "https://daycatch-backend-1.onrender.com/api/deliveryBoy/addDeliveryBoy",
+        data,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
-      alert("Delivery Boy added successfully (Mock API)!");
+      alert("Delivery Boy added successfully!");
       navigate("/delivery-boy-list");
     } catch (error) {
       console.error("Error adding delivery boy:", error);
-      alert("Failed to add delivery boy.");
+      alert(error?.response?.data?.message || "Failed to add delivery boy.");
     } finally {
       setIsSubmitting(false);
     }

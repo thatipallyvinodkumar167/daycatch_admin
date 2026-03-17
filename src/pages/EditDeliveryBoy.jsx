@@ -78,19 +78,26 @@ const EditDeliveryBoy = () => {
   useEffect(() => {
     const fetchBoy = async () => {
       try {
-        const response = await axios.get(`https://jsonplaceholder.typicode.com/users/${id}`);
-        // Mocking the data structure matching the new requirements
-        setFormData({
-          name: response.data.name,
-          phone: response.data.phone,
-          password: `db@pass${id}`,
-          city: "Vijayawada",
-          idType: "Aadhar Card",
-          idNumber: "1234-5678-9012",
-          address: response.data.address.city,
-          stores: ["Hyderabad Store", "Vijayawada Store"],
-        });
-        setExistingImageUrl("https://via.placeholder.com/150"); // Mock image
+        // Fetch all boys and find the one matching the ID
+        const response = await axios.get(
+          "https://daycatch-backend-1.onrender.com/api/deliveryBoy/getAllDeliveryBoy"
+        );
+        const list = Array.isArray(response.data) ? response.data : (response.data.data || []);
+        const found = list.find(b => String(b._id) === String(id) || String(b.id) === String(id));
+
+        if (found) {
+          setFormData({
+            name: found.name || "",
+            phone: found.phone || "",
+            password: found.password || "",
+            city: found.city || "",
+            idType: found.idType || "",
+            idNumber: found.idNumber || "",
+            address: found.address || "",
+            stores: found.stores || [],
+          });
+          if (found.idImage) setExistingImageUrl(found.idImage);
+        }
         setLoading(false);
       } catch (error) {
         console.error("Error fetching delivery boy:", error);
@@ -143,13 +150,17 @@ const EditDeliveryBoy = () => {
       });
       if (idImage) data.append("idImage", idImage);
 
-      await axios.put(`https://jsonplaceholder.typicode.com/posts/${id}`, data);
+      await axios.put(
+        `https://daycatch-backend-1.onrender.com/api/deliveryBoy/updateDeliveryBoy/${id}`,
+        data,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
-      alert("Delivery Boy updated successfully (Mock API)!");
+      alert("Delivery Boy updated successfully!");
       navigate("/delivery-boy-list");
     } catch (error) {
       console.error("Error updating delivery boy:", error);
-      alert("Failed to update delivery boy.");
+      alert(error?.response?.data?.message || "Failed to update delivery boy.");
     } finally {
       setIsSubmitting(false);
     }

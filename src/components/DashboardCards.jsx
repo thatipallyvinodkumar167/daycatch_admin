@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 
 import { motion } from "framer-motion";
-import axios from "axios";
+
 import { useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 
@@ -64,7 +64,6 @@ const Dashboard = () => {
         // Simulating API response delay
         await new Promise(resolve => setTimeout(resolve, 600));
 
-        const currentDate = new Date(2026, 2, 14); // March 14, 2026
         
         let currentCount = 20;
         let lastCount = 18;

@@ -35,26 +35,20 @@ const DeliveryBoyIncentive = () => {
   const fetchIncentives = async () => {
     try {
       const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users"
+        "https://daycatch-backend-1.onrender.com/api/deliveryBoyIncentive/getDeliveryBoyIncentive"
       );
-      
-      // Map fake data to our requested columns
-      const formattedData = response.data.map((item, index) => {
-        const total = Math.floor(Math.random() * 5000) + 1000;
-        const paid = Math.floor(Math.random() * total);
-        const pending = total - paid;
-        
-        return {
-          id: item.id,
-          name: item.name,
-          phone: item.phone,
-          address: `${item.address.suite}, ${item.address.city}`,
-          bankUpi: index % 2 === 0 ? `SBI - ****${4000 + item.id}` : `${item.username.toLowerCase()}@ybl`,
-          totalIncentive: `₹${total}`,
-          paidIncentive: `₹${paid}`,
-          pendingIncentive: `₹${pending}`,
-        };
-      });
+      const list = Array.isArray(response.data) ? response.data : (response.data.data || []);
+
+      const formattedData = list.map((item) => ({
+        id: item._id || item.id,
+        name: item.name || item.deliveryBoyName || "—",
+        phone: item.phone || item.deliveryBoyPhone || "—",
+        address: item.address || "—",
+        bankUpi: item.bankDetails || item.upi || item.bankUpi || "—",
+        totalIncentive: `₹${item.totalIncentive ?? 0}`,
+        paidIncentive: `₹${item.paidIncentive ?? 0}`,
+        pendingIncentive: `₹${item.pendingIncentive ?? 0}`,
+      }));
 
       setIncentives(formattedData);
     } catch (error) {
