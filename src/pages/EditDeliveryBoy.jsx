@@ -153,9 +153,7 @@ const EditDeliveryBoy = () => {
       data.append("boyAddress", formData.address);
 
       if (formData.stores && formData.stores.length > 0) {
-        formData.stores.forEach(store => {
-          data.append("store", store); // Node/Express usually parses repeated fields as array without []
-        });
+        data.append("store", formData.stores[0]); // Using the first store as string value based on backend requirements
       }
 
       if (idImage) data.append("idImage", idImage);

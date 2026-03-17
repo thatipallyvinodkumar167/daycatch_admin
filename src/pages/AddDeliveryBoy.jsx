@@ -113,25 +113,23 @@ const AddDeliveryBoy = () => {
     try {
       const data = new FormData();
       
-      // Append basic fields mapped to backend expectations
       data.append("boyName", formData.name);
       data.append("boyMobile", formData.phone);
       data.append("boyEmail", formData.email);
       data.append("boyPassword", formData.password);
-      data.append("city", formData.city); // assuming this stays city
+      data.append("city", formData.city); // Make sure this is an ObjectId ID during real use!
       data.append("idType", formData.idType);
       data.append("idNumber", formData.idNumber);
       data.append("boyAddress", formData.address);
       data.append("status", "Active");
-
-      // Append stores individually
+      
       if (formData.stores && formData.stores.length > 0) {
-        formData.stores.forEach(store => {
-          data.append("store", store); // Node/Express usually parses repeated fields as array without []
-        });
+        data.append("store", formData.stores[0]); // Form payload references a single string ID
       }
 
-      if (idImage) data.append("idImage", idImage);
+      if (idImage) {
+        data.append("idImage", idImage);
+      }
 
       const response = await addDeliveryBoy(data);
 
