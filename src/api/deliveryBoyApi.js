@@ -1,27 +1,25 @@
 import api from "./api";
 
-const ADD_DELIVERY_BOY_URL =
-  "https://daycatch-backend-3.onrender.com/api/deliveryBoy/addDeliveryBoy";
-const GET_ALL_DELIVERY_BOYS_URL =
-  "https://daycatch-backend-3.onrender.com/api/deliveryBoy/getAllDeliveryBoy";
+const DELIVERY_BOY_API_BASE_URL =
+  "https://daycatch-backend-3.onrender.com/api/deliveryBoy";
 
 // Delivery Boy API calls
 export const addDeliveryBoy = async (payload) => {
-  return await api.post(ADD_DELIVERY_BOY_URL, payload, {
+  return await api.post(`${DELIVERY_BOY_API_BASE_URL}/addDeliveryBoy`, payload, {
     headers: { "Content-Type": "application/json" },
   });
 };
 
 export const getAllDeliveryBoys = async () => {
-  return await api.get(GET_ALL_DELIVERY_BOYS_URL);
+  return await api.get(`${DELIVERY_BOY_API_BASE_URL}/getAllDeliveryBoy`);
 };
 
 export const updateDeliveryBoy = async (id, payload) => {
-  return await api.put(`/deliveryBoy/updateDeliveryBoy/${id}`, payload, {
+  return await api.put(`${DELIVERY_BOY_API_BASE_URL}/updateDeliveryBoy/${id}`, payload, {
     headers: { "Content-Type": "application/json" },
   });
 };
 
 export const deleteDeliveryBoy = async (id) => {
-  return await api.delete(`/deliveryBoy/deleteDeliveryBoy/${id}`);
+  return await api.delete(`${DELIVERY_BOY_API_BASE_URL}/deleteDeliveryBoy/${id}`);
 };
