@@ -15,7 +15,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
-import BadgeIcon from "@mui/icons-material/Badge";
 import CardMembershipIcon from "@mui/icons-material/CardMembership";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
@@ -29,7 +28,6 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import DeliveryDiningIcon from "@mui/icons-material/DeliveryDining";
-import DescriptionIcon from "@mui/icons-material/Description";
 import FeedbackIcon from "@mui/icons-material/Feedback";
 import PhoneCallbackIcon from "@mui/icons-material/PhoneCallback";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -85,7 +83,6 @@ function Sidebar({ open }) {
     const currentPath = location.pathname;
     
     let isActive = isPath ? currentPath === pathOrName : isChildActive(childPaths);
-    let isExpanded = !isPath && openMenu === pathOrName;
 
     const primaryColor = theme.palette.primary.main;
 
