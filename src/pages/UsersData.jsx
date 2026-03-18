@@ -59,7 +59,7 @@ const UsersData = () => {
           status: user.status || "Active",
           avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         };
-      }));
+      });
 
       setUsers(formattedData);
     } catch (error) {
