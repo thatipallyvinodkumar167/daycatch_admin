@@ -18,6 +18,12 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import { getAllDeliveryBoys, updateDeliveryBoy } from "../api/deliveryBoyApi";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import {
+  DELIVERY_BOY_ID_TYPES,
+  DELIVERY_BOY_STATUS,
+  normalizeDeliveryBoyIdType,
+  normalizeDeliveryBoyStatus,
+} from "../utils/deliveryBoy";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -45,6 +51,7 @@ const EditDeliveryBoy = () => {
     idNumber: "",
     address: "",
     stores: [],
+    status: DELIVERY_BOY_STATUS.ON_DUTY,
   });
   const [idImage, setIdImage] = useState(null);
   const [existingImageUrl, setExistingImageUrl] = useState("");
@@ -52,12 +59,6 @@ const EditDeliveryBoy = () => {
   const cities = [
     { name: "Hyderabad", _id: "69b78e59c52e71920fa867ac" },
     { name: "Kurnool", _id: "69b78e59c52e71920fa867ac" }
-  ];
-
-  const idTypes = [
-    "Aadhar",
-    "PAN Card",
-    "Business Proof"
   ];
 
   const storeList = [
@@ -80,10 +81,11 @@ const EditDeliveryBoy = () => {
             email: found.boyEmail || found.email || "",
             password: found.boyPassword || found.password || "",
             city: typeof found.city === 'object' ? found.city._id : (found.city || ""),
-            idType: found.idType || "",
+            idType: normalizeDeliveryBoyIdType(found.idType),
             idNumber: found.idNumber || "",
             address: found.boyAddress || found.address || "",
             stores: found.store ? (Array.isArray(found.store) ? found.store : [typeof found.store === 'object' ? found.store._id : found.store]) : (found.stores || []),
+            status: normalizeDeliveryBoyStatus(found.status),
           });
           if (found.idImage) setExistingImageUrl(found.idImage);
         }
@@ -110,7 +112,7 @@ const EditDeliveryBoy = () => {
         if (formData.stores.length === storeList.length) {
             setFormData({ ...formData, stores: [] });
         } else {
-            setFormData({ ...formData, stores: [...storeList] });
+            setFormData({ ...formData, stores: storeList.map((store) => store._id) });
         }
         return;
     }
@@ -135,10 +137,10 @@ const EditDeliveryBoy = () => {
         boyEmail: formData.email,
         boyPassword: formData.password,
         city: formData.city,
-        idType: formData.idType,
+        idType: normalizeDeliveryBoyIdType(formData.idType),
         idNumber: formData.idNumber,
         boyAddress: formData.address,
-        status: "Active",
+        status: normalizeDeliveryBoyStatus(formData.status),
         store: formData.stores && formData.stores.length > 0 ? formData.stores[0] : "",
         idImage: idImage ? idImage.name : (existingImageUrl || "placeholder_image.jpg")
       };
@@ -283,8 +285,8 @@ const EditDeliveryBoy = () => {
                     sx={{ borderRadius: "8px" }}
                     input={<OutlinedInput />}
                   >
-                    {idTypes.map(type => (
-                      <MenuItem key={type} value={type}>{type}</MenuItem>
+                    {DELIVERY_BOY_ID_TYPES.map((type) => (
+                      <MenuItem key={type.value} value={type.value}>{type.label}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>

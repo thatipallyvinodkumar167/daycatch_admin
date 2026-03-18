@@ -13,6 +13,13 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import { getAllDeliveryBoys } from "../api/deliveryBoyApi";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import {
+  formatDeliveryBoyIdType,
+  formatDeliveryBoyStatus,
+  isDeliveryBoyOffDuty,
+  normalizeDeliveryBoyIdType,
+  normalizeDeliveryBoyStatus,
+} from "../utils/deliveryBoy";
 
 const DeliveryBoyDetails = () => {
   const { id } = useParams();
@@ -32,9 +39,9 @@ const DeliveryBoyDetails = () => {
             name: found.boyName || found.name || "N/A",
             phone: found.boyMobile || found.phone || "N/A",
             email: found.boyEmail || found.email || "N/A",
-            status: found.status || "Active",
+            status: normalizeDeliveryBoyStatus(found.status),
             city: found.city?.cityName || found.city || "N/A",
-            idType: found.idType || "Aadhar",
+            idType: normalizeDeliveryBoyIdType(found.idType),
             idNumber: found.idNumber || "N/A",
             addressLine: found.boyAddress || found.address || "N/A",
             stores: found.store ? (Array.isArray(found.store) ? found.store : [found.store]) : [],
@@ -62,6 +69,8 @@ const DeliveryBoyDetails = () => {
   if (!boy) {
     return <Typography>Boy not found</Typography>;
   }
+
+  const isOffDuty = isDeliveryBoyOffDuty(boy.status);
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
@@ -123,10 +132,10 @@ const DeliveryBoyDetails = () => {
               Delivery Partner
             </Typography>
             <Chip 
-              label={boy.status} 
+              label={formatDeliveryBoyStatus(boy.status)} 
               sx={{ 
-                backgroundColor: "#e6f9ed", 
-                color: "#24d164", 
+                backgroundColor: isOffDuty ? "#fff1f0" : "#e6f9ed", 
+                color: isOffDuty ? "#ff4d49" : "#24d164", 
                 fontWeight: "700",
                 px: 2
               }} 
@@ -170,7 +179,7 @@ const DeliveryBoyDetails = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="textSecondary" sx={{ fontWeight: "600", textTransform: "uppercase", fontSize: "10px" }}>ID Type</Typography>
-                <Typography variant="body1" fontWeight="600" color="#1b2559">{boy.idType}</Typography>
+                <Typography variant="body1" fontWeight="600" color="#1b2559">{formatDeliveryBoyIdType(boy.idType)}</Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="textSecondary" sx={{ fontWeight: "600", textTransform: "uppercase", fontSize: "10px" }}>ID Number</Typography>
@@ -211,7 +220,7 @@ const DeliveryBoyDetails = () => {
                 }}
             >
                 <Typography variant="body2" color="textSecondary">
-                    [ ID Image Preview: {boy.idType} ]
+                    [ ID Image Preview: {formatDeliveryBoyIdType(boy.idType)} ]
                 </Typography>
             </Box>
 
