@@ -19,6 +19,7 @@ import {
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import StoreIcon from "@mui/icons-material/Store";
 import axios from "axios";
 
 const AllOrders = () => {
@@ -98,6 +99,19 @@ const AllOrders = () => {
         </Stack>
       </Box>
 
+      {/* Stats Summary */}
+      <Paper sx={{ p: 3, mb: 4, borderRadius: "16px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", borderLeft: "6px solid #ff4d49" }}>
+        <Stack direction="row" alignItems="center" spacing={2}>
+            <Box sx={{ p: 1.5, borderRadius: "12px", backgroundColor: "#fff1f0" }}>
+                <StoreIcon sx={{ color: "#ff4d49" }} />
+            </Box>
+            <Box>
+                <Typography variant="caption" color="textSecondary" fontWeight="600">All Orders BY STORE</Typography>
+                <Typography variant="h5" fontWeight="800" color="#1b2559">{orders.length}</Typography>
+            </Box>
+        </Stack>
+      </Paper>
+
       <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
         
         <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
@@ -116,12 +130,12 @@ const AllOrders = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>ORDER ID</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>PRICE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>USER</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>DELIVERY DATE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Cart ID</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Cart price</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>User</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Delivery Date</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Status</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>Details</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

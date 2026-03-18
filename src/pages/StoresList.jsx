@@ -14,16 +14,33 @@ import {
   Stack,
   Avatar,
   IconButton,
-  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Divider,
+  Grid,
 } from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import CloseIcon from "@mui/icons-material/Close";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import axios from "axios";
 
 const StoresList = () => {
   const [stores, setStores] = useState([]);
   const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState(null);
+
+  const handleOpenDetails = (store) => {
+    setSelectedStore(store);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setSelectedStore(null);
+  };
 
   useEffect(() => {
     fetchStores();
@@ -109,12 +126,14 @@ const StoresList = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STORE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>LOCATION</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CONTACT</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>PROFILE PIC</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STORE NAME</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CITY</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>MOBILE</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>EMAIL</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>ORDERS</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>DETAILS</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTION</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -129,46 +148,40 @@ const StoresList = () => {
                   <TableRow key={store.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
                     <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{index + 1}</TableCell>
                     <TableCell>
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        <Avatar src={store.logo} sx={{ borderRadius: "10px", width: 40, height: 40 }} />
-                        <Typography variant="body2" fontWeight="700" color="#1b2559">{store.name}</Typography>
-                      </Stack>
+                      <Avatar src={store.logo} sx={{ borderRadius: "10px", width: 40, height: 40, border: "2px solid #f4f7fe" }} />
                     </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={0.5} alignItems="center">
-                        <LocationOnIcon sx={{ fontSize: "16px", color: "#a3aed0" }} />
-                        <Typography variant="body2" sx={{ color: "#475467" }}>{store.city}</Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="600" color="#1b2559">{store.phone}</Typography>
-                      <Typography variant="caption" color="textSecondary">{store.email}</Typography>
-                    </TableCell>
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>{store.name}</TableCell>
+                    <TableCell sx={{ color: "#475467" }}>{store.city}</TableCell>
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>{store.phone}</TableCell>
+                    <TableCell sx={{ color: "#475467" }}>{store.email}</TableCell>
                     <TableCell sx={{ color: "#2d60ff", fontWeight: "700" }}>{store.totalOrders.toLocaleString()}</TableCell>
                     <TableCell>
+                      <IconButton 
+                        onClick={() => handleOpenDetails(store)}
+                        sx={{ 
+                          backgroundColor: "#4318ff", 
+                          color: "#fff", 
+                          fontSize: "12px", 
+                          borderRadius: "6px",
+                          px: 2,
+                          py: 0.5,
+                          "&:hover": { backgroundColor: "#3a15dc" }
+                        }}
+                      >
+                        Details
+                      </IconButton>
+                    </TableCell>
+                    <TableCell align="right" sx={{ pr: 3 }}>
                       <Chip
                         label={store.status}
                         size="small"
                         sx={{ 
                           backgroundColor: store.status === "Active" ? "#e6f9ed" : "#fff8e6", 
                           color: store.status === "Active" ? "#24d164" : "#ffb800", 
-                          fontWeight: "700" 
+                          fontWeight: "700",
+                          borderRadius: "10px"
                         }}
                       />
-                    </TableCell>
-                    <TableCell align="right" sx={{ pr: 3 }}>
-                      <Tooltip title="View Store Details">
-                        <IconButton 
-                          sx={{ 
-                              backgroundColor: "#f4f7fe", 
-                              color: "#4318ff", 
-                              borderRadius: "8px",
-                              "&:hover": { backgroundColor: "#e0e7ff" }
-                          }}
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 ))
@@ -177,6 +190,60 @@ const StoresList = () => {
           </Table>
         </TableContainer>
       </Paper>
+
+      {/* Store Details Dialog */}
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth sx={{ "& .MuiDialog-paper": { borderRadius: "16px" } }}>
+        <DialogTitle sx={{ m: 0, p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "700", color: "#1b2559" }}>
+          Store Details
+          <IconButton onClick={handleClose} size="small" sx={{ color: "#a3aed0" }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
+        <Divider />
+        <DialogContent sx={{ p: 3 }}>
+          {selectedStore && (
+            <Box>
+              <Stack direction="row" spacing={3} sx={{ mb: 4, alignItems: "center" }}>
+                <Avatar src={selectedStore.logo} sx={{ width: 100, height: 100, borderRadius: "20px", border: "4px solid #f4f7fe" }} />
+                <Box>
+                  <Typography variant="h5" fontWeight="800" color="#1b2559">{selectedStore.name}</Typography>
+                  <Typography variant="body2" color="textSecondary">{selectedStore.city} • {selectedStore.status}</Typography>
+                  <Chip 
+                    label={selectedStore.status} 
+                    size="small" 
+                    sx={{ mt: 1, backgroundColor: selectedStore.status === "Active" ? "#e6f9ed" : "#fff8e6", color: selectedStore.status === "Active" ? "#24d164" : "#ffb800", fontWeight: "700" }} 
+                  />
+                </Box>
+              </Stack>
+
+              <Grid container spacing={3}>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="textSecondary" fontWeight="600">EMAIL ADDRESS</Typography>
+                  <Typography variant="body1" fontWeight="700" color="#1b2559">{selectedStore.email}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="textSecondary" fontWeight="600">PHONE NUMBER</Typography>
+                  <Typography variant="body1" fontWeight="700" color="#1b2559">{selectedStore.phone}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="textSecondary" fontWeight="600">CITY</Typography>
+                  <Typography variant="body1" fontWeight="700" color="#1b2559">{selectedStore.city}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="textSecondary" fontWeight="600">TOTAL ORDERS</Typography>
+                  <Typography variant="body1" fontWeight="700" color="#1b2559">{selectedStore.totalOrders}</Typography>
+                </Grid>
+              </Grid>
+
+              <Box sx={{ mt: 4, pt: 3, borderTop: "1px solid #f1f1f1", display: "flex", justifyContent: "flex-end" }}>
+                <IconButton onClick={handleClose} sx={{ backgroundColor: "#ff4d49", color: "#fff", borderRadius: "8px", px: 3, py: 1, fontSize: "14px", fontWeight: "700", "&:hover": { backgroundColor: "#e64440" } }}>
+                  Close
+                </IconButton>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

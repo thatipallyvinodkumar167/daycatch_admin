@@ -13,9 +13,9 @@ import {
   Stack,
   IconButton,
   Chip,
+  Button,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import EditIcon from "@mui/icons-material/Edit";
 import axios from "axios";
 
 const UserNotifications = () => {
@@ -35,10 +35,9 @@ const UserNotifications = () => {
       const formattedData = response.data.map((item, index) => ({
         id: item.id,
         title: item.title.slice(0, 30),
+        image: "https://via.placeholder.com/50",
+        user: "John Doe " + (index + 1),
         message: item.body.slice(0, 50) + "...",
-        date: "2024-03-16",
-        time: "10:30 AM",
-        status: index % 3 === 0 ? "Draft" : "Sent",
       }));
 
       setNotifications(formattedData);
@@ -82,9 +81,9 @@ const UserNotifications = () => {
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Title</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Message</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Schedule/Sent</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Image</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>User</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Notification Text</TableCell>
                 <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>Action</TableCell>
               </TableRow>
             </TableHead>
@@ -93,40 +92,39 @@ const UserNotifications = () => {
                 <TableRow key={item.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
                   <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{index + 1}</TableCell>
                   <TableCell sx={{ fontWeight: "700", color: "#1b2559" }}>{item.title}</TableCell>
+                  <TableCell>
+                    <img src={item.image} alt="Notification" style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover" }} />
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: "600", color: "#2b3674" }}>{item.user}</TableCell>
                   <TableCell sx={{ color: "#475467", maxWidth: "250px" }}>{item.message}</TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="600" color="#1b2559">{item.date}</Typography>
-                    <Typography variant="caption" color="textSecondary">{item.time}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                        label={item.status} 
-                        size="small" 
-                        sx={{ 
-                            backgroundColor: item.status === "Sent" ? "#e6f9ed" : "#f4f7fe", 
-                            color: item.status === "Sent" ? "#24d164" : "#2b3674",
-                            fontWeight: "700" 
-                        }} 
-                    />
-                  </TableCell>
                   <TableCell align="right" sx={{ pr: 3 }}>
-                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                    <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
                         <IconButton sx={{ 
-                            backgroundColor: "#2d60ff", 
+                            backgroundColor: "#22c55e", 
                             color: "#fff", 
-                            borderRadius: "10px",
-                            "&:hover": { backgroundColor: "#2046cc" }
+                            borderRadius: "8px",
+                            width: "35px",
+                            height: "35px",
+                            "&:hover": { backgroundColor: "#16a34a" }
                         }}>
-                            <VisibilityIcon fontSize="small" />
+                            <EditIcon sx={{ fontSize: "20px" }} />
                         </IconButton>
-                        <IconButton sx={{ 
-                            backgroundColor: "#ff4d49", 
-                            color: "#fff", 
-                            borderRadius: "10px",
-                            "&:hover": { backgroundColor: "#e03e3e" }
-                        }}>
-                            <DeleteIcon fontSize="small" />
-                        </IconButton>
+                        <Button 
+                            variant="contained" 
+                            disableElevation
+                            sx={{ 
+                                backgroundColor: "#ff4d4f", 
+                                color: "#fff", 
+                                borderRadius: "8px",
+                                textTransform: "none",
+                                fontWeight: "600",
+                                minWidth: "70px",
+                                height: "35px",
+                                "&:hover": { backgroundColor: "#e03e3e" }
+                            }}
+                        >
+                            Close
+                        </Button>
                     </Stack>
                   </TableCell>
                 </TableRow>

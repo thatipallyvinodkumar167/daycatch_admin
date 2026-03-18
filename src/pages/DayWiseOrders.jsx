@@ -11,19 +11,18 @@ import {
   TableRow,
   TextField,
   Stack,
-  IconButton,
-  Tooltip,
   InputAdornment,
+  MenuItem,
 } from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import SearchIcon from "@mui/icons-material/Search";
 import axios from "axios";
 
 const DayWiseOrders = () => {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [paymentMethod, setPaymentMethod] = useState("All");
+  const [fromDate, setFromDate] = useState(new Date().toISOString().split("T")[0]);
+  const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -32,15 +31,27 @@ const DayWiseOrders = () => {
           "https://jsonplaceholder.typicode.com/users?_limit=9"
         );
         
-        const formattedData = response.data.map((user, index) => ({
-          id: index + 1,
-          cartId: `ORD-DAY-${8000 + user.id}`,
-          cartPrice: `₹${Math.floor(Math.random() * 3000) + 400}`,
-          userName: user.name,
-          userPhone: user.phone.split(" ")[0],
-          deliveryDate: selectedDate,
-          status: index % 4 === 0 ? "Pending" : "Completed",
-        }));
+        const formattedData = response.data.map((user, index) => {
+          // Generate a random date between fromDate and toDate
+          const start = new Date(fromDate);
+          const end = new Date(toDate);
+          const randomDate = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+          const dateString = randomDate.toISOString().split("T")[0];
+
+          return {
+            id: index + 1,
+            cartId: `ORD-DAY-${8000 + user.id}`,
+            cartPrice: `₹${Math.floor(Math.random() * 3000) + 400}`,
+            userName: user.name,
+            userPhone: user.phone.split(" ")[0],
+            deliveryDate: dateString,
+            deliveryBoy: `Boy ${index + 1}`,
+            cartProducts: `${Math.floor(Math.random() * 5) + 1} items`,
+            payment: index % 2 === 0 ? "COD" : "Online",
+            status: index % 4 === 0 ? "Pending" : "Completed",
+            store: `Store ${index + 1}`,
+          };
+        });
 
         setOrders(formattedData);
       } catch (error) {
@@ -48,35 +59,66 @@ const DayWiseOrders = () => {
       }
     };
     fetchOrders();
-  }, [selectedDate]);
+  }, [fromDate, toDate, paymentMethod]);
 
-  const filteredOrders = orders.filter((order) =>
-    order.cartId.toLowerCase().includes(search.toLowerCase()) ||
-    order.userName.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredOrders = orders.filter((order) => {
+    const matchesSearch = order.cartId.toLowerCase().includes(search.toLowerCase()) ||
+                         order.userName.toLowerCase().includes(search.toLowerCase());
+    const matchesPayment = paymentMethod === "All" || order.payment === paymentMethod;
+    return matchesSearch && matchesPayment;
+  });
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
-      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box sx={{ mb: 4, display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 3 }}>
         <Box>
             <Typography variant="h4" fontWeight="700" color="#2b3674">
                 Hi, Day Catch Super Admin Panel.
             </Typography>
             <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-                View and track orders for a specific date.
+                View and track orders for specific date ranges and payment methods.
             </Typography>
         </Box>
-        <Paper sx={{ p: 2, borderRadius: "12px", border: "1px solid #e0e5f2" }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-                <CalendarMonthIcon sx={{ color: "#2d60ff" }} />
-                <TextField
-                    type="date"
-                    size="small"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                />
+        
+        <Paper sx={{ p: 2, borderRadius: "16px", border: "1px solid #e0e5f2", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
+            <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
+                <Box>
+                    <Typography variant="caption" fontWeight="700" color="#a3aed0" sx={{ mb: 0.5, display: "block", ml: 1 }}>PAYMENT METHOD</Typography>
+                    <TextField
+                        select
+                        size="small"
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        sx={{ minWidth: "180px", "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                    >
+                        <MenuItem value="All">Select payment method</MenuItem>
+                        <MenuItem value="COD">COD</MenuItem>
+                        <MenuItem value="Online">Online</MenuItem>
+                    </TextField>
+                </Box>
+
+                <Box>
+                    <Typography variant="caption" fontWeight="700" color="#a3aed0" sx={{ mb: 0.5, display: "block", ml: 1 }}>FROM DATE</Typography>
+                    <TextField
+                        type="date"
+                        size="small"
+                        value={fromDate}
+                        onChange={(e) => setFromDate(e.target.value)}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                    />
+                </Box>
+
+                <Box>
+                    <Typography variant="caption" fontWeight="700" color="#a3aed0" sx={{ mb: 0.5, display: "block", ml: 1 }}>TO DATE</Typography>
+                    <TextField
+                        type="date"
+                        size="small"
+                        value={toDate}
+                        onChange={(e) => setToDate(e.target.value)}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                    />
+                </Box>
             </Stack>
         </Paper>
       </Box>
@@ -106,12 +148,15 @@ const DayWiseOrders = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>ORDER ID</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>PRICE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>USER</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>DATE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Cart ID</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Cart price</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>User</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Delivery Date</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Delivery Boy</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Cart Products</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Payment</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Order Status</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>Store</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -131,25 +176,17 @@ const DayWiseOrders = () => {
                         <Typography variant="body2" fontWeight="700" color="#1b2559">{order.userName}</Typography>
                         <Typography variant="caption" color="textSecondary">{order.userPhone}</Typography>
                       </TableCell>
-                      <TableCell sx={{ color: "#475467" }}>{order.deliveryDate}</TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.deliveryDate}</TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.deliveryBoy}</TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.cartProducts}</TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.payment}</TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight="700" color={order.status === "Completed" ? "#24d164" : "#ffb800"}>
                           {order.status}
                         </Typography>
                       </TableCell>
-                      <TableCell align="right" sx={{ pr: 3 }}>
-                        <Tooltip title="View Order Details">
-                          <IconButton 
-                            sx={{ 
-                                backgroundColor: "#f4f7fe", 
-                                color: "#4318ff", 
-                                borderRadius: "8px",
-                                "&:hover": { backgroundColor: "#e0e7ff" }
-                            }}
-                          >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                      <TableCell align="right" sx={{ pr: 4, fontWeight: "700", color: "#1b2559" }}>
+                        {order.store}
                       </TableCell>
                     </TableRow>
                 ))

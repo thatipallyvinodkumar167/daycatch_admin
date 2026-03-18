@@ -39,9 +39,8 @@ const Rejectedbystore = () => {
         cartPrice: `₹${Math.floor(Math.random() * 4000) + 1000}`,
         userName: user.name,
         userPhone: user.phone.split(" ")[0],
-        deliveryDate: "N/A",
+        deliveryDate: "2024-03-20 10:30 AM",
         status: "Rejected by Store",
-        storeName: user.company.name
       }));
 
       setOrders(formattedData);
@@ -98,12 +97,12 @@ const Rejectedbystore = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>ORDER ID</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>PRICE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>USER</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>REJECTING STORE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Cart ID</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Cart price</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>User</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Delivery Date</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Status</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>Details</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -123,7 +122,7 @@ const Rejectedbystore = () => {
                         <Typography variant="body2" fontWeight="700" color="#1b2559">{order.userName}</Typography>
                         <Typography variant="caption" color="textSecondary">{order.userPhone}</Typography>
                       </TableCell>
-                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.storeName}</TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.deliveryDate}</TableCell>
                       <TableCell>
                         <Chip
                           label={order.status}
@@ -136,18 +135,20 @@ const Rejectedbystore = () => {
                         />
                       </TableCell>
                       <TableCell align="right" sx={{ pr: 3 }}>
-                        <Tooltip title="View Details">
-                          <IconButton 
-                            sx={{ 
-                                backgroundColor: "#f4f7fe", 
-                                color: "#4318ff", 
-                                borderRadius: "8px",
-                                "&:hover": { backgroundColor: "#e0e7ff" }
-                            }}
-                          >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+                          <Tooltip title="View Details">
+                            <IconButton 
+                              sx={{ 
+                                  backgroundColor: "#2d60ff", 
+                                  color: "#fff", 
+                                  borderRadius: "8px",
+                                  "&:hover": { backgroundColor: "#2046cc" }
+                              }}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
                       </TableCell>
                     </TableRow>
                 ))

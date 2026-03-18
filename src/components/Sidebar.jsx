@@ -310,7 +310,7 @@ return (
 <Collapse in={openMenu === "sendNotifications"} timeout="auto" unmountOnExit>
   <List component="div" disablePadding>
 
-    <ListItemButton sx={{ pl: 6, ...activeMenu("/push-notification") }} onClick={() => navigate("/push-notification")}>
+    <ListItemButton sx={{ pl: 6, ...activeMenu("/users-notification") }} onClick={() => navigate("/users-notification")}>
       <ListItemText primary="Send Notification to User" />
     </ListItemButton>
 

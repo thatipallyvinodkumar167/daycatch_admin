@@ -83,7 +83,7 @@ const OutOFDeliveryOrders = () => {
       <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
         
         <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
-          <Typography variant="h6" fontWeight="600" color="#1b2559">Delivery Dispatch</Typography>
+          <Typography variant="h6" fontWeight="600" color="#1b2559">Out For Delivery orders</Typography>
           <TextField
             size="small"
             placeholder="Search Order ID or User..."
@@ -98,12 +98,12 @@ const OutOFDeliveryOrders = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>ORDER ID</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>PRICE</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CART ID</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CART PRICE</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>USER</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>DELIVERY BOY</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>DELIVERY DATE</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>DETAILS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -123,7 +123,7 @@ const OutOFDeliveryOrders = () => {
                         <Typography variant="body2" fontWeight="700" color="#1b2559">{order.userName}</Typography>
                         <Typography variant="caption" color="textSecondary">{order.userPhone}</Typography>
                       </TableCell>
-                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.driver}</TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.deliveryDate}</TableCell>
                       <TableCell>
                         <Chip
                           label={order.status}

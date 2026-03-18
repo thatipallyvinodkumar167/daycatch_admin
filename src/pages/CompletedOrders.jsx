@@ -39,8 +39,12 @@ const CompletedOrders = () => {
         cartPrice: `₹${Math.floor(Math.random() * 6000) + 1000}`,
         userName: user.name,
         userPhone: user.phone.split(" ")[0],
+        store: `Store ${index + 1}`,
+        deliveryBoy: `Boy ${index + 1}`,
         deliveryDate: `2024-03-${1 + (index % 10)}`,
         status: "Completed",
+        cartProducts: `${Math.floor(Math.random() * 5) + 1} items`,
+        signature: "Signed",
       }));
 
       setOrders(formattedData);
@@ -97,12 +101,15 @@ const CompletedOrders = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>ORDER ID</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>PRICE</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CART ID</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CART PRICE</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>USER</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>DELIVERED ON</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STORE</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>DELIVERY BOY</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>DELIVERY DATE</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CART PRODUCT</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>SIGNATURE</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -122,7 +129,9 @@ const CompletedOrders = () => {
                         <Typography variant="body2" fontWeight="700" color="#1b2559">{order.userName}</Typography>
                         <Typography variant="caption" color="textSecondary">{order.userPhone}</Typography>
                       </TableCell>
-                      <TableCell sx={{ color: "#475467" }}>{order.deliveryDate}</TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.store}</TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.deliveryBoy}</TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.deliveryDate}</TableCell>
                       <TableCell>
                         <Chip
                           label={order.status}
@@ -134,20 +143,8 @@ const CompletedOrders = () => {
                           }}
                         />
                       </TableCell>
-                      <TableCell align="right" sx={{ pr: 3 }}>
-                        <Tooltip title="View Order Details">
-                          <IconButton 
-                            sx={{ 
-                                backgroundColor: "#f4f7fe", 
-                                color: "#4318ff", 
-                                borderRadius: "8px",
-                                "&:hover": { backgroundColor: "#e0e7ff" }
-                            }}
-                          >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.cartProducts}</TableCell>
+                      <TableCell sx={{ color: "#1b2559", fontWeight: "700", pr: 4 }}>{order.signature}</TableCell>
                     </TableRow>
                 ))
               )}

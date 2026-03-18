@@ -97,12 +97,12 @@ const PendingOrders = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>ORDER ID</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>PRICE</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CART ID</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CART PRICE</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>USER</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>DELIVERY DATE</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>DETAILS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
