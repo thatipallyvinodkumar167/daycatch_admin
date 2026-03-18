@@ -1,5 +1,8 @@
 import api from "./api";
 
+const GET_ALL_DELIVERY_BOYS_URL =
+  "https://daycatch-backend-3.onrender.com/api/deliveryBoy/getAllDeliveryBoy";
+
 // Delivery Boy API calls
 export const addDeliveryBoy = async (payload) => {
   return await api.post("/deliveryBoy/addDeliveryBoy", payload, {
@@ -8,7 +11,7 @@ export const addDeliveryBoy = async (payload) => {
 };
 
 export const getAllDeliveryBoys = async () => {
-  return await api.get("/deliveryBoy/getAllDeliveryBoy");
+  return await api.get(GET_ALL_DELIVERY_BOYS_URL);
 };
 
 export const updateDeliveryBoy = async (id, payload) => {
