@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/orders-proxy",
+      "destination": "https://backend-daycatch.onrender.com/api/orders"
+    }
+  ]
+}
