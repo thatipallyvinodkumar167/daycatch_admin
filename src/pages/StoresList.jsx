@@ -22,8 +22,6 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import StorefrontIcon from "@mui/icons-material/Storefront";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import axios from "axios";
 
 const StoresList = () => {
