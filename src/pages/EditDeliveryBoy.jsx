@@ -153,7 +153,10 @@ const EditDeliveryBoy = () => {
       navigate("/delivery-boy-list");
     } catch (error) {
       console.error("Error updating delivery boy:", error);
-      const serverMessage = error?.response?.data?.message || error?.response?.data?.error;
+      const serverMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message;
       alert(serverMessage || "Failed to update delivery boy.");
     } finally {
       setIsSubmitting(false);

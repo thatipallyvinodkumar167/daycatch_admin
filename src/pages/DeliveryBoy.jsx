@@ -70,7 +70,11 @@ const DeliveryBoy = () => {
         alert("Delivery boy deleted successfully!");
       } catch (error) {
         console.error("Error deleting delivery boy:", error);
-        alert("Failed to delete delivery boy.");
+        const serverMessage =
+          error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message;
+        alert(serverMessage || "Failed to delete delivery boy.");
       }
     }
   };
