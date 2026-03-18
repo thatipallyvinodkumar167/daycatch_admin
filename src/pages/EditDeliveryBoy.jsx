@@ -132,6 +132,7 @@ const EditDeliveryBoy = () => {
     setIsSubmitting(true);
     try {
       const payload = {
+        _id: id,
         boyName: formData.name,
         boyMobile: formData.phone,
         boyEmail: formData.email,
@@ -145,7 +146,7 @@ const EditDeliveryBoy = () => {
         idImage: idImage ? idImage.name : (existingImageUrl || "placeholder_image.jpg")
       };
 
-      const response = await updateDeliveryBoy(id, payload);
+      const response = await updateDeliveryBoy(payload);
 
       console.log("Update Delivery Boy Response:", response.data);
       alert("Delivery Boy updated successfully!");

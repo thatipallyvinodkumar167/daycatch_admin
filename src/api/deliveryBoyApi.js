@@ -14,8 +14,8 @@ export const getAllDeliveryBoys = async () => {
   return await api.get(`${DELIVERY_BOY_API_BASE_URL}/getAllDeliveryBoy`);
 };
 
-export const updateDeliveryBoy = async (id, payload) => {
-  return await api.put(`${DELIVERY_BOY_API_BASE_URL}/updateDeliveryBoy/${id}`, payload, {
+export const updateDeliveryBoy = async (payload) => {
+  return await api.put(`${DELIVERY_BOY_API_BASE_URL}/updateDeliveryBoy`, payload, {
     headers: { "Content-Type": "application/json" },
   });
 };
