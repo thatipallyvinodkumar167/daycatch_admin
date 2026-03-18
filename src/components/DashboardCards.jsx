@@ -12,7 +12,6 @@ import {
   Chip,
   Paper,
   Stack,
-  Avatar,
   useTheme,
   alpha
 } from "@mui/material";
@@ -48,7 +47,6 @@ const DashboardCards = () => {
   const [stats, setStats] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState("week");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,7 +81,7 @@ const DashboardCards = () => {
     };
 
     fetchData();
-  }, [timeRange]);
+  }, []);
 
   const glassStyle = {
     background: isDark ? alpha(theme.palette.background.paper, 0.8) : alpha("#fff", 0.8),
