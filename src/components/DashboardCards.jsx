@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
   Box,
   Grid,
@@ -51,33 +52,47 @@ const DashboardCards = () => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      try {
+        // Fetch real data from the provided API
+        const response = await axios.get("https://backend-daycatch.onrender.com/api/orders");
+        const results = response.data.results || [];
 
-      // Data from User Request
-      setStats([
-        { 
-          title: "This Week Earning", 
-          value: "₹0", 
-          change: "-100 %", 
-          icon: "revenue", 
-          comparisonLabel: "last week",
-          subData: [
-            { label: "Store Earnings", value: "₹18" },
-            { label: "Admin Earnings", value: "₹2" }
-          ]
-        },
-        { title: "New Orders", value: "1", change: "0 %", icon: "orders", comparisonLabel: "last week" },
-        { title: "Cancelled Orders", value: "0", change: "-100 %", icon: "cancelled", comparisonLabel: "last week" },
-        { title: "Pending Orders", value: "1", change: "-75 %", icon: "pending", comparisonLabel: "last week" },
-        { title: "This Week App Users", value: "33", change: "-17.5 %", icon: "customers", comparisonLabel: "last week" }
-      ]);
+        // Map API fields to Dashboard structure
+        const mappedOrders = results.map(order => ({
+            id: order["Cart ID"] || order._id.slice(-8),
+            date: order["Delivery Date"] ? new Date(order["Delivery Date"]).toISOString().split('T')[0] : "N/A",
+            customer: order["User"] || "Guest User",
+            phone: order.Details?.phone || "9000953970", 
+            status: order["Status"] || "Pending",
+            amount: `₹${order["Cart price"] || 0}`
+        }));
+        
+        setOrders(mappedOrders);
 
-      setOrders([
-        { id: "DWPJ87cd", date: "2026-03-10", customer: "Test", phone: "9000953970", status: "Completed", amount: "₹20" },
-        { id: "RZIJ5675", date: "2026-03-10", customer: "Test", phone: "9000953970", status: "Cancelled", amount: "₹1250" },
-      ]);
+        // Keep existing mock stats for UI structure (or until stats API is provided)
+        setStats([
+          { 
+            title: "This Week Earning", 
+            value: "₹0", 
+            change: "-100 %", 
+            icon: "revenue", 
+            comparisonLabel: "last week",
+            subData: [
+              { label: "Store Earnings", value: "₹18" },
+              { label: "Admin Earnings", value: "₹2" }
+            ]
+          },
+          { title: "New Orders", value: results.length.toString(), change: "0 %", icon: "orders", comparisonLabel: "last week" },
+          { title: "Cancelled Orders", value: "0", change: "-100 %", icon: "cancelled", comparisonLabel: "last week" },
+          { title: "Pending Orders", value: "1", change: "-75 %", icon: "pending", comparisonLabel: "last week" },
+          { title: "This Week App Users", value: "33", change: "-17.5 %", icon: "customers", comparisonLabel: "last week" }
+        ]);
 
-      setLoading(false);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
@@ -97,7 +112,8 @@ const DashboardCards = () => {
     const configs = {
       "Completed": { color: "#10b981", bg: alpha("#10b981", 0.1), icon: <CheckCircleOutlineIcon sx={{ fontSize: 16 }} /> },
       "Cancelled": { color: theme.palette.error.main, bg: alpha(theme.palette.error.main, 0.1), icon: <CancelOutlined sx={{ fontSize: 16 }} /> },
-      "Pending": { color: "#f59e0b", bg: alpha("#f59e0b", 0.1), icon: <ShoppingBagOutlinedIcon sx={{ fontSize: 16 }} /> }
+      "Pending": { color: "#f59e0b", bg: alpha("#f59e0b", 0.1), icon: <ShoppingBagOutlinedIcon sx={{ fontSize: 16 }} /> },
+      "Placed": { color: "#3b82f6", bg: alpha("#3b82f6", 0.1), icon: <ShoppingBagOutlinedIcon sx={{ fontSize: 16 }} /> }
     };
     const config = configs[status] || configs["Pending"];
     return (

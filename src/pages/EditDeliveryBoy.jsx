@@ -23,7 +23,7 @@ import {
   DELIVERY_BOY_STATUS,
   normalizeDeliveryBoyIdType,
   normalizeDeliveryBoyStatus,
-} from "../utils/deliveryBoy";
+} from "../utils/deliveryBoyUtils";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;

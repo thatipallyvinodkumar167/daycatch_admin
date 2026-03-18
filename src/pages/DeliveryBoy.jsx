@@ -23,7 +23,7 @@ import { getAllDeliveryBoys, deleteDeliveryBoy } from "../api/deliveryBoyApi";
 import {
   formatDeliveryBoyStatus,
   isDeliveryBoyOffDuty,
-} from "../utils/deliveryBoy";
+} from "../utils/deliveryBoyUtils";
 
 const DeliveryBoy = () => {
   const navigate = useNavigate();

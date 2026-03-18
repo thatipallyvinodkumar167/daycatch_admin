@@ -19,7 +19,7 @@ import {
   isDeliveryBoyOffDuty,
   normalizeDeliveryBoyIdType,
   normalizeDeliveryBoyStatus,
-} from "../utils/deliveryBoy";
+} from "../utils/deliveryBoyUtils";
 
 const DeliveryBoyDetails = () => {
   const { id } = useParams();
