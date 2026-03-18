@@ -10,501 +10,229 @@ import {
   TableHead,
   TableRow,
   Chip,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel
+  Paper,
+  Stack,
+  Avatar,
+  useTheme,
+  alpha
 } from "@mui/material";
-
 import { motion } from "framer-motion";
-
-import { useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
-
-import StatCard from "../components/StatCard";
-
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  Legend
-} from "recharts";
+import StatCard from "./StatCard";
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
+import CancelOutlined from "@mui/icons-material/CancelOutlined";
 
 const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 }
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { 
+      duration: 0.6,
+      staggerChildren: 0.1
+    }
+  }
 };
 
-const Dashboard = () => {
+const itemVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { opacity: 1, scale: 1 }
+};
 
+const DashboardCards = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const isDark = theme.palette.mode === 'dark';
 
   const [stats, setStats] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [revenueData, setRevenueData] = useState([]);
-  const [orderDistribution, setOrderDistribution] = useState([]);
-  const [topProducts, setTopProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState("month");
+  const [timeRange, setTimeRange] = useState("week");
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Simulating API response delay
-        await new Promise(resolve => setTimeout(resolve, 600));
+      setLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-        
-        let currentCount = 20;
-        let lastCount = 18;
-        let label = "last month";
+      // Data from User Request
+      setStats([
+        { 
+          title: "This Week Earning", 
+          value: "₹0", 
+          change: "-100 %", 
+          icon: "revenue", 
+          comparisonLabel: "last week",
+          subData: [
+            { label: "Store Earnings", value: "₹18" },
+            { label: "Admin Earnings", value: "₹2" }
+          ]
+        },
+        { title: "New Orders", value: "1", change: "0 %", icon: "orders", comparisonLabel: "last week" },
+        { title: "Cancelled Orders", value: "0", change: "-100 %", icon: "cancelled", comparisonLabel: "last week" },
+        { title: "Pending Orders", value: "1", change: "-75 %", icon: "pending", comparisonLabel: "last week" },
+        { title: "This Week App Users", value: "33", change: "-17.5 %", icon: "customers", comparisonLabel: "last week" }
+      ]);
 
-        if (timeRange === "week") {
-          currentCount = 8;
-          lastCount = 7;
-          label = "last week";
-        } else if (timeRange === "today") {
-          currentCount = 2;
-          lastCount = 1;
-          label = "yesterday";
-        }
+      setOrders([
+        { id: "DWPJ87cd", date: "2026-03-10", customer: "Test", phone: "9000953970", status: "Completed", amount: "₹20" },
+        { id: "RZIJ5675", date: "2026-03-10", customer: "Test", phone: "9000953970", status: "Cancelled", amount: "₹1250" },
+      ]);
 
-        const generateOrders = (count) => {
-          return Array.from({ length: count }).map((_, i) => ({
-            id: `ORD-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
-            customer: `Customer ${i + 1}`,
-            amount: Math.floor(Math.random() * 500) + 300,
-            status: ["Delivered", "Pending", "Cancelled"][Math.floor(Math.random() * 3)],
-            date: new Date()
-          }));
-        };
-
-        const currentOrders = generateOrders(currentCount);
-        const lastOrders = generateOrders(lastCount);
-
-        setOrders(currentOrders);
-
-        const calculateStats = (orders) => {
-          const revenue = orders.reduce((sum, o) => sum + o.amount, 0);
-          const delivered = orders.filter(o => o.status === "Delivered").length;
-          const pending = orders.filter(o => o.status === "Pending").length;
-          const customers = new Set(orders.map(o => o.customer)).size;
-          const productsSold = orders.length;
-          const aov = orders.length > 0 ? Math.floor(revenue / orders.length) : 0;
-          return { revenue, delivered, pending, customers, productsSold, aov, count: orders.length };
-        };
-
-        const currentStats = calculateStats(currentOrders);
-        const previousStats = calculateStats(lastOrders);
-
-        const calculateChange = (current, previous) => {
-          if (previous === 0) return "+100%";
-          const diff = ((current - previous) / previous) * 100;
-          return (diff >= 0 ? "+" : "") + diff.toFixed(0) + "%";
-        };
-
-        setStats([
-          { title: "Total Orders", value: currentStats.count, change: calculateChange(currentStats.count, previousStats.count), icon: "orders", comparisonLabel: label },
-          { title: "Revenue", value: "₹" + currentStats.revenue, change: calculateChange(currentStats.revenue, previousStats.revenue), icon: "revenue", comparisonLabel: label },
-          { title: "Avg Order Value", value: "₹" + currentStats.aov, change: calculateChange(currentStats.aov, previousStats.aov), icon: "stock", comparisonLabel: label },
-          { title: "Delivered Orders", value: currentStats.delivered, change: calculateChange(currentStats.delivered, previousStats.delivered), icon: "vendors", comparisonLabel: label },
-          { title: "Customers", value: currentStats.customers, change: calculateChange(currentStats.customers, previousStats.customers), icon: "customers", comparisonLabel: label },
-          { title: "Products Sold", value: currentStats.productsSold, change: calculateChange(currentStats.productsSold, previousStats.productsSold), icon: "stock", comparisonLabel: label }
-        ]);
-
-        // Distribution Data
-        setOrderDistribution([
-          { name: "Delivered", value: currentStats.delivered, color: "#24d164" },
-          { name: "Pending", value: currentStats.pending, color: "#ffb800" },
-          { name: "Cancelled", value: currentOrders.filter(o => o.status === "Cancelled").length, color: "#ff4d49" },
-        ]);
-
-        // Top Products
-        setTopProducts([
-          { name: "Organic Milk", sales: 150, revenue: "₹4,500" },
-          { name: "Farm Fresh Eggs", sales: 120, revenue: "₹2,400" },
-          { name: "A2 Ghee 500ml", sales: 85, revenue: "₹12,750" },
-          { name: "Basmati Rice 5kg", sales: 60, revenue: "₹18,000" },
-          { name: "Cold Pressed Oil", sales: 45, revenue: "₹9,000" },
-        ]);
-
-        // Revenue Analytics Data for 6 months
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-        const chartData = months.map((m, idx) => ({
-          month: m,
-          revenue: idx <= 2 ? Math.floor(Math.random() * 5000) + 10000 : 0
-        }));
-        setRevenueData(chartData);
-
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        setLoading(false);
-      }
+      setLoading(false);
     };
 
     fetchData();
   }, [timeRange]);
 
-  if(loading)
+  const glassStyle = {
+    background: isDark ? alpha(theme.palette.background.paper, 0.8) : alpha("#fff", 0.8),
+    backdropFilter: "blur(12px)",
+    borderRadius: "24px",
+    border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"}`,
+    boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.3)" : "0 8px 32px rgba(0,0,0,0.03)",
+    overflow: "hidden",
+    height: "100%"
+  };
+
+  const getStatusChip = (status) => {
+    const configs = {
+      "Completed": { color: "#10b981", bg: alpha("#10b981", 0.1), icon: <CheckCircleOutlineIcon sx={{ fontSize: 16 }} /> },
+      "Cancelled": { color: theme.palette.error.main, bg: alpha(theme.palette.error.main, 0.1), icon: <CancelOutlined sx={{ fontSize: 16 }} /> },
+      "Pending": { color: "#f59e0b", bg: alpha("#f59e0b", 0.1), icon: <ShoppingBagOutlinedIcon sx={{ fontSize: 16 }} /> }
+    };
+    const config = configs[status] || configs["Pending"];
     return (
-      <Box p={4}>
-        <Typography>Loading Dashboard...</Typography>
+      <Chip 
+        label={status} 
+        size="small" 
+        icon={config.icon}
+        sx={{ 
+          backgroundColor: config.bg, 
+          color: config.color, 
+          fontWeight: 700, 
+          borderRadius: "8px",
+          "& .MuiChip-icon": { color: "inherit" }
+        }} 
+      />
+    );
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 2 }}>
+        <Box className="loader-orbit" />
+        <Typography variant="body1" sx={{ color: "text.secondary", fontWeight: 600 }}>
+          Analyzing Live Inventory...
+        </Typography>
       </Box>
     );
+  }
 
   return (
-
-    <Box
-      component={motion.div}
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      sx={{ p:4 }}
-    >
-
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
-        <Typography
-          variant="h6"
-          sx={{ fontWeight: 800 }}
-        >
-          Dashboard Overview
-        </Typography>
-
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel id="time-range-label">Time Range</InputLabel>
-          <Select
-            labelId="time-range-label"
-            id="time-range-select"
-            value={timeRange}
-            label="Time Range"
-            onChange={(e) => setTimeRange(e.target.value)}
-            sx={{ bgcolor: "background.paper", borderRadius: 2 }}
-          >
-            <MenuItem value="today">Today</MenuItem>
-            <MenuItem value="week">This Week</MenuItem>
-            <MenuItem value="month">This Month</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+    <Box component={motion.div} variants={containerVariants} initial="hidden" animate="visible" sx={{ pb: 6 }}>
+      
+      {/* Header */}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", letterSpacing: "-0.5px" }}>
+            Super Admin Overview
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+            Operational performance for the current week.
+          </Typography>
+        </Box>
+      </Stack>
 
       <Grid container spacing={3}>
-
-        {/* Stat Cards */}
-
-        {stats.map((stat,i)=>(
-          <Grid item xs={12} sm={6} md={4} key={i}>
-            <StatCard
-              {...stat}
-              onClick={()=>{
-
-                if(stat.title==="Total Orders")
-                  navigate("/admin/orders");
-
-                if(stat.title==="Delivered Orders")
-                  navigate("/admin/orders/delivered");
-
-                if(stat.title==="Pending Orders")
-                  navigate("/admin/orders/pending");
-
-                if(stat.title==="Customers")
-                  navigate("/admin/customers");
-
-                if(stat.title==="Products Sold")
-                  navigate("/admin/products");
-
-                if(stat.title==="Revenue")
-                  navigate("/admin/revenue");
-
-              }}
-            />
+        {/* Statistics Row */}
+        {stats.map((stat, i) => (
+          <Grid item xs={12} sm={6} md={4} key={i} component={motion.div} variants={itemVariants}>
+            <StatCard {...stat} />
+            {stat.subData && (
+              <Box sx={{ mt: 1, px: 2, display: "flex", gap: 2 }}>
+                {stat.subData.map((sub, idx) => (
+                  <Typography key={idx} variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 700, cursor: "pointer", "&:hover": { textDecoration: "underline" } }} onClick={() => navigate("/admin/store-earnings")}>
+                    {sub.label}: {sub.value}
+                  </Typography>
+                ))}
+              </Box>
+            )}
           </Grid>
         ))}
 
-        {/* Revenue Analytics */}
-
-        <Grid item xs={12} md={8}>
-
-          <Box
-            sx={{
-              p:3,
-              bgcolor:"background.paper",
-              borderRadius:3,
-              boxShadow:3
-            }}
-          >
-
-            <Typography
-              variant="h6"
-              sx={{ mb:2 }}
-            >
-              Revenue Analytics
-            </Typography>
-
-            <ResponsiveContainer
-              width="100%"
-              height={300}
-            >
-
-              <LineChart data={revenueData}>
-
-                <CartesianGrid strokeDasharray="3 3"/>
-
-                <XAxis dataKey="month"/>
-
-                <YAxis/>
-
-                <Tooltip/>
-
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke={theme.palette.primary.main}
-                  strokeWidth={3}
-                />
-
-              </LineChart>
-
-            </ResponsiveContainer>
-
-          </Box>
-
-        </Grid>
-
-        {/* Sales Overview */}
-
-        <Grid item xs={12} md={4}>
-
-          <Box
-            sx={{
-              p:3,
-              bgcolor:"background.paper",
-              borderRadius:3,
-              boxShadow:3
-            }}
-          >
-
-            <Typography
-              variant="h6"
-              sx={{ mb:2 }}
-            >
-              Sales Overview
-            </Typography>
-
-            <ResponsiveContainer
-              width="100%"
-              height={300}
-            >
-
-              <BarChart data={revenueData}>
-
-                <CartesianGrid strokeDasharray="3 3"/>
-
-                <XAxis dataKey="month"/>
-
-                <YAxis/>
-
-                <Tooltip/>
-
-                <Bar
-                  dataKey="revenue"
-                  fill={theme.palette.primary.light}
-                />
-
-              </BarChart>
-
-            </ResponsiveContainer>
-
-          </Box>
-
-        </Grid>
-
-        {/* Analytics Breakdown Row */}
-        <Grid item xs={12} md={6}>
-          <Box
-            sx={{
-              p: 3,
-              bgcolor: "background.paper",
-              borderRadius: 3,
-              boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-              height: "100%"
-            }}
-          >
-            <Typography variant="h6" fontWeight="700" color="#1b2559" sx={{ mb: 3 }}>
-              Order Distribution
-            </Typography>
-            <Box sx={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={orderDistribution}
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {orderDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend verticalAlign="bottom" height={36}/>
-                </PieChart>
-              </ResponsiveContainer>
+        {/* Bestseller Section */}
+        <Grid item xs={12} md={4} component={motion.div} variants={itemVariants}>
+          <Paper sx={{ ...glassStyle, p: 4, display: "flex", flexDirection: "column", minHeight: 300 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>Bestseller</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 4 }}>Top product sales this week</Typography>
+            <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ p: 2, borderRadius: "50%", background: alpha(theme.palette.text.primary, 0.03) }}>
+                <ShoppingBagOutlinedIcon sx={{ color: alpha(theme.palette.text.primary, 0.2), fontSize: 48 }} />
+              </Box>
+              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>No data found</Typography>
             </Box>
-          </Box>
+          </Paper>
         </Grid>
 
-        <Grid item xs={12} md={6}>
-          <Box
-            sx={{
-              p: 3,
-              bgcolor: "background.paper",
-              borderRadius: 3,
-              boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-              height: "100%"
-            }}
-          >
-            <Typography variant="h6" fontWeight="700" color="#1b2559" sx={{ mb: 2 }}>
-              Top Selling Products
-            </Typography>
+        {/* Latest Orders History */}
+        <Grid item xs={12} md={8} component={motion.div} variants={itemVariants}>
+          <Paper sx={{ ...glassStyle, p: 0 }}>
+            <Box sx={{ p: 4 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800 }}>Orders</Typography>
+              <Typography variant="caption" color="text.secondary">Latest order history</Typography>
+            </Box>
             <TableContainer>
-              <Table size="small">
+              <Table>
                 <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ color: "#a3aed0", fontWeight: "700" }}>PRODUCT</TableCell>
-                    <TableCell sx={{ color: "#a3aed0", fontWeight: "700" }}>SALES</TableCell>
-                    <TableCell align="right" sx={{ color: "#a3aed0", fontWeight: "700" }}>REVENUE</TableCell>
+                  <TableRow sx={{ bgcolor: alpha(theme.palette.text.primary, 0.02) }}>
+                    <TableCell sx={{ fontWeight: 700, px: 4 }}>#</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Cart ID</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>User Details</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 700, pr: 4 }}>Amount</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {topProducts.map((product) => (
-                    <TableRow key={product.name}>
-                      <TableCell sx={{ fontWeight: "600", color: "#1b2559" }}>{product.name}</TableCell>
-                      <TableCell sx={{ color: "#475467" }}>{product.sales} units</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: "700", color: "#2d60ff" }}>{product.revenue}</TableCell>
+                  {orders.map((order, i) => (
+                    <TableRow key={i} sx={{ "&:hover": { bgcolor: alpha(theme.palette.text.primary, 0.01) } }}>
+                      <TableCell sx={{ px: 4, fontWeight: 700, color: "text.secondary" }}>{i + 1}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 900, color: "primary.main" }}>{order.id}</Typography>
+                        <Typography variant="caption" color="text.secondary">{order.date}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{order.customer}</Typography>
+                        <Typography variant="caption" color="text.secondary">{order.phone}</Typography>
+                      </TableCell>
+                      <TableCell>{getStatusChip(order.status)}</TableCell>
+                      <TableCell sx={{ fontWeight: 900, fontSize: "1rem", pr: 4 }}>{order.amount}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </TableContainer>
-          </Box>
+          </Paper>
         </Grid>
-
-        {/* Recent Orders */}
-
-        <Grid item xs={12}>
-
-  <Box
-    sx={{
-      p: 3,
-      bgcolor: "background.paper",
-      borderRadius: 3,
-      boxShadow: 3
-    }}
-  >
-
-    <Typography variant="h6" sx={{ mb: 2 }}>
-      Recent Orders
-    </Typography>
-
-    <TableContainer>
-
-      <Table>
-
-        <TableHead>
-
-          <TableRow>
-
-            <TableCell>#</TableCell>
-            <TableCell>CART ID</TableCell>
-            <TableCell>CART PRICE</TableCell>
-            <TableCell>USER</TableCell>
-            <TableCell>DELIVERY DATE</TableCell>
-            <TableCell>STATUS</TableCell>
-            <TableCell>DETAILS</TableCell>
-
-          </TableRow>
-
-        </TableHead>
-
-        <TableBody>
-
-          {orders.map((order, index) => (
-
-            <TableRow key={order.id} hover>
-
-              <TableCell>{index + 1}</TableCell>
-
-              <TableCell>{order.id}</TableCell>
-
-              <TableCell>₹{order.amount}</TableCell>
-
-              <TableCell>{order.customer}</TableCell>
-
-              <TableCell>
-                {order.date.toLocaleDateString()}
-              </TableCell>
-
-              <TableCell>
-
-                <Chip
-                  label={order.status}
-                  color={
-                    order.status === "Delivered"
-                      ? "success"
-                      : order.status === "Pending"
-                      ? "warning"
-                      : "error"
-                  }
-                  size="small"
-                />
-
-              </TableCell>
-
-              <TableCell>
-
-                <Typography
-                  sx={{
-                    color: "primary.main",
-                    fontWeight: 600,
-                    cursor: "pointer"
-                  }}
-                >
-                  View
-                </Typography>
-
-              </TableCell>
-
-            </TableRow>
-
-          ))}
-
-        </TableBody>
-
-      </Table>
-
-    </TableContainer>
-
-  </Box>
-
-</Grid>
       </Grid>
 
+      {/* Modern Loader Styles */}
+      <style>{`
+        @keyframes orbit {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .loader-orbit {
+          width: 40px;
+          height: 40px;
+          border: 3px solid ${alpha(theme.palette.primary.main, 0.1)};
+          border-top-color: ${theme.palette.primary.main};
+          border-radius: 50%;
+          animation: orbit 1s linear infinite;
+        }
+      `}</style>
     </Box>
-
   );
-
 };
 
-export default Dashboard;
+export default DashboardCards;

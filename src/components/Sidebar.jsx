@@ -6,7 +6,9 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Collapse
+  Collapse,
+  useTheme,
+  alpha
 } from "@mui/material";
 
 import { useNavigate } from "react-router-dom";
@@ -39,6 +41,7 @@ import { useLocation } from "react-router-dom";
 const drawerWidth = 240;
 
 function Sidebar({ open }) {
+  const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [openMenu, setOpenMenu] = useState(null);
@@ -80,43 +83,40 @@ function Sidebar({ open }) {
 
   const activeMenu = (pathOrName, childPaths = []) => {
     const isPath = typeof pathOrName === "string" && pathOrName.startsWith("/");
-    const isDirectMatch = isPath && location.pathname === pathOrName;
-    const hasActiveChild = isChildActive(childPaths);
-    const isExpandedParent = openMenu === pathOrName;
-
-    let isActiveBar = false;
-
-    if (!isPath) {
-      // It's a parent menu (e.g., "orders")
-      // Only show the bar if it's the open menu OR if nothing is open but this contains the active page.
-      isActiveBar = isExpandedParent || (openMenu === null && hasActiveChild);
+    const currentPath = location.pathname;
+    
+    let isActive = false;
+    
+    if (isPath) {
+      // It's a direct link (Dashboard, Taxes, or a sub-item)
+      isActive = currentPath === pathOrName;
     } else {
-      // It's a path-based item (top level link like Dashboard, or a sub-item)
-      // Only show the bar if it matches AND no parent menu is currently expanded.
-      isActiveBar = isDirectMatch && openMenu === null;
+      // It's a parent group (Orders, Users Management, etc.)
+      // Active if it's currently expanded OR if the current URL belongs to one of its children
+      isActive = openMenu === pathOrName || isChildActive(childPaths);
     }
-
-    // Sub-items (direct matches when a menu is open) get yellow text, but no bar
-    const isYellowText = isDirectMatch;
   
     return {
-      borderLeft: isActiveBar ? "6px solid #FFC107" : "6px solid transparent",
-      backgroundColor: isActiveBar ? "rgba(255,193,7,0.12)" : "transparent",
+      borderLeft: isActive ? `4px solid ${theme.palette.primary.main}` : "4px solid transparent",
+      backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.1) : "transparent",
       color: "#fff",
-      borderRadius: "0 8px 8px 0",
+      borderRadius: "0 12px 12px 0",
       mx: 0,
-      paddingLeft: "12px",
-      transition: "all 0.2s ease-in-out",
+      ml: 0,
+      paddingLeft: "16px",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       "& .MuiListItemIcon-root": {
-        color: "#fff",
-        minWidth: "40px"
+        color: isActive ? theme.palette.primary.main : "#fff",
+        minWidth: "42px",
+        transition: "color 0.3s ease"
       },
       "& .MuiListItemText-root": {
-        color: isYellowText ? "#FFC107" : "#fff",
-        fontWeight: (isActiveBar || isYellowText) ? "bold" : "normal"
+        color: isActive ? theme.palette.primary.main : "#fff",
+        fontWeight: isActive ? 700 : 500
       },
       "&:hover": {
-        backgroundColor: isActiveBar ? "rgba(255,193,7,0.2)" : "rgba(255,255,255,0.05)",
+        backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.15) : "rgba(255,255,255,0.05)",
+        transform: isActive ? "none" : "translateX(4px)"
       }
     };
   };
@@ -171,7 +171,7 @@ return (
               <AdminPanelSettingsIcon />
             </ListItemIcon>
             <ListItemText primary="Sub-Admin Management" />
-            {openMenu === "subAdmin" ? <ExpandLess sx={{ color: openMenu === "subAdmin" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+            {openMenu === "subAdmin" ? <ExpandLess sx={{ color: openMenu === "subAdmin" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
 
@@ -232,7 +232,7 @@ return (
               <AssessmentIcon />
             </ListItemIcon>
             <ListItemText primary="Reports" />
-            {openMenu === "reports" ? <ExpandLess sx={{ color: openMenu === "reports" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+            {openMenu === "reports" ? <ExpandLess sx={{ color: openMenu === "reports" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
 
@@ -278,7 +278,7 @@ return (
       <ManageAccountsIcon />
     </ListItemIcon>
     <ListItemText primary="Users Management" />
-    {openMenu === "users" ? <ExpandLess sx={{ color: openMenu === "users" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    {openMenu === "users" ? <ExpandLess sx={{ color: openMenu === "users" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -303,7 +303,7 @@ return (
       <NotificationsIcon  />
     </ListItemIcon>
     <ListItemText primary="Send Notification" />
-    {openMenu === "sendNotifications" ? <ExpandLess sx={{ color: openMenu === "sendNotifications" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    {openMenu === "sendNotifications" ? <ExpandLess sx={{ color: openMenu === "sendNotifications" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -334,7 +334,7 @@ return (
       <FormatListBulletedIcon  />
     </ListItemIcon>
     <ListItemText primary="List Notification" />
-    {openMenu === "listNotifications" ? <ExpandLess sx={{ color: openMenu === "listNotifications" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    {openMenu === "listNotifications" ? <ExpandLess sx={{ color: openMenu === "listNotifications" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -364,7 +364,7 @@ return (
       <CategoryIcon  />
     </ListItemIcon>
     <ListItemText primary="Category Menagement" />
-    { openMenu === "category" ? <ExpandLess sx={{ color: openMenu === "category" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    { openMenu === "category" ? <ExpandLess sx={{ color: openMenu === "category" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -390,7 +390,7 @@ return (
       <InventoryIcon  />
     </ListItemIcon>
     <ListItemText primary="Product Catalog" />
-    { openMenu === "products" ? <ExpandLess sx={{ color: openMenu === "products" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    { openMenu === "products" ? <ExpandLess sx={{ color: openMenu === "products" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -422,7 +422,7 @@ return (
       <LocationOnIcon  />
     </ListItemIcon>
     <ListItemText primary="Area Management" />
-    { openMenu === "area" ? <ExpandLess sx={{ color: openMenu === "area" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    { openMenu === "area" ? <ExpandLess sx={{ color: openMenu === "area" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -450,7 +450,7 @@ return (
       <StoreIcon  />
     </ListItemIcon>
     <ListItemText primary="Store Management" />
-    { openMenu === "stores" ? <ExpandLess sx={{ color: openMenu === "stores" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    { openMenu === "stores" ? <ExpandLess sx={{ color: openMenu === "stores" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -481,7 +481,7 @@ return (
       <ShoppingCartIcon  />
     </ListItemIcon>
     <ListItemText primary="Order Management" />
-    { openMenu === "orders" ? <ExpandLess sx={{ color: openMenu === "orders" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    { openMenu === "orders" ? <ExpandLess sx={{ color: openMenu === "orders" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -532,7 +532,7 @@ return (
       <PaymentsIcon  />
     </ListItemIcon>
     <ListItemText primary="Payout" />
-    { openMenu === "payout" ? <ExpandLess sx={{ color: openMenu === "payout" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    { openMenu === "payout" ? <ExpandLess sx={{ color: openMenu === "payout" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -557,7 +557,7 @@ return (
       <EmojiEventsIcon  />
     </ListItemIcon>
     <ListItemText primary="Rewards" />
-    { openMenu === "rewards" ? <ExpandLess sx={{ color: openMenu === "rewards" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    { openMenu === "rewards" ? <ExpandLess sx={{ color: openMenu === "rewards" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -582,7 +582,7 @@ return (
       <DeliveryDiningIcon  />
     </ListItemIcon>
     <ListItemText primary="Delivery Boy" />
-    { openMenu === "delivery" ? <ExpandLess sx={{ color: openMenu === "delivery" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    { openMenu === "delivery" ? <ExpandLess sx={{ color: openMenu === "delivery" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -607,7 +607,7 @@ return (
       <DescriptionIcon  />
     </ListItemIcon>
     <ListItemText primary="Pages" />
-    { openMenu === "pages" ? <ExpandLess sx={{ color: openMenu === "pages" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    { openMenu === "pages" ? <ExpandLess sx={{ color: openMenu === "pages" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -632,7 +632,7 @@ return (
       <FeedbackIcon  />
     </ListItemIcon>
     <ListItemText primary="Feedback" />
-    { openMenu === "feedback" ? <ExpandLess sx={{ color: openMenu === "feedback" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    { openMenu === "feedback" ? <ExpandLess sx={{ color: openMenu === "feedback" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 
@@ -661,7 +661,7 @@ return (
       <PhoneCallbackIcon  />
     </ListItemIcon>
     <ListItemText primary="Callback Request" />
-    { openMenu === "callback" ? <ExpandLess sx={{ color: openMenu === "callback" ? "#FFC107" : "#fff" }} /> : <ExpandMore />}
+    { openMenu === "callback" ? <ExpandLess sx={{ color: openMenu === "callback" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
   </ListItemButton>
 </ListItem>
 

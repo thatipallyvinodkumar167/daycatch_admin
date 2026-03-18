@@ -1,16 +1,21 @@
-import { Box } from "@mui/material";
+import React from "react";
+import { Box, Container } from "@mui/material";
 import DashboardCards from "../components/DashboardCards";
 
 function Dashboard() {
   return (
-    <Box p={3}>
-      <h1>Super Admin Panel</h1>
-
-      <Box sx={{ marginTop: "15px" }}>
+    <Box 
+      sx={{ 
+        minHeight: "100vh",
+        backgroundColor: "#f8fafc", // Modern slate background
+        py: { xs: 2, md: 4 }
+      }}
+    >
+      <Container maxWidth="xl">
         <DashboardCards />
-      </Box>
+      </Container>
     </Box>
   );
 }
 
-export default Dashboard;
+export default Dashboard;

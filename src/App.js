@@ -23,7 +23,9 @@ function App() {
         palette: {
           mode,
           primary: {
-            main: '#1976d2', // Blue primary color as requested
+            main: '#E53935', // Vibrant Logo Red from theme page
+            light: '#FF6B6B',
+            dark: '#B71C1C',
           },
           background: {
             default: mode === 'light' ? '#f5f5f5' : '#121212',
