@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Grid,
@@ -30,8 +30,6 @@ import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
-
-import StatCard from "./StatCard";
 import { getAllOrders } from "../api/ordersApi";
 
 const cardVariants = {
@@ -43,14 +41,13 @@ const cardVariants = {
 const DashboardCards = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const isDark = theme.palette.mode === "dark";
 
   const [stats, setStats] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setRefreshing(true);
     try {
       const response = await getAllOrders();
@@ -113,11 +110,11 @@ const DashboardCards = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [theme.palette.primary.main]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const getStatusConfig = (status) => {
     const s = status.toLowerCase();
