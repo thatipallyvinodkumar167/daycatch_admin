@@ -3,26 +3,26 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#E53935', // Vibrant Logo Red
+      main: '#FF3B30', // Electric Crimson
       light: '#FF6B6B',
-      dark: '#B71C1C',
+      dark: '#C41C16',
     },
     secondary: {
-      main: '#333333', // Deep Grey for balance
+      main: '#0F172A', // Deep Slate / Midnight
     },
     background: {
-      default: '#FFFFFF',
+      default: '#F8FAFC', // Soft Ghost White
       paper: '#FFFFFF',
     },
     text: {
-      primary: '#212121', // Near black for readability
-      secondary: '#757575',
+      primary: '#0F172A', // High contrast slate
+      secondary: '#64748B', // Slate grey
     },
     error: {
-      main: '#D32F2F',
+      main: '#EF4444',
     },
     action: {
-      hover: '#FFEBEE',
+      hover: 'rgba(255, 59, 48, 0.05)',
     }
   },
   typography: {

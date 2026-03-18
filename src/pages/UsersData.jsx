@@ -21,7 +21,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import PersonIcon from "@mui/icons-material/Person";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import axios from "axios";
+import { getAllUsers } from "../api/usersApi";
 
 const UsersData = () => {
   const [users, setUsers] = useState([]);
@@ -33,24 +33,38 @@ const UsersData = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users"
-      );
-      
-      const formattedData = response.data.map((user, index) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone.split(" ")[0],
-        regDate: `2024-02-${10 + (index % 18)}`,
-        isVerified: index % 3 !== 0,
-        status: index % 5 === 0 ? "Blocked" : "Active",
-        avatar: `https://ui-avatars.com/api/?name=${user.name}&background=random`,
+      const response = await getAllUsers({ limit: 200, skip: 0 });
+      const results = response.data?.results || [];
+
+      const formattedData = results.map((user) => {
+        const name = user["User Name"] || "Unknown User";
+        const email = user["User Email"] || "No email";
+        const phone = user["User Phone"] || "N/A";
+        const registrationDate = user["Registration Date"];
+        const isVerified = Boolean(user["Is Verified"]);
+
+        return {
+          id: user._id || name,
+          name,
+          email,
+          phone,
+          regDate: registrationDate
+            ? new Date(registrationDate).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "N/A",
+          isVerified,
+          status: user.status || "Active",
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+        };
       }));
 
       setUsers(formattedData);
     } catch (error) {
       console.error("Error fetching users:", error);
+      setUsers([]);
     }
   };
 

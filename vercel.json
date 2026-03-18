@@ -3,6 +3,10 @@
     {
       "source": "/api/orders-proxy",
       "destination": "https://backend-daycatch.onrender.com/api/orders"
+    },
+    {
+      "source": "/api/users-proxy",
+      "destination": "https://backend-daycatch.onrender.com/api/users"
     }
   ]
 }
