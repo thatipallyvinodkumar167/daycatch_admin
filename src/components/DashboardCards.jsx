@@ -69,6 +69,14 @@ const DashboardCards = () => {
 
       setStats([
         {
+          title: "Incoming Orders",
+          value: orderList.length.toString(),
+          change: "+12%",
+          isIncrease: true,
+          icon: <ShoppingBagIcon />,
+          color: theme.palette.primary.main,
+        },
+        {
           title: "Revenue (Week)",
           value: "Rs. 0",
           change: "-100%",
@@ -79,14 +87,6 @@ const DashboardCards = () => {
             { label: "Store", val: "Rs. 18" },
             { label: "Admin", val: "Rs. 2" }
           ]
-        },
-        {
-          title: "Incoming Orders",
-          value: orderList.length.toString(),
-          change: "+12%",
-          isIncrease: true,
-          icon: <ShoppingBagIcon />,
-          color: theme.palette.primary.main,
         },
         {
           title: "New Users",
