@@ -36,10 +36,10 @@ const AdminProducts = () => {
     try {
       const response = await productApi.getAllProducts();
       
-      const results = response.data.results || response.data.data || [];
+      const productList = response.data.data || [];
       
       // Map backend data to our product columns
-      const formattedData = results.map((item, index) => {
+      const formattedData = productList.map((item, index) => {
         return {
           id: item._id || item.id,
           name: item["Product Name"] || item.name || "Unnamed Product",

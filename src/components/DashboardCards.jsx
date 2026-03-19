@@ -55,9 +55,9 @@ const DashboardCards = () => {
 
       try {
         const response = await getAllOrders();
-        const results = response.data.results || [];
+        const orderList = response.data.data || [];
 
-        const mappedOrders = results.map((order) => ({
+        const mappedOrders = orderList.map((order) => ({
           id: order["Cart ID"] || order._id?.slice(-8) || "N/A",
           date: order["Delivery Date"]
             ? new Date(order["Delivery Date"]).toISOString().split("T")[0]
@@ -88,7 +88,7 @@ const DashboardCards = () => {
           },
           {
             title: "New Orders",
-            value: results.length.toString(),
+            value: orderList.length.toString(),
             change: "0 %",
             icon: "orders",
             comparisonLabel: "last week",
