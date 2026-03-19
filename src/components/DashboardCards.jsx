@@ -42,7 +42,44 @@ const DashboardCards = () => {
   const theme = useTheme();
   const navigate = useNavigate();
 
-  const [stats, setStats] = useState([]);
+  const [stats, setStats] = useState([
+    {
+      title: "Revenue (Week)",
+      value: "Rs. 0",
+      change: "-100%",
+      isIncrease: false,
+      icon: <CurrencyRupeeIcon />,
+      color: "#E53935",
+      subItems: [
+        { label: "Store", val: "Rs. 18" },
+        { label: "Admin", val: "Rs. 2" }
+      ]
+    },
+    {
+      title: "Incoming Orders",
+      value: "0",
+      change: "+0%",
+      isIncrease: true,
+      icon: <ShoppingBagIcon />,
+      color: "#E53935",
+    },
+    {
+      title: "New Users",
+      value: "33",
+      change: "-17%",
+      isIncrease: false,
+      icon: <PersonIcon />,
+      color: "#E53935",
+    },
+    {
+      title: "Fulfillment Rate",
+      value: "94%",
+      change: "+2%",
+      isIncrease: true,
+      icon: <CheckCircleIcon />,
+      color: "#2ED480",
+    },
+  ]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,7 +88,6 @@ const DashboardCards = () => {
     setRefreshing(true);
     try {
       const response = await getAllOrders();
-      // FIX: Use response.data.data instead of response.data.results
       const orderList = response.data.data || [];
 
       const mappedOrders = orderList.map((order) => ({
@@ -67,43 +103,14 @@ const DashboardCards = () => {
 
       setOrders(mappedOrders);
 
-      setStats([
+      // Only update stats if we have data or want to refresh specific numbers
+      setStats(prev => [
+        { ...prev[0] }, // Keep revenue as is or update from orderList logic
         {
-          title: "Revenue (Week)",
-          value: "Rs. 0",
-          change: "-100%",
-          isIncrease: false,
-          icon: <CurrencyRupeeIcon />,
-          color: theme.palette.primary.main,
-          subItems: [
-            { label: "Store", val: "Rs. 18" },
-            { label: "Admin", val: "Rs. 2" }
-          ]
-        },
-        {
-          title: "Incoming Orders",
+          ...prev[1],
           value: orderList.length.toString(),
-          change: "+12%",
-          isIncrease: true,
-          icon: <ShoppingBagIcon />,
-          color: theme.palette.primary.main,
         },
-        {
-          title: "New Users",
-          value: "33",
-          change: "-17%",
-          isIncrease: false,
-          icon: <PersonIcon />,
-          color: "#FFBB28",
-        },
-        {
-          title: "Fulfillment Rate",
-          value: "94%",
-          change: "+2%",
-          isIncrease: true,
-          icon: <CheckCircleIcon />,
-          color: "#2ED480",
-        },
+        ...prev.slice(2)
       ]);
     } catch (error) {
       console.error("Dashboard Sync Error:", error);
@@ -111,7 +118,7 @@ const DashboardCards = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [theme.palette.primary.main]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -172,17 +179,17 @@ const DashboardCards = () => {
               whileHover="hover"
               sx={{
                 p: 3,
-                borderRadius: "20px",
+                borderRadius: "24px",
                 border: "1px solid rgba(0,0,0,0.03)",
                 background: "#fff",
                 boxShadow: "0 10px 40px rgba(0,0,0,0.02)",
                 height: "100%",
                 position: "relative",
-                overflow: "hidden"
+                transition: "all 0.3s ease"
               }}
             >
               <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                <Avatar sx={{ bgcolor: alpha(stat.color, 0.1), color: stat.color, borderRadius: "12px", width: 48, height: 48 }}>
+                <Avatar sx={{ bgcolor: alpha("#FDEAEA", 0.6), color: "#E53935", borderRadius: "12px", width: 42, height: 42 }}>
                   {stat.icon}
                 </Avatar>
                 <Chip
@@ -190,27 +197,30 @@ const DashboardCards = () => {
                   label={stat.change}
                   size="small"
                   sx={{
-                    bgcolor: stat.isIncrease ? alpha("#2ED480", 0.1) : alpha("#F45252", 0.1),
+                    bgcolor: stat.isIncrease ? alpha("#E8F5E9", 0.8) : alpha("#FDEAEA", 0.8),
                     color: stat.isIncrease ? "#2E7D32" : "#D32F2F",
-                    fontWeight: 800,
-                    borderRadius: "6px",
-                    px: 0.5
+                    fontWeight: 750,
+                    borderRadius: "8px",
+                    px: 0.5,
+                    border: "none"
                   }}
                 />
               </Stack>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 2.5, fontWeight: 700, textTransform: "uppercase", fontSize: 11, letterSpacing: 1 }}>
+              
+              <Typography variant="body2" sx={{ mt: 3, fontWeight: 750, color: "#808191", textTransform: "uppercase", fontSize: 10, letterSpacing: 1 }}>
                 {stat.title}
               </Typography>
-              <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 900, color: "#11142D" }}>
+              
+              <Typography variant="h3" sx={{ mt: 0.5, fontWeight: 900, color: "#11142D", fontSize: "2.5rem" }}>
                 {stat.value}
               </Typography>
               
               {stat.subItems && (
-                <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                <Stack direction="row" spacing={3} sx={{ mt: 2 }}>
                   {stat.subItems.map((sub, j) => (
                     <Box key={j}>
-                      <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600 }}>{sub.label}</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 800, color: stat.color }}>{sub.val}</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: "#808191", fontSize: 11 }}>{sub.label}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 850, color: "#E53935" }}>{sub.val}</Typography>
                     </Box>
                   ))}
                 </Stack>
