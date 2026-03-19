@@ -185,18 +185,21 @@ const DashboardCards = () => {
                 <Avatar sx={{ bgcolor: alpha(stat.color, 0.1), color: stat.color, borderRadius: "12px", width: 48, height: 48 }}>
                   {stat.icon}
                 </Avatar>
-                <Chip
-                  icon={stat.isIncrease ? <TrendingUpIcon sx={{ fontSize: "14px !important" }} /> : <TrendingDownIcon sx={{ fontSize: "14px !important" }} />}
-                  label={stat.change}
-                  size="small"
-                  sx={{
-                    bgcolor: stat.isIncrease ? alpha("#2ED480", 0.1) : alpha("#F45252", 0.1),
-                    color: stat.isIncrease ? "#2E7D32" : "#D32F2F",
-                    fontWeight: 800,
-                    borderRadius: "6px",
-                    px: 0.5
-                  }}
-                />
+                {stat.change && (
+                  <Chip
+                    key={`stat-chip-${i}`}
+                    icon={stat.isIncrease ? <TrendingUpIcon sx={{ fontSize: "14px !important" }} /> : <TrendingDownIcon sx={{ fontSize: "14px !important" }} />}
+                    label={stat.change}
+                    size="small"
+                    sx={{
+                      bgcolor: stat.isIncrease ? alpha("#2ED480", 0.1) : alpha("#F45252", 0.1),
+                      color: stat.isIncrease ? "#2E7D32" : "#D32F2F",
+                      fontWeight: 800,
+                      borderRadius: "6px",
+                      px: 0.5
+                    }}
+                  />
+                )}
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 2.5, fontWeight: 700, textTransform: "uppercase", fontSize: 11, letterSpacing: 1 }}>
                 {stat.title}
