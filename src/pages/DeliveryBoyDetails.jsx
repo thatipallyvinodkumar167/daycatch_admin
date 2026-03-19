@@ -35,17 +35,18 @@ const DeliveryBoyDetails = () => {
         const found = list.find(b => String(b._id) === String(id) || String(b.id) === String(id));
 
         if (found) {
+          const detailsInfo = found.Details || found.details || {};
           setBoy({
             name: found.boyName || found.name || found["Boy Name"] || "N/A",
             phone: found.boyMobile || found.phone || found["Boy Phone"] || "N/A",
-            email: found.boyEmail || found.email || found["Boy Email"] || "N/A",
+            email: found.boyEmail || found.email || found["Boy Email"] || detailsInfo.Email || detailsInfo.boyEmail || "N/A",
             status: normalizeDeliveryBoyStatus(found.status || found["Status"]),
-            city: found.city?.cityName || found.city || found["City"] || "N/A",
-            idType: normalizeDeliveryBoyIdType(found.idType || found["ID Type"]),
-            idNumber: found.idNumber || found["ID Number"] || "N/A",
-            addressLine: found.boyAddress || found.address || found["Boy Address"] || "N/A",
-            stores: found.store ? (Array.isArray(found.store) ? found.store : [found.store]) : (found["Store"] ? (Array.isArray(found["Store"]) ? found["Store"] : [found["Store"]]) : []),
-            idImage: found.idImage || found["ID Image"] || "",
+            city: detailsInfo.City || typeof found.city === 'object' ? found.city?.cityName : (found.city || found["City"] || "N/A"),
+            idType: normalizeDeliveryBoyIdType(detailsInfo["ID Type"] || found.idType || found["ID Type"]),
+            idNumber: detailsInfo["ID Number"] || found.idNumber || found["ID Number"] || "N/A",
+            addressLine: detailsInfo["Boy Address"] || found.boyAddress || found.address || found["Boy Address"] || "N/A",
+            stores: detailsInfo.Store ? (Array.isArray(detailsInfo.Store) ? detailsInfo.Store : [detailsInfo.Store]) : (found.store ? (Array.isArray(found.store) ? found.store : [found.store]) : (found["Store"] ? (Array.isArray(found["Store"]) ? found["Store"] : [found["Store"]]) : [])),
+            idImage: detailsInfo["ID Image"] || found.idImage || found["ID Image"] || "",
             createdAt: found.createdAt ? new Date(found.createdAt).toLocaleDateString() : "N/A",
             orders: found.orders || found["Orders"] || 0,
             totalEarnings: "N/A"

@@ -75,19 +75,20 @@ const EditDeliveryBoy = () => {
         const found = list.find(b => String(b._id) === String(id) || String(b.id) === String(id));
 
         if (found) {
+          const detailsInfo = found.Details || found.details || {};
           setFormData({
-            name: found.boyName || found.name || "",
-            phone: found.boyMobile || found.phone || "",
-            email: found.boyEmail || found.email || "",
-            password: found.boyPassword || found.password || "",
-            city: typeof found.city === 'object' ? found.city._id : (found.city || ""),
-            idType: normalizeDeliveryBoyIdType(found.idType),
-            idNumber: found.idNumber || "",
-            address: found.boyAddress || found.address || "",
-            stores: found.store ? (Array.isArray(found.store) ? found.store : [typeof found.store === 'object' ? found.store._id : found.store]) : (found.stores || []),
-            status: normalizeDeliveryBoyStatus(found.status),
+            name: found.boyName || found.name || found["Boy Name"] || "",
+            phone: found.boyMobile || found.phone || found["Boy Phone"] || "",
+            email: found.boyEmail || found.email || found["Boy Email"] || detailsInfo.Email || detailsInfo.boyEmail || "",
+            password: found.boyPassword || found.password || found["Boy Password"] || "",
+            city: detailsInfo.City || typeof found.city === 'object' ? found.city?._id : (found.city || ""),
+            idType: normalizeDeliveryBoyIdType(detailsInfo["ID Type"] || found.idType),
+            idNumber: detailsInfo["ID Number"] || found.idNumber || "",
+            address: detailsInfo["Boy Address"] || found.boyAddress || found.address || "",
+            stores: detailsInfo.Store ? [detailsInfo.Store] : found.store ? (Array.isArray(found.store) ? found.store : [typeof found.store === 'object' ? found.store._id : found.store]) : (found.stores || []),
+            status: normalizeDeliveryBoyStatus(found.status || found.Status),
           });
-          if (found.idImage) setExistingImageUrl(found.idImage);
+          if (detailsInfo["ID Image"] || found.idImage) setExistingImageUrl(detailsInfo["ID Image"] || found.idImage);
         }
         setLoading(false);
       } catch (error) {
@@ -134,15 +135,17 @@ const EditDeliveryBoy = () => {
       const payload = {
         "Boy Name": formData.name,
         "Boy Phone": formData.phone,
-        "Boy Email": formData.email,
         "Boy Password": formData.password,
-        "City": formData.city,
-        "ID Type": normalizeDeliveryBoyIdType(formData.idType),
-        "ID Number": formData.idNumber,
-        "Boy Address": formData.address,
         "Status": normalizeDeliveryBoyStatus(formData.status),
-        "Store": formData.stores && formData.stores.length > 0 ? formData.stores[0] : "",
-        "ID Image": idImage ? idImage.name : (existingImageUrl || "placeholder_image.jpg")
+        "Details": {
+          "Email": formData.email,
+          "City": formData.city,
+          "ID Type": normalizeDeliveryBoyIdType(formData.idType),
+          "ID Number": formData.idNumber,
+          "Boy Address": formData.address,
+          "Store": formData.stores && formData.stores.length > 0 ? formData.stores[0] : "",
+          "ID Image": idImage ? idImage.name : (existingImageUrl || "placeholder_image.jpg")
+        }
       };
 
       const response = await updateDeliveryBoy(id, payload);
