@@ -21,35 +21,48 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import axios from "axios";
+import { getSubCategories, addSubCategory, deleteSubCategory, getParentCategories } from "../api/categoryApi";
 
 const SubCategories = () => {
   const [subCategories, setSubCategories] = useState([]);
+  const [parentCats, setParentCats] = useState([]);
   const [search, setSearch] = useState("");
   const [newSubCat, setNewSubCat] = useState("");
-  const [selectedParent, setSelectedParent] = useState("Fruits & Vegetables");
-
-  const parentCats = ["Fruits & Vegetables", "Dairy & Eggs", "Bakery", "Beverages", "Snacks"];
+  const [selectedParent, setSelectedParent] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchSubCategories();
+    fetchInitialData();
   }, []);
+
+  const fetchInitialData = async () => {
+    setLoading(true);
+    try {
+      const parentRes = await getParentCategories();
+      const pResults = parentRes.data?.results || parentRes.data?.data || [];
+      const formattedParents = pResults.map(p => p["Category Name"] || p.name);
+      setParentCats(formattedParents);
+      if (formattedParents.length > 0) setSelectedParent(formattedParents[0]);
+
+      await fetchSubCategories();
+    } catch (error) {
+      console.error("Error fetching initial sub-category data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchSubCategories = async () => {
     try {
-      const response = await axios.get("https://jsonplaceholder.typicode.com/posts?_limit=10");
-      const subCatNames = [
-        "Seasonal Fruits", "Leafy Greens", "Full Cream Milk", "Butter & Cheese",
-        "White Bread", "Multigrain", "Juices", "Energy Drinks", "Biscuits", "Chips"
-      ];
-      const parents = ["Fruits & Vegetables", "Fruits & Vegetables", "Dairy & Eggs", "Dairy & Eggs",
-        "Bakery", "Bakery", "Beverages", "Beverages", "Snacks", "Snacks"];
-      const formattedData = response.data.map((item, index) => ({
-        id: item.id,
-        name: subCatNames[index % subCatNames.length],
-        parentCategory: parents[index % parents.length],
-        image: `https://ui-avatars.com/api/?name=${subCatNames[index % subCatNames.length]}&background=random`,
-        productCount: Math.floor(Math.random() * 50) + 5,
+      const response = await getSubCategories();
+      const results = response.data?.results || response.data?.data || [];
+      
+      const formattedData = results.map((item) => ({
+        id: item._id,
+        name: item["Sub Category Name"] || item.name || "Unnamed",
+        parentCategory: item["Parent Category"] || item.parentCategory || "General",
+        image: item["Sub Category Image"] || `https://ui-avatars.com/api/?name=${encodeURIComponent(item["Sub Category Name"] || "S")}&background=random`,
+        productCount: item.productCount || 0,
       }));
       setSubCategories(formattedData);
     } catch (error) {
@@ -57,23 +70,35 @@ const SubCategories = () => {
     }
   };
 
-  const handleAdd = () => {
-    if (!newSubCat.trim()) return;
-    const newItem = {
-      id: Date.now(),
-      name: newSubCat.trim(),
-      parentCategory: selectedParent,
-      image: `https://ui-avatars.com/api/?name=${newSubCat.trim()}&background=random`,
-      productCount: 0,
-    };
-    setSubCategories([newItem, ...subCategories]);
-    setNewSubCat("");
-    alert("Sub-category added!");
+  const handleAdd = async () => {
+    if (!newSubCat.trim() || !selectedParent) return;
+    try {
+      const payload = {
+        "Sub Category Name": newSubCat.trim(),
+        "Parent Category": selectedParent,
+        "Sub Category Image": `https://ui-avatars.com/api/?name=${encodeURIComponent(newSubCat.trim())}&background=random`,
+        productCount: 0,
+      };
+      
+      await addSubCategory(payload);
+      setNewSubCat("");
+      fetchSubCategories();
+      alert("Sub-category added!");
+    } catch (error) {
+      console.error("Error adding sub-category:", error);
+      alert("Failed to add sub-category.");
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Delete this sub-category?")) {
-      setSubCategories(prev => prev.filter(item => item.id !== id));
+      try {
+        await deleteSubCategory(id);
+        fetchSubCategories();
+      } catch (error) {
+        console.error("Error deleting sub-category:", error);
+        alert("Failed to delete sub-category.");
+      }
     }
   };
 

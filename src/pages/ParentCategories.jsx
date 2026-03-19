@@ -18,60 +18,68 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import axios from "axios";
+import { getParentCategories, addParentCategory, deleteParentCategory } from "../api/categoryApi";
 
 const ParentCategories = () => {
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [newCategory, setNewCategory] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
   const fetchCategories = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users?_limit=6"
-      );
-      const catNames = [
-        "Fruits & Vegetables",
-        "Dairy & Eggs",
-        "Bakery",
-        "Beverages",
-        "Snacks",
-        "Meat & Seafood",
-      ];
-      const formattedData = response.data.map((item, index) => ({
-        id: item.id,
-        name: catNames[index % catNames.length],
-        image: `https://ui-avatars.com/api/?name=${catNames[index % catNames.length]}&background=random`,
-        subCategoryCount: Math.floor(Math.random() * 10) + 2,
-        productCount: Math.floor(Math.random() * 300) + 20,
+      const response = await getParentCategories();
+      const results = response.data?.results || response.data?.data || [];
+      
+      const formattedData = results.map((item) => ({
+        id: item._id,
+        name: item["Category Name"] || item.name || "Unnamed",
+        image: item["Category Image"] || `https://ui-avatars.com/api/?name=${encodeURIComponent(item["Category Name"] || "C")}&background=random`,
+        subCategoryCount: item.subCategoryCount || 0,
+        productCount: item.productCount || 0,
       }));
       setCategories(formattedData);
     } catch (error) {
       console.error("Error fetching parent categories:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newCategory.trim()) return;
-    const newItem = {
-      id: Date.now(),
-      name: newCategory.trim(),
-      image: `https://ui-avatars.com/api/?name=${newCategory.trim()}&background=random`,
-      subCategoryCount: 0,
-      productCount: 0,
-    };
-    setCategories([newItem, ...categories]);
-    setNewCategory("");
-    alert("Parent category added!");
+    try {
+      const payload = {
+        "Category Name": newCategory.trim(),
+        "Category Image": `https://ui-avatars.com/api/?name=${encodeURIComponent(newCategory.trim())}&background=random`,
+        subCategoryCount: 0,
+        productCount: 0,
+      };
+      
+      await addParentCategory(payload);
+      setNewCategory("");
+      fetchCategories();
+      alert("Parent category added!");
+    } catch (error) {
+      console.error("Error adding category:", error);
+      alert("Failed to add category.");
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Delete this parent category? All sub-categories under it will also be affected.")) {
-      setCategories(prev => prev.filter(item => item.id !== id));
+      try {
+        await deleteParentCategory(id);
+        fetchCategories();
+      } catch (error) {
+        console.error("Error deleting category:", error);
+        alert("Failed to delete category.");
+      }
     }
   };
 
