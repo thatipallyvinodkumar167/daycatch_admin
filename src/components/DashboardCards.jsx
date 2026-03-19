@@ -31,6 +31,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
 import { getAllOrders } from "../api/ordersApi";
+import { getAllUsers } from "../api/usersApi";
 
 const cardVariants = {
   initial: { opacity: 0, scale: 0.95, y: 15 },
@@ -51,8 +52,8 @@ const DashboardCards = () => {
       icon: <CurrencyRupeeIcon />,
       color: "#E53935",
       subItems: [
-        { label: "Store", val: "Rs. 18" },
-        { label: "Admin", val: "Rs. 2" }
+        { label: "Store", val: "Rs. 0" },
+        { label: "Admin", val: "Rs. 0" }
       ]
     },
     {
@@ -65,16 +66,16 @@ const DashboardCards = () => {
     },
     {
       title: "New Users",
-      value: "33",
-      change: "-17%",
-      isIncrease: false,
+      value: "0",
+      change: "+0%",
+      isIncrease: true,
       icon: <PersonIcon />,
       color: "#E53935",
     },
     {
       title: "Fulfillment Rate",
-      value: "94%",
-      change: "+2%",
+      value: "0%",
+      change: "+0%",
       isIncrease: true,
       icon: <CheckCircleIcon />,
       color: "#2ED480",
@@ -87,8 +88,13 @@ const DashboardCards = () => {
   const fetchData = useCallback(async () => {
     setRefreshing(true);
     try {
-      const response = await getAllOrders();
-      const orderList = response.data.data || [];
+      const [orderRes, userRes] = await Promise.all([
+        getAllOrders(),
+        getAllUsers()
+      ]);
+
+      const orderList = orderRes.data.data || [];
+      const userList = userRes.data.data || [];
 
       const mappedOrders = orderList.map((order) => ({
         id: order["Cart ID"] || order._id?.slice(-8) || "N/A",
@@ -103,14 +109,52 @@ const DashboardCards = () => {
 
       setOrders(mappedOrders);
 
-      // Only update stats if we have data or want to refresh specific numbers
-      setStats(prev => [
-        { ...prev[0] }, // Keep revenue as is or update from orderList logic
+      // Calculations
+      const totalRevenue = orderList.reduce((sum, order) => sum + (Number(order["Cart price"]) || 0), 0);
+      const completedOrders = orderList.filter(o => o["Status"]?.toLowerCase().includes("complete") || o["Status"]?.toLowerCase().includes("delivered")).length;
+      const fulfillmentRate = orderList.length > 0 ? Math.round((completedOrders / orderList.length) * 100) : 0;
+      
+      // Calculate Admin/Store (Mock logic: 10% Admin, 90% Store if not provided)
+      const adminRev = Math.round(totalRevenue * 0.1);
+      const storeRev = totalRevenue - adminRev;
+
+      setStats([
         {
-          ...prev[1],
-          value: orderList.length.toString(),
+          title: "Revenue (Week)",
+          value: `Rs. ${totalRevenue}`,
+          change: totalRevenue > 0 ? "+10%" : "-100%",
+          isIncrease: totalRevenue > 0,
+          icon: <CurrencyRupeeIcon />,
+          color: "#E53935",
+          subItems: [
+            { label: "Store", val: `Rs. ${storeRev}` },
+            { label: "Admin", val: `Rs. ${adminRev}` }
+          ]
         },
-        ...prev.slice(2)
+        {
+          title: "Incoming Orders",
+          value: orderList.length.toString(),
+          change: "+12%",
+          isIncrease: true,
+          icon: <ShoppingBagIcon />,
+          color: "#E53935",
+        },
+        {
+          title: "New Users",
+          value: userList.length.toString(),
+          change: "+10%",
+          isIncrease: true,
+          icon: <PersonIcon />,
+          color: "#E53935",
+        },
+        {
+          title: "Fulfillment Rate",
+          value: `${fulfillmentRate}%`,
+          change: "+2%",
+          isIncrease: true,
+          icon: <CheckCircleIcon />,
+          color: "#2ED480",
+        },
       ]);
     } catch (error) {
       console.error("Dashboard Sync Error:", error);
