@@ -137,31 +137,6 @@ function Sidebar({ open }) {
     };
   };
 
-  const subItemStyles = (path) => {
-    const isActive = location.pathname === path;
-    const primaryColor = theme.palette.primary.main;
-
-    return {
-      pl: 7,
-      py: 1,
-      minHeight: "40px",
-      margin: "2px 12px",
-      borderRadius: "10px",
-      transition: "all 0.2s ease",
-      backgroundColor: isActive ? alpha(primaryColor, 0.08) : "transparent",
-      "& .MuiListItemText-root .MuiTypography-root": {
-        fontSize: "0.8125rem",
-        color: isActive ? primaryColor : "rgba(255, 255, 255, 0.5)",
-        fontWeight: isActive ? 600 : 400
-      },
-      "&:hover": {
-        backgroundColor: "rgba(255, 255, 255, 0.03)",
-        "& .MuiListItemText-root .MuiTypography-root": {
-          color: "#fff"
-        }
-      }
-    };
-  };
 
   return (
     <Drawer

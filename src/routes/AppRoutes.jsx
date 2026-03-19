@@ -5,9 +5,6 @@ import AdminLayout from "../layouts/AdminLayout";
 
 // Pages
 import Dashboard from "../pages/Dashboard";
-import Products from "../pages/Products";
-import Categories from "../pages/Categories";
-import Orders from "../pages/Orders";
 import Customers from "../pages/Customers";
 import Payments from "../pages/Payments";
 import Coupons from "../pages/Coupons";
