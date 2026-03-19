@@ -137,6 +137,31 @@ function Sidebar({ open }) {
     };
   };
 
+  const subItemStyles = (path) => {
+    const isActive = location.pathname === path;
+    const primaryColor = theme.palette.primary.main;
+
+    return {
+      pl: 7,
+      py: 1,
+      minHeight: "40px",
+      margin: "2px 12px",
+      borderRadius: "10px",
+      transition: "all 0.2s ease",
+      backgroundColor: isActive ? alpha(primaryColor, 0.08) : "transparent",
+      "& .MuiListItemText-root .MuiTypography-root": {
+        fontSize: "0.8125rem",
+        color: isActive ? primaryColor : "rgba(255, 255, 255, 0.5)",
+        fontWeight: isActive ? 600 : 400
+      },
+      "&:hover": {
+        backgroundColor: "rgba(255, 255, 255, 0.03)",
+        "& .MuiListItemText-root .MuiTypography-root": {
+          color: "#fff"
+        }
+      }
+    };
+  };
 
   return (
     <Drawer
@@ -301,13 +326,13 @@ function Sidebar({ open }) {
             <ListItemButton sx={{ pl: 6, ...activeMenu("/products") }} onClick={() => navigate("/products")}>
               <ListItemText primary="Admin products" />
             </ListItemButton>
-            <ListItemButton sx={{ pl: 6, ...activeMenu("/store-products") }} onClick={() => navigate("/store-products")}>
+            <ListItemButton sx={{ pl: 6, ...activeMenu("/store-products") }} onClick={() => navigate("/products")}>
               <ListItemText primary="Store products" />
             </ListItemButton>
-            <ListItemButton sx={{ pl: 6, ...activeMenu("/trending-search") }} onClick={() => navigate("/trending-search")}>
+            <ListItemButton sx={{ pl: 6, ...activeMenu("/trending-search") }} onClick={() => navigate("/products")}>
               <ListItemText primary="Trending Search" />
             </ListItemButton>
-            <ListItemButton sx={{ pl: 6, ...activeMenu("/bulk-upload-products") }} onClick={() => navigate("/bulk-upload-products")}>
+            <ListItemButton sx={{ pl: 6, ...activeMenu("/bulk-upload-products") }} onClick={() => navigate("/products")}>
               <ListItemText primary="Bulk Upload" />
             </ListItemButton>
           </List>

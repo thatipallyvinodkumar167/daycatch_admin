@@ -5,6 +5,9 @@ import AdminLayout from "../layouts/AdminLayout";
 
 // Pages
 import Dashboard from "../pages/Dashboard";
+import Products from "../pages/Products";
+import Categories from "../pages/Categories";
+import Orders from "../pages/Orders";
 import Customers from "../pages/Customers";
 import Payments from "../pages/Payments";
 import Coupons from "../pages/Coupons";
@@ -116,8 +119,9 @@ const AppRoutes = () => {
 
         <Route index element={<Dashboard />} />
 
-        <Route path="categories" element={<ParentCategories />} />
-        <Route path="orders" element={<AllOrders />} />
+        <Route path="products" element={<Products />} />
+        <Route path="categories" element={<Categories />} />
+        <Route path="orders" element={<Orders />} />
         <Route path="customers" element={<Customers />} />
         <Route path="payments" element={<Payments />} />
         <Route path="coupons" element={<Coupons />} />
@@ -161,6 +165,7 @@ const AppRoutes = () => {
         <Route path="driver-notifications" element={<DriverNotifications />}/>
 
         {/*  Categories management */}
+        <Route path="categories" element={<ParentCategories />}/>
         <Route path="sub-category" element={<SubCategories />}/>
 
       {/* Product catalog */}
@@ -222,6 +227,7 @@ const AppRoutes = () => {
 
         {/* Order Management */}
 
+        <Route path="all-orders" element={<AllOrders />} />
         <Route path="pending-orders" element={<PendingOrders />} />
         <Route path="cancelled-orders" element={<CancelledOrders />} />
         <Route path="ongoing-orders" element={<OngoingOrders />} />
