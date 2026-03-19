@@ -92,33 +92,44 @@ const DeliveryBoy = () => {
 
       <Paper
         sx={{
-          borderRadius: "15px",
+          borderRadius: "20px",
           overflow: "hidden",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+          boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
+          border: "1px solid #e0e5f2",
+          background: "#fff",
         }}
       >
         <Box
           sx={{
-            p: 3,
+            p: 4,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             borderBottom: "1px solid #f1f1f1",
+            background: "linear-gradient(90deg, #fff 0%, #fafbfc 100%)",
           }}
         >
-          <Typography variant="h6" fontWeight="600" color="#1b2559">
-            Delivery Boy List
-          </Typography>
+          <Box>
+            <Typography variant="h5" fontWeight="800" color="#1b2559">
+              Fleet Management
+            </Typography>
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
+              Monitor real-time delivery performance and duty status of your personnel.
+            </Typography>
+          </Box>
           <Button
             variant="contained"
             onClick={() => navigate("/delivery-boy-list/add")}
+            startIcon={<AddIcon />}
             sx={{
-              backgroundColor: "#2d60ff",
-              "&:hover": { backgroundColor: "#2046cc" },
-              borderRadius: "8px",
+              backgroundColor: "#E53935",
+              "&:hover": { backgroundColor: "#C62828" },
+              borderRadius: "14px",
               textTransform: "none",
-              px: 3,
-              fontWeight: "600",
+              px: 4,
+              py: 1.5,
+              fontWeight: "700",
+              boxShadow: "0 6px 20px rgba(229, 57, 53, 0.3)",
             }}
           >
             Add New Boy
@@ -127,22 +138,35 @@ const DeliveryBoy = () => {
 
         <Stack
           direction="row"
-          justifyContent="flex-end"
+          justifyContent="space-between"
           alignItems="center"
-          spacing={1}
-          sx={{ p: 3 }}
+          sx={{ p: 4, backgroundColor: "#fff" }}
         >
-          <Typography variant="body2" sx={{ mr: 1, fontWeight: "500" }}>
-            Search:
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ px: 2, py: 1, backgroundColor: "#f4f7fe", borderRadius: "10px" }}>
+                <Typography variant="body2" fontWeight="800" color="#1b2559">
+                    {filteredBoys.length} <span style={{ color: "#a3aed0", fontWeight: "600" }}>Total Fleet</span>
+                </Typography>
+            </Box>
+            <Box sx={{ px: 2, py: 1, backgroundColor: "#e6f9ed", borderRadius: "10px" }}>
+                <Typography variant="body2" fontWeight="800" color="#24d164">
+                    {deliveryBoys.filter(b => !isDeliveryBoyOffDuty(b.status)).length} <span style={{ color: "#24d164", opacity: 0.7, fontWeight: "600" }}>On Duty</span>
+                </Typography>
+            </Box>
+          </Box>
           <TextField
             size="small"
-            placeholder="Search by name or phone..."
+            placeholder="Search by name, phone or ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             sx={{
-              "& .MuiOutlinedInput-root": { borderRadius: "8px" },
-              width: "280px",
+              "& .MuiOutlinedInput-root": { 
+                borderRadius: "12px", 
+                backgroundColor: "#f4f7fe", 
+                border: "none",
+                "& fieldset": { border: "none" }
+              },
+              width: "350px",
             }}
           />
         </Stack>
@@ -151,88 +175,23 @@ const DeliveryBoy = () => {
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell
-                  sx={{
-                    fontWeight: "700",
-                    color: "#a3aed0",
-                    borderBottom: "2px solid #e0e5f2",
-                  }}
-                >
-                  #
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: "700",
-                    color: "#a3aed0",
-                    borderBottom: "2px solid #e0e5f2",
-                  }}
-                >
-                  Boy Name
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: "700",
-                    color: "#a3aed0",
-                    borderBottom: "2px solid #e0e5f2",
-                  }}
-                >
-                  Boy Phone
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: "700",
-                    color: "#a3aed0",
-                    borderBottom: "2px solid #e0e5f2",
-                  }}
-                >
-                  Boy Password
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: "700",
-                    color: "#a3aed0",
-                    borderBottom: "2px solid #e0e5f2",
-                  }}
-                >
-                  Status
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: "700",
-                    color: "#a3aed0",
-                    borderBottom: "2px solid #e0e5f2",
-                  }}
-                >
-                  Orders
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{
-                    fontWeight: "700",
-                    color: "#a3aed0",
-                    borderBottom: "2px solid #e0e5f2",
-                  }}
-                >
-                  Details
-                </TableCell>
-                <TableCell
-                  align="right"
-                  sx={{
-                    fontWeight: "700",
-                    color: "#a3aed0",
-                    borderBottom: "2px solid #e0e5f2",
-                    pr: 4,
-                  }}
-                >
-                  Actions
-                </TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#a3aed0", fontSize: "11px", py: 2, pl: 4 }}>#</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#a3aed0", fontSize: "11px" }}>PERSONNEL</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#a3aed0", fontSize: "11px" }}>CONTACT INFO</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#a3aed0", fontSize: "11px" }}>ACCESS KEY</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#a3aed0", fontSize: "11px" }}>DUTY STATUS</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#a3aed0", fontSize: "11px" }}>DELIVERIES</TableCell>
+                <TableCell align="center" sx={{ fontWeight: "800", color: "#a3aed0", fontSize: "11px" }}>PROFILE</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "800", color: "#a3aed0", fontSize: "11px", pr: 4 }}>MANAGEMENT</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredBoys.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                    No delivery boys found
+                  <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                    <Typography variant="body1" color="textSecondary" fontWeight="600">
+                        No Delivery Boys Found
+                    </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -242,54 +201,84 @@ const DeliveryBoy = () => {
                   return (
                     <TableRow
                       key={item._id || item.id}
-                      sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}
+                      sx={{
+                        "&:hover": { backgroundColor: "#f9fafc" },
+                        transition: "all 0.2s ease",
+                      }}
                     >
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>
-                        {index + 1}
+                      <TableCell sx={{ color: "#a3aed0", fontWeight: "600", pl: 4 }}>
+                        {String(index + 1).padStart(2, '0')}
                       </TableCell>
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>
-                        {item.boyName || item.name}
+                      <TableCell>
+                        <Typography variant="body2" fontWeight="800" color="#1b2559">
+                          {item.boyName || item.name}
+                        </Typography>
                       </TableCell>
-                      <TableCell sx={{ color: "#475467" }}>
-                        {item.boyMobile || item.phone}
+                      <TableCell>
+                        <Typography variant="body2" fontWeight="600" color="#475467">
+                          {item.boyMobile || item.phone}
+                        </Typography>
                       </TableCell>
-                      <TableCell
-                        sx={{
-                          color: "#475467",
-                          fontStyle: "italic",
-                          fontSize: "12px",
-                        }}
-                      >
-                        {item.boyPassword || item.password || "--"}
+                      <TableCell>
+                        <Typography
+                          sx={{
+                            color: "#a3aed0",
+                            fontFamily: "Monaco, monospace",
+                            fontSize: "12px",
+                            letterSpacing: "1px",
+                            backgroundColor: "#f4f7fe",
+                            px: 1,
+                            py: 0.2,
+                            borderRadius: "4px",
+                            display: "inline-block"
+                          }}
+                        >
+                          {item.boyPassword || item.password || "••••••"}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={formatDeliveryBoyStatus(item.status)}
+                          label={formatDeliveryBoyStatus(item.status).toUpperCase()}
                           size="small"
                           sx={{
-                            backgroundColor: isOffDuty ? "#fff1f0" : "#e6f9ed",
-                            color: isOffDuty ? "#ff4d49" : "#24d164",
-                            fontWeight: "700",
-                            borderRadius: "6px",
+                            backgroundColor: isOffDuty ? "#FFF5F5" : "#E6FFFA",
+                            color: isOffDuty ? "#E53935" : "#2ED480",
+                            fontWeight: "900",
+                            fontSize: "10px",
+                            borderRadius: "8px",
+                            px: 1.5,
+                            height: "24px"
                           }}
                         />
                       </TableCell>
                       <TableCell>
-                        <Typography
-                          onClick={() =>
-                            navigate(
-                              `/delivery-boy-list/orders/${item._id || item.id}`
-                            )
-                          }
-                          sx={{
-                            color: "#2d60ff",
-                            fontWeight: "700",
-                            cursor: "pointer",
-                            "&:hover": { textDecoration: "underline" },
-                          }}
-                        >
-                          {item.orders ?? 0}
-                        </Typography>
+                        <Box sx={{ 
+                          display: "inline-flex", 
+                          alignItems: "center", 
+                          gap: 1,
+                          backgroundColor: "#f4f7fe",
+                          borderRadius: "12px",
+                          px: 2,
+                          py: 0.5,
+                          border: "1px solid #e0e5f2"
+                        }}>
+                          <Typography
+                            onClick={() =>
+                              navigate(
+                                `/delivery-boy-list/orders/${item._id || item.id}`
+                              )
+                            }
+                            sx={{
+                              color: "#E53935",
+                              fontWeight: "900",
+                              fontSize: "14px",
+                              cursor: "pointer",
+                              "&:hover": { textDecoration: "underline" },
+                            }}
+                          >
+                            {item.orders ?? 0}
+                          </Typography>
+                        </Box>
                       </TableCell>
                       <TableCell align="center">
                         <IconButton
@@ -300,10 +289,11 @@ const DeliveryBoy = () => {
                             )
                           }
                           sx={{
-                            backgroundColor: "#2d60ff",
-                            color: "white",
-                            borderRadius: "10px",
-                            "&:hover": { backgroundColor: "#2046cc" },
+                            backgroundColor: "#f4f7fe",
+                            color: "#1b2559",
+                            borderRadius: "12px",
+                            transition: "all 0.3s",
+                            "&:hover": { backgroundColor: "#1b2559", color: "#fff", transform: "translateY(-2px)" },
                           }}
                         >
                           <VisibilityIcon fontSize="small" />
@@ -312,7 +302,7 @@ const DeliveryBoy = () => {
                       <TableCell align="right" sx={{ pr: 3 }}>
                         <Stack
                           direction="row"
-                          spacing={1}
+                          spacing={1.5}
                           justifyContent="flex-end"
                         >
                           <IconButton
@@ -322,10 +312,10 @@ const DeliveryBoy = () => {
                               )
                             }
                             sx={{
-                              backgroundColor: "#00d26a",
-                              color: "white",
+                              color: "#2ED480",
+                              backgroundColor: "rgba(46, 212, 128, 0.1)",
                               borderRadius: "10px",
-                              "&:hover": { backgroundColor: "#00b85c" },
+                              "&:hover": { backgroundColor: "#2ED480", color: "#fff" },
                             }}
                           >
                             <EditIcon fontSize="small" />
@@ -333,10 +323,10 @@ const DeliveryBoy = () => {
                           <IconButton
                             onClick={() => handleDelete(item._id || item.id)}
                             sx={{
-                              backgroundColor: "#ff4d49",
-                              color: "white",
+                              color: "#E53935",
+                              backgroundColor: "rgba(229, 57, 53, 0.1)",
                               borderRadius: "10px",
-                              "&:hover": { backgroundColor: "#e03e3a" },
+                              "&:hover": { backgroundColor: "#E53935", color: "#fff" },
                             }}
                           >
                             <DeleteIcon fontSize="small" />
