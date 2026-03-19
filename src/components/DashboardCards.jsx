@@ -86,7 +86,7 @@ const DashboardCards = () => {
           change: "+12%",
           isIncrease: true,
           icon: <ShoppingBagIcon />,
-          color: "#475BE8",
+          color: theme.palette.primary.main,
         },
         {
           title: "New Users",
@@ -260,7 +260,7 @@ const DashboardCards = () => {
                           sx={{ "&:hover": { bgcolor: "rgba(0,0,0,0.01)" }, transition: "0.2s" }}
                         >
                           <TableCell sx={{ borderBottom: "1px solid rgba(0,0,0,0.04)", py: 2.5 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 850, color: "#2d60ff" }}>{order.id}</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 850, color: theme.palette.primary.main }}>{order.id}</Typography>
                             <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>{order.date}</Typography>
                           </TableCell>
                           <TableCell sx={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}>

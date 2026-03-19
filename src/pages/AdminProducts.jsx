@@ -11,9 +11,7 @@ import {
   TableRow,
   TextField,
   Button,
-  Stack,
-  IconButton,
-  Chip,
+  useTheme,
   Avatar,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -23,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import * as productApi from "../api/productApi";
 
 const AdminProducts = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
@@ -95,14 +94,14 @@ const AdminProducts = () => {
           startIcon={<AddIcon />}
           onClick={() => navigate("/products/add")}
           sx={{ 
-            backgroundColor: "#2d60ff", 
-            "&:hover": { backgroundColor: "#2046cc" },
+            backgroundColor: theme.palette.primary.main, 
+            "&:hover": { backgroundColor: theme.palette.primary.dark },
             borderRadius: "10px",
             textTransform: "none",
             px: 3,
             py: 1.2,
             fontWeight: "700",
-            boxShadow: "0 4px 12px rgba(45, 96, 255, 0.3)"
+            boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`
           }}
         >
           Add New Product
@@ -179,7 +178,7 @@ const AdminProducts = () => {
                     <TableCell sx={{ color: "#1b2559", fontWeight: "700", maxWidth: "180px" }}>{item.name}</TableCell>
                     <TableCell sx={{ color: "#475467" }}>{item.category}</TableCell>
                     <TableCell sx={{ color: "#475467" }}>{item.subCategory}</TableCell>
-                    <TableCell sx={{ color: "#2d60ff", fontWeight: "800" }}>{item.price}</TableCell>
+                    <TableCell sx={{ color: theme.palette.primary.main, fontWeight: "800" }}>{item.price}</TableCell>
                     <TableCell>
                         <Chip 
                             label={item.status} 
