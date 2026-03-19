@@ -1,8 +1,21 @@
-import axios from "axios";
+import api from "./api";
 
-const ORDERS_API_URL =
-  process.env.REACT_APP_ORDERS_API_URL || "/api/orders-proxy";
+export const getAllOrders = async (params = {}) => {
+  return await api.get("/orders", { params });
+};
 
-export const getAllOrders = async () => {
-  return await axios.get(ORDERS_API_URL);
+export const getOrder = async (id) => {
+    return await api.get(`/orders/${id}`);
+};
+
+export const createOrder = async (data) => {
+    return await api.post("/orders", data);
+};
+
+export const updateOrder = async (id, data) => {
+    return await api.patch(`/orders/${id}`, data);
+};
+
+export const deleteOrder = async (id) => {
+    return await api.delete(`/orders/${id}`);
 };

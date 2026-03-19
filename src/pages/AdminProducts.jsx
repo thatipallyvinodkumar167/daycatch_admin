@@ -20,7 +20,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import * as productApi from "../api/productApi";
 
 const AdminProducts = () => {
   const navigate = useNavigate();
@@ -34,24 +34,20 @@ const AdminProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/posts?_limit=10"
-      );
+      const response = await productApi.getAllProducts();
       
-      // Map fake data to our product columns
-      const formattedData = response.data.map((item, index) => {
-        const categories = ["Fruits", "Vegetables", "Dairy", "Grains"];
-        const subCategories = ["Organic", "Fresh", "Packaged", "Imported"];
-        const price = Math.floor(Math.random() * 500) + 20;
-        
+      const results = response.data.results || response.data.data || [];
+      
+      // Map backend data to our product columns
+      const formattedData = results.map((item, index) => {
         return {
-          id: item.id,
-          name: item.title.slice(0, 20),
-          category: categories[index % 4],
-          subCategory: subCategories[index % 4],
-          price: `₹${price}`,
-          image: `https://picsum.photos/seed/${item.id}/100`,
-          status: index % 3 === 0 ? "Out of Stock" : "In Stock"
+          id: item._id || item.id,
+          name: item["Product Name"] || item.name || "Unnamed Product",
+          category: item["Category"] || item.category || "N/A",
+          subCategory: item["Sub Category"] || item.subCategory || "N/A",
+          price: `₹${item["Price"] || item.price || 0}`,
+          image: item["Product Image"] || item.image || `https://picsum.photos/seed/${item._id}/100`,
+          status: item.status || (index % 3 === 0 ? "Out of Stock" : "In Stock")
         };
       });
 
@@ -68,10 +64,16 @@ const AdminProducts = () => {
     );
   }, [products, search]);
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts(prev => prev.filter(item => item.id !== id));
-      alert("Product deleted successfully!");
+      try {
+        await productApi.deleteProduct(id);
+        setProducts(prev => prev.filter(item => item.id !== id));
+        alert("Product deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        alert("Failed to delete product.");
+      }
     }
   };
 
