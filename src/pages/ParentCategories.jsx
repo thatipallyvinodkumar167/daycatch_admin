@@ -14,6 +14,7 @@ import {
   Stack,
   IconButton,
   Avatar,
+  LinearProgress,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -145,7 +146,19 @@ const ParentCategories = () => {
         </Paper>
 
         {/* List */}
-        <Paper sx={{ flex: 1, borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+        <Paper sx={{ flex: 1, borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", position: "relative" }}>
+          {loading && (
+            <LinearProgress 
+              sx={{ 
+                position: "absolute", 
+                top: 0, 
+                left: 0, 
+                right: 0, 
+                backgroundColor: "#fff1f0",
+                "& .MuiLinearProgress-bar": { backgroundColor: "#E53935" }
+              }} 
+            />
+          )}
           <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
             <Typography variant="h6" fontWeight="600" color="#1b2559">Parent Categories</Typography>
             <TextField

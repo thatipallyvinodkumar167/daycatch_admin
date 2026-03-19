@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -17,6 +17,7 @@ import {
   FormControl,
   Select,
   Avatar,
+  LinearProgress,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -31,28 +32,7 @@ const SubCategories = () => {
   const [selectedParent, setSelectedParent] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  const fetchInitialData = async () => {
-    setLoading(true);
-    try {
-      const parentRes = await getParentCategories();
-      const pResults = parentRes.data?.results || parentRes.data?.data || [];
-      const formattedParents = pResults.map(p => p["Category Name"] || p.name);
-      setParentCats(formattedParents);
-      if (formattedParents.length > 0) setSelectedParent(formattedParents[0]);
-
-      await fetchSubCategories();
-    } catch (error) {
-      console.error("Error fetching initial sub-category data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchSubCategories = async () => {
+  const fetchSubCategories = useCallback(async () => {
     try {
       const response = await getSubCategories();
       const results = response.data?.results || response.data?.data || [];
@@ -68,7 +48,28 @@ const SubCategories = () => {
     } catch (error) {
       console.error("Error fetching sub-categories:", error);
     }
-  };
+  }, []);
+
+  const fetchInitialData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const parentRes = await getParentCategories();
+      const pResults = parentRes.data?.results || parentRes.data?.data || [];
+      const formattedParents = pResults.map(p => p["Category Name"] || p.name);
+      setParentCats(formattedParents);
+      if (formattedParents.length > 0) setSelectedParent(formattedParents[0]);
+
+      await fetchSubCategories();
+    } catch (error) {
+      console.error("Error fetching initial sub-category data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchSubCategories]);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
 
   const handleAdd = async () => {
     if (!newSubCat.trim() || !selectedParent) return;
@@ -169,7 +170,19 @@ const SubCategories = () => {
         </Paper>
 
         {/* List */}
-        <Paper sx={{ flex: 1, borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+        <Paper sx={{ flex: 1, borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", position: "relative" }}>
+          {loading && (
+            <LinearProgress 
+              sx={{ 
+                position: "absolute", 
+                top: 0, 
+                left: 0, 
+                right: 0, 
+                backgroundColor: "#fff1f0",
+                "& .MuiLinearProgress-bar": { backgroundColor: "#E53935" }
+              }} 
+            />
+          )}
           <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
             <Typography variant="h6" fontWeight="600" color="#1b2559">Sub-Categories List</Typography>
             <TextField
