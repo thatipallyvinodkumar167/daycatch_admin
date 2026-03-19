@@ -69,14 +69,6 @@ const DashboardCards = () => {
 
       setStats([
         {
-          title: "Incoming Orders",
-          value: orderList.length.toString(),
-          change: "+12%",
-          isIncrease: true,
-          icon: <ShoppingBagIcon />,
-          color: theme.palette.primary.main,
-        },
-        {
           title: "Revenue (Week)",
           value: "Rs. 0",
           change: "-100%",
@@ -87,6 +79,14 @@ const DashboardCards = () => {
             { label: "Store", val: "Rs. 18" },
             { label: "Admin", val: "Rs. 2" }
           ]
+        },
+        {
+          title: "Incoming Orders",
+          value: orderList.length.toString(),
+          change: "+12%",
+          isIncrease: true,
+          icon: <ShoppingBagIcon />,
+          color: theme.palette.primary.main,
         },
         {
           title: "New Users",
@@ -121,7 +121,7 @@ const DashboardCards = () => {
     const s = status.toLowerCase();
     if (s.includes("complete")) return { color: "#2ED480", icon: <CheckCircleIcon />, label: "Completed" };
     if (s.includes("cancel") || s.includes("reject")) return { color: "#F45252", icon: <ErrorIcon />, label: "Cancelled" };
-    if (s.includes("place") || s.includes("pending")) return { color: "#475BE8", icon: <AccessTimeFilledIcon />, label: "Received" };
+    if (s.includes("place") || s.includes("pending")) return { color: "#E53935", icon: <AccessTimeFilledIcon />, label: "Received" };
     return { color: "#808191", icon: <AccessTimeFilledIcon />, label: status };
   };
 
@@ -185,21 +185,18 @@ const DashboardCards = () => {
                 <Avatar sx={{ bgcolor: alpha(stat.color, 0.1), color: stat.color, borderRadius: "12px", width: 48, height: 48 }}>
                   {stat.icon}
                 </Avatar>
-                {stat.change && (
-                  <Chip
-                    key={`stat-chip-${i}`}
-                    icon={stat.isIncrease ? <TrendingUpIcon sx={{ fontSize: "14px !important" }} /> : <TrendingDownIcon sx={{ fontSize: "14px !important" }} />}
-                    label={stat.change}
-                    size="small"
-                    sx={{
-                      bgcolor: stat.isIncrease ? alpha("#2ED480", 0.1) : alpha("#F45252", 0.1),
-                      color: stat.isIncrease ? "#2E7D32" : "#D32F2F",
-                      fontWeight: 800,
-                      borderRadius: "6px",
-                      px: 0.5
-                    }}
-                  />
-                )}
+                <Chip
+                  icon={stat.isIncrease ? <TrendingUpIcon sx={{ fontSize: "14px !important" }} /> : <TrendingDownIcon sx={{ fontSize: "14px !important" }} />}
+                  label={stat.change}
+                  size="small"
+                  sx={{
+                    bgcolor: stat.isIncrease ? alpha("#2ED480", 0.1) : alpha("#F45252", 0.1),
+                    color: stat.isIncrease ? "#2E7D32" : "#D32F2F",
+                    fontWeight: 800,
+                    borderRadius: "6px",
+                    px: 0.5
+                  }}
+                />
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 2.5, fontWeight: 700, textTransform: "uppercase", fontSize: 11, letterSpacing: 1 }}>
                 {stat.title}
@@ -263,7 +260,7 @@ const DashboardCards = () => {
                           sx={{ "&:hover": { bgcolor: "rgba(0,0,0,0.01)" }, transition: "0.2s" }}
                         >
                           <TableCell sx={{ borderBottom: "1px solid rgba(0,0,0,0.04)", py: 2.5 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 850, color: theme.palette.primary.main }}>{order.id}</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 850, color: "#E53935" }}>{order.id}</Typography>
                             <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>{order.date}</Typography>
                           </TableCell>
                           <TableCell sx={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
@@ -279,7 +276,7 @@ const DashboardCards = () => {
                             </Stack>
                           </TableCell>
                           <TableCell align="right" sx={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
-                            <Typography variant="body1" sx={{ fontWeight: 900, color: "#11142D" }}>Rs. {order.amount}</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 900, color: "#E53935" }}>Rs. {order.amount}</Typography>
                           </TableCell>
                         </TableRow>
                       );
