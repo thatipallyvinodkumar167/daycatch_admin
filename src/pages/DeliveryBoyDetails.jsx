@@ -36,17 +36,19 @@ const DeliveryBoyDetails = () => {
 
         if (found) {
           setBoy({
-            name: found.boyName || found.name || "N/A",
-            phone: found.boyMobile || found.phone || "N/A",
-            email: found.boyEmail || found.email || "N/A",
-            status: normalizeDeliveryBoyStatus(found.status),
-            city: found.city?.cityName || found.city || "N/A",
-            idType: normalizeDeliveryBoyIdType(found.idType),
-            idNumber: found.idNumber || "N/A",
-            addressLine: found.boyAddress || found.address || "N/A",
-            stores: found.store ? (Array.isArray(found.store) ? found.store : [found.store]) : [],
-            idImage: found.idImage || "",
+            name: found.boyName || found.name || found["Boy Name"] || "N/A",
+            phone: found.boyMobile || found.phone || found["Boy Phone"] || "N/A",
+            email: found.boyEmail || found.email || found["Boy Email"] || "N/A",
+            status: normalizeDeliveryBoyStatus(found.status || found["Status"]),
+            city: found.city?.cityName || found.city || found["City"] || "N/A",
+            idType: normalizeDeliveryBoyIdType(found.idType || found["ID Type"]),
+            idNumber: found.idNumber || found["ID Number"] || "N/A",
+            addressLine: found.boyAddress || found.address || found["Boy Address"] || "N/A",
+            stores: found.store ? (Array.isArray(found.store) ? found.store : [found.store]) : (found["Store"] ? (Array.isArray(found["Store"]) ? found["Store"] : [found["Store"]]) : []),
+            idImage: found.idImage || found["ID Image"] || "",
             createdAt: found.createdAt ? new Date(found.createdAt).toLocaleDateString() : "N/A",
+            orders: found.orders || found["Orders"] || 0,
+            totalEarnings: "N/A"
           });
         }
         setLoading(false);
