@@ -15,6 +15,7 @@ import {
   Avatar,
   IconButton,
   Tooltip,
+  LinearProgress,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -27,12 +28,14 @@ import { getAllOrders } from "../api/ordersApi";
 const UsersData = () => {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
       const [userRes, orderRes] = await Promise.all([
         getAllUsers({ limit: 500 }),
@@ -83,6 +86,8 @@ const UsersData = () => {
     } catch (error) {
       console.error("Error fetching users:", error);
       setUsers([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,7 +145,19 @@ const UsersData = () => {
         ))}
       </Stack>
 
-      <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+      <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", position: "relative" }}>
+        {loading && (
+          <LinearProgress 
+            sx={{ 
+              position: "absolute", 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              backgroundColor: "#fff1f0",
+              "& .MuiLinearProgress-bar": { backgroundColor: "#E53935" }
+            }} 
+          />
+        )}
         
         <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
           <Typography variant="h6" fontWeight="600" color="#1b2559">User Directory</Typography>
