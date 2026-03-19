@@ -267,16 +267,7 @@ function Sidebar({ open }) {
           </List>
         </Collapse>
 
-        {/* Customers */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/customers")} sx={activeMenu("/customers")}>
-            <ListItemIcon>
-              <ManageAccountsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Customers" />
-          </ListItemButton>
-        </ListItem>
-
+      
         {/* INVENTORY & SALES */}
         <ListItem disablePadding sx={{ mt: 3, px: 2, mb: 1 }}>
           <Typography

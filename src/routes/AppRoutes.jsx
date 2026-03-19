@@ -8,7 +8,6 @@ import Dashboard from "../pages/Dashboard";
 import Products from "../pages/Products";
 import Categories from "../pages/Categories";
 import Orders from "../pages/Orders";
-import Customers from "../pages/Customers";
 import Payments from "../pages/Payments";
 import Coupons from "../pages/Coupons";
 import Reviews from "../pages/Reviews";
@@ -122,7 +121,6 @@ const AppRoutes = () => {
         <Route path="products" element={<Products />} />
         <Route path="categories" element={<Categories />} />
         <Route path="orders" element={<Orders />} />
-        <Route path="customers" element={<Customers />} />
         <Route path="payments" element={<Payments />} />
         <Route path="coupons" element={<Coupons />} />
         <Route path="reviews" element={<Reviews />} />

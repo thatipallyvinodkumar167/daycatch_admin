@@ -22,6 +22,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { getAllUsers } from "../api/usersApi";
+import { getAllOrders } from "../api/ordersApi";
 
 const UsersData = () => {
   const [users, setUsers] = useState([]);
@@ -33,8 +34,22 @@ const UsersData = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await getAllUsers({ limit: 200, skip: 0 });
-      const results = response.data?.results || [];
+      const [userRes, orderRes] = await Promise.all([
+        getAllUsers({ limit: 500 }),
+        getAllOrders({ limit: 1000 })
+      ]);
+
+      const results = userRes.data?.results || userRes.data?.data || [];
+      const orderList = orderRes.data?.results || orderRes.data?.data || [];
+
+      // Create a map of order counts by user name or phone
+      const orderCountMap = orderList.reduce((acc, order) => {
+        const userKey = order["User"] || order["User Phone"];
+        if (userKey) {
+          acc[userKey] = (acc[userKey] || 0) + 1;
+        }
+        return acc;
+      }, {});
 
       const formattedData = results.map((user) => {
         const name = user["User Name"] || "Unknown User";
@@ -56,6 +71,9 @@ const UsersData = () => {
               })
             : "N/A",
           isVerified,
+          totalOrders: orderCountMap[name] || orderCountMap[phone] || 0,
+          walletBalance: user["Wallet Balance"] || "Rs. 0",
+          location: user["Location"] || user["City"] || "Not Set",
           status: user.status || "Active",
           avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         };
@@ -142,18 +160,19 @@ const UsersData = () => {
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>#</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>USER NAME</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>USER PHONE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>USER EMAIL</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>LOCATION</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>ORDERS</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>WALLET</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>REG. DATE</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>IS VERIFIED</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>STATUS</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>DETAILS</TableCell>
                 <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px", pr: 4 }}>ACTIONS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
                     No Users Found
                   </TableCell>
                 </TableRow>
@@ -167,20 +186,39 @@ const UsersData = () => {
                     <TableCell>
                       <Stack direction="row" spacing={1.5} alignItems="center">
                         <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} />
-                        <Typography variant="body2" fontWeight="700" color="#1b2559" noWrap sx={{ maxWidth: 130 }}>
-                          {user.name}
-                        </Typography>
+                        <Box>
+                          <Typography variant="body2" fontWeight="700" color="#1b2559" noWrap sx={{ maxWidth: 130 }}>
+                            {user.name}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary" noWrap sx={{ maxWidth: 130, display: "block" }}>
+                            {user.email}
+                          </Typography>
+                        </Box>
                       </Stack>
                     </TableCell>
 
                     {/* User Phone */}
                     <TableCell sx={{ color: "#475467", fontWeight: "500" }}>{user.phone}</TableCell>
 
-                    {/* User Email */}
-                    <TableCell sx={{ color: "#475467", fontSize: "13px" }}>{user.email}</TableCell>
+                    {/* Location */}
+                    <TableCell sx={{ color: "#475467", fontWeight: "500" }}>{user.location}</TableCell>
+
+                    {/* Total Orders */}
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="700" color="#E53935">
+                        {user.totalOrders}
+                      </Typography>
+                    </TableCell>
+
+                    {/* Wallet Balance */}
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="700" color="#2ED480">
+                        {user.walletBalance}
+                      </Typography>
+                    </TableCell>
 
                     {/* Registration Date */}
-                    <TableCell sx={{ color: "#475467" }}>{user.regDate}</TableCell>
+                    <TableCell sx={{ color: "#475467", fontSize: "13px" }}>{user.regDate}</TableCell>
 
                     {/* Is Verified */}
                     <TableCell>
