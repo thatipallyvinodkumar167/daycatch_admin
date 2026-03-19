@@ -102,17 +102,17 @@ const AddDeliveryBoy = () => {
     setIsSubmitting(true);
     try {
       const payload = {
-        boyName: formData.name,
-        boyMobile: formData.phone,
-        boyEmail: formData.email,
-        boyPassword: formData.password,
-        city: formData.city, // Wait until these IDs match backend strings/ObjectIds
-        idType: normalizeDeliveryBoyIdType(formData.idType),
-        idNumber: formData.idNumber,
-        boyAddress: formData.address,
-        status: normalizeDeliveryBoyStatus(formData.status),
-        store: formData.stores && formData.stores.length > 0 ? formData.stores[0] : "",
-        idImage: idImage ? idImage.name : "placeholder_image.jpg" // Some APIs test upload as simple string names like your snippet earlier "nag_aadhar.jpg"
+        "Boy Name": formData.name,
+        "Boy Phone": formData.phone,
+        "Boy Email": formData.email,
+        "Boy Password": formData.password,
+        "City": formData.city,
+        "ID Type": normalizeDeliveryBoyIdType(formData.idType),
+        "ID Number": formData.idNumber,
+        "Boy Address": formData.address,
+        "Status": normalizeDeliveryBoyStatus(formData.status),
+        "Store": formData.stores && formData.stores.length > 0 ? formData.stores[0] : "",
+        "ID Image": idImage ? idImage.name : "placeholder_image.jpg"
       };
 
       const response = await addDeliveryBoy(payload);

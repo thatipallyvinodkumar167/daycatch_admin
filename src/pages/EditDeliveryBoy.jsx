@@ -132,21 +132,20 @@ const EditDeliveryBoy = () => {
     setIsSubmitting(true);
     try {
       const payload = {
-        _id: id,
-        boyName: formData.name,
-        boyMobile: formData.phone,
-        boyEmail: formData.email,
-        boyPassword: formData.password,
-        city: formData.city,
-        idType: normalizeDeliveryBoyIdType(formData.idType),
-        idNumber: formData.idNumber,
-        boyAddress: formData.address,
-        status: normalizeDeliveryBoyStatus(formData.status),
-        store: formData.stores && formData.stores.length > 0 ? formData.stores[0] : "",
-        idImage: idImage ? idImage.name : (existingImageUrl || "placeholder_image.jpg")
+        "Boy Name": formData.name,
+        "Boy Phone": formData.phone,
+        "Boy Email": formData.email,
+        "Boy Password": formData.password,
+        "City": formData.city,
+        "ID Type": normalizeDeliveryBoyIdType(formData.idType),
+        "ID Number": formData.idNumber,
+        "Boy Address": formData.address,
+        "Status": normalizeDeliveryBoyStatus(formData.status),
+        "Store": formData.stores && formData.stores.length > 0 ? formData.stores[0] : "",
+        "ID Image": idImage ? idImage.name : (existingImageUrl || "placeholder_image.jpg")
       };
 
-      const response = await updateDeliveryBoy(payload);
+      const response = await updateDeliveryBoy(id, payload);
 
       console.log("Update Delivery Boy Response:", response.data);
       alert("Delivery Boy updated successfully!");
