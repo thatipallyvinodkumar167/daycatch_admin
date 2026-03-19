@@ -41,12 +41,23 @@ const DeliveryBoy = () => {
     setLoading(true);
     try {
       const response = await getAllDeliveryBoys();
-      const list = Array.isArray(response.data.data)
+      const rawList = Array.isArray(response.data.data)
         ? response.data.data
         : Array.isArray(response.data)
           ? response.data
           : [];
-      setDeliveryBoys(list);
+
+      // Normalize data fields from API (handles "Boy Name" vs "boyName", etc.)
+      const normalizedList = rawList.map(item => ({
+        ...item,
+        boyName: item.boyName || item.name || item["Boy Name"] || "Unnamed",
+        boyMobile: item.boyMobile || item.phone || item["Boy Phone"] || "N/A",
+        boyPassword: item.boyPassword || item.password || item["Boy Password"] || "••••••",
+        status: item.status || item.Status || "Off duty",
+        orders: item.orders || item.Orders || 0,
+      }));
+
+      setDeliveryBoys(normalizedList);
     } catch (error) {
       console.error("Error fetching delivery boys:", error);
     } finally {
