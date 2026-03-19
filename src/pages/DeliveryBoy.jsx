@@ -14,6 +14,7 @@ import {
   Stack,
   IconButton,
   Chip,
+  LinearProgress,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -30,12 +31,14 @@ const DeliveryBoy = () => {
   const navigate = useNavigate();
   const [deliveryBoys, setDeliveryBoys] = useState([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDeliveryBoys();
   }, []);
 
   const fetchDeliveryBoys = async () => {
+    setLoading(true);
     try {
       const response = await getAllDeliveryBoys();
       const list = Array.isArray(response.data.data)
@@ -46,19 +49,20 @@ const DeliveryBoy = () => {
       setDeliveryBoys(list);
     } catch (error) {
       console.error("Error fetching delivery boys:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const filteredBoys = React.useMemo(() => {
-    return deliveryBoys.filter(
-      (item) =>
-        (item.boyName || item.name)
-          ?.toLowerCase()
-          .includes(search.toLowerCase().trim()) ||
-        (item.boyMobile || item.phone)
-          ?.toLowerCase()
-          .includes(search.toLowerCase().trim())
-    );
+    const s = search.toLowerCase().trim();
+    if (!s) return deliveryBoys;
+
+    return deliveryBoys.filter((item) => {
+      const name = String(item.boyName || item.name || "").toLowerCase();
+      const phone = String(item.boyMobile || item.phone || "").toLowerCase();
+      return name.includes(s) || phone.includes(s);
+    });
   }, [deliveryBoys, search]);
 
   const handleDelete = async (id) => {
@@ -98,8 +102,21 @@ const DeliveryBoy = () => {
           boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
           border: "1px solid #e0e5f2",
           background: "#fff",
+          position: "relative",
         }}
       >
+        {loading && (
+          <LinearProgress 
+            sx={{ 
+              position: "absolute", 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              backgroundColor: "#fff1f0",
+              "& .MuiLinearProgress-bar": { backgroundColor: "#E53935" }
+            }} 
+          />
+        )}
         <Box
           sx={{
             p: 4,
