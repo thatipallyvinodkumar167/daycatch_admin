@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -37,49 +37,49 @@ const EditSubAdmin = () => {
   const [loading, setLoading] = useState(true);
 
   // Default roles to show when API is unavailable
-  const DEFAULT_ROLES = ["Super Admin", "Manager", "Delivery Manager", "Support", "Inventory Manager"];
+  const DEFAULT_ROLES = useCallback(() => ["Super Admin", "Manager", "Delivery Manager", "Support", "Inventory Manager"], []);
+
+  const fetchRoles = useCallback(async () => {
+    try {
+      const response = await genericApi.getAll("roles");
+      const results = response.data.results || response.data || [];
+      if (results.length > 0) {
+        setRoles(results.map(r => ({ id: r._id, name: r.name })));
+      } else {
+        setRoles(DEFAULT_ROLES().map(name => ({ id: name, name })));
+      }
+    } catch {
+      // Fallback to default roles if API fails
+      setRoles(DEFAULT_ROLES().map(name => ({ id: name, name })));
+    }
+  }, [DEFAULT_ROLES]);
+
+  const fetchAdminDetails = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await genericApi.getOne("sub-admin", id);
+      const admin = response.data;
+      
+      if (admin) {
+        setFormData(prev => ({
+          ...prev,
+          name: admin["Name"] || admin.name || "",
+          email: admin["Email"] || admin["Email ID"] || admin.email || "",
+          roleName: admin["role Name"] || admin.roleName || admin.role || "",
+        }));
+        setImagePreview(admin.Image || admin.image || admin.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(admin["Name"] || "Admin")}&background=random`);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching admin details:", error);
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const response = await genericApi.getAll("roles");
-        const results = response.data.results || response.data || [];
-        if (results.length > 0) {
-          setRoles(results.map(r => ({ id: r._id, name: r.name })));
-        } else {
-          setRoles(DEFAULT_ROLES.map(name => ({ id: name, name })));
-        }
-      } catch {
-        // Fallback to default roles if API fails
-        setRoles(DEFAULT_ROLES.map(name => ({ id: name, name })));
-      }
-    };
-
-    const fetchAdminDetails = async () => {
-      try {
-        setLoading(true);
-        const response = await genericApi.getOne("sub-admin", id);
-        const admin = response.data;
-        
-        if (admin) {
-          setFormData(prev => ({
-            ...prev,
-            name: admin["Name"] || admin.name || "",
-            email: admin["Email"] || admin["Email ID"] || admin.email || "",
-            roleName: admin["role Name"] || admin.roleName || admin.role || "",
-          }));
-          setImagePreview(admin.Image || admin.image || admin.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(admin["Name"] || "Admin")}&background=random`);
-        }
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching admin details:", error);
-        setLoading(false);
-      }
-    };
-
     fetchRoles();
     fetchAdminDetails();
-  }, [id]);
+  }, [fetchRoles, fetchAdminDetails]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

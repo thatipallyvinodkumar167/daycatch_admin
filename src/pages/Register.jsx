@@ -23,7 +23,7 @@ const RegisterPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5001/api/v1/auth/register', formData);
+      await axios.post('http://localhost:5001/api/v1/auth/register', formData);
       alert('Registration successful! Please login.');
       navigate('/login');
     } catch (error) {

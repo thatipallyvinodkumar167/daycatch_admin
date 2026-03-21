@@ -10,7 +10,6 @@ import {
   useTheme,
   alpha,
   Typography,
-  CircularProgress,
 } from "@mui/material";
 import { genericApi } from "../api/genericApi";
 
@@ -54,7 +53,6 @@ function Sidebar({ open }) {
   };
 
   const [permissions, setPermissions] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   React.useEffect(() => {
     const fetchPermissions = async () => {
@@ -63,7 +61,6 @@ function Sidebar({ open }) {
       // Super Admin or no role set → show everything
       if (!userRole || userRole === "Super Admin") {
         setPermissions("all");
-        setLoading(false);
         return;
       }
 
@@ -76,8 +73,6 @@ function Sidebar({ open }) {
         setPermissions(foundRole?.permissions || "all");
       } catch {
         setPermissions("all");
-      } finally {
-        setLoading(false);
       }
     };
 

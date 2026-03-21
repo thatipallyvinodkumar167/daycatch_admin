@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -121,11 +121,6 @@ const ProfilePage = () => {
     }
   };
 
-  const statCards = [
-    { label: "Role", value: profile.role, icon: <ShieldIcon />, color: "#E53935" },
-    { label: "Account Type", value: "Admin Panel", icon: <PersonIcon />, color: "#7c3aed" },
-    { label: "Session", value: "Active", icon: <CalendarTodayIcon />, color: "#059669" },
-  ];
 
   return (
     <Box

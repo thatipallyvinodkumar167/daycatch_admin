@@ -25,14 +25,12 @@ import { genericApi } from "../api/genericApi";
 
 const Rewards = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const [rewards, setRewards] = useState([]);
   const [search, setSearch] = useState("");
   const [newRule, setNewRule] = useState({ cartValue: "", points: "" });
 
   const fetchRewards = useCallback(async () => {
     try {
-      setLoading(true);
       const response = await genericApi.getAll("rewards");
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item) => ({
@@ -44,7 +42,6 @@ const Rewards = () => {
     } catch (error) {
       console.error("Error fetching rewards:", error);
     } finally {
-      setLoading(false);
     }
   }, []);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -34,25 +34,25 @@ const AddSubAdmin = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [roles, setRoles] = useState([]);
 
-  useEffect(() => {
-    fetchRoles();
-  }, []);
+  const DEFAULT_ROLES = useCallback(() => ["Super Admin", "Manager", "Delivery Manager", "Support", "Inventory Manager"], []);
 
-  const DEFAULT_ROLES = ["Super Admin", "Manager", "Delivery Manager", "Support", "Inventory Manager"];
-
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     try {
       const response = await genericApi.getAll("roles");
       const results = response.data.results || response.data || [];
       if (results.length > 0) {
         setRoles(results.map(r => ({ id: r._id, name: r.name })));
       } else {
-        setRoles(DEFAULT_ROLES.map(name => ({ id: name, name })));
+        setRoles(DEFAULT_ROLES().map(name => ({ id: name, name })));
       }
     } catch {
-      setRoles(DEFAULT_ROLES.map(name => ({ id: name, name })));
+      setRoles(DEFAULT_ROLES().map(name => ({ id: name, name })));
     }
-  };
+  }, [DEFAULT_ROLES]);
+
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

@@ -82,7 +82,6 @@ const DashboardCards = () => {
     },
   ]);
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -159,7 +158,6 @@ const DashboardCards = () => {
     } catch (error) {
       console.error("Dashboard Sync Error:", error);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   }, []);

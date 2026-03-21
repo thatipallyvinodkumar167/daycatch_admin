@@ -24,14 +24,12 @@ import { genericApi } from "../api/genericApi";
 
 const RedeemValues = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const [redeemValues, setRedeemValues] = useState([]);
   const [search, setSearch] = useState("");
   const [newRule, setNewRule] = useState({ points: "", value: "" });
 
   const fetchRedeemValues = useCallback(async () => {
     try {
-      setLoading(true);
       const response = await genericApi.getAll("reedm value");
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item) => ({
@@ -43,7 +41,6 @@ const RedeemValues = () => {
     } catch (error) {
       console.error("Error fetching redeem values:", error);
     } finally {
-      setLoading(false);
     }
   }, []);
 
