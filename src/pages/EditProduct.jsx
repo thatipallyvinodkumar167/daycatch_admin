@@ -15,6 +15,7 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate, useParams } from "react-router-dom";
+import { useCallback } from "react";
 import { getParentCategories, getSubCategories } from "../api/categoryApi";
 import { getProduct, updateProduct } from "../api/productApi";
 
@@ -40,12 +41,7 @@ const EditProduct = () => {
     description: "",
   });
 
-  useEffect(() => {
-    fetchInitialData();
-    if (id) fetchProductData();
-  }, [id]);
-
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     try {
       const pRes = await getParentCategories();
       const pData = pRes.data?.results || pRes.data?.data || [];
@@ -60,9 +56,9 @@ const EditProduct = () => {
     } catch (error) {
        console.error("Error fetching categories:", error);
     }
-  };
+  }, []);
 
-  const fetchProductData = async () => {
+  const fetchProductData = useCallback(async () => {
     try {
       const response = await getProduct(id);
       const p = response.data.data || response.data;
@@ -83,7 +79,12 @@ const EditProduct = () => {
     } catch (error) {
       console.error("Error fetching product:", error);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchInitialData();
+    if (id) fetchProductData();
+  }, [id, fetchInitialData, fetchProductData]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];

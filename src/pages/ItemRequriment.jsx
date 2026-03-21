@@ -29,9 +29,7 @@ const ItemRequirement = () => {
   const [view, setView] = useState("list"); // 'list' or 'detail'
   const [requirements, setRequirements] = useState([]);
   const [search, setSearch] = useState("");
-  const [selectedStore, setSelectedStore] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [detailItems, setDetailItems] = useState([]);
 
   useEffect(() => {
     fetchRequirements();

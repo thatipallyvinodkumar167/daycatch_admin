@@ -61,7 +61,7 @@ const BulkUpload = () => {
         
         // Send to backend bulk endpoint
         try {
-          const response = await genericApi.create("Adminproducts/bulk", data);
+          await genericApi.create("Adminproducts/bulk", data);
           setProgress(100);
           setTimeout(() => {
             setUploading(false);

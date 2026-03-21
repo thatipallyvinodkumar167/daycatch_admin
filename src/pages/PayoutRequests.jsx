@@ -27,61 +27,13 @@ const PayoutRequests = () => {
   const [requests, setRequests] = useState([]);
   const [search, setSearch] = useState("");
   const [payoutRules, setPayoutRules] = useState({ minAmount: 500, minDays: 7, _id: null });
-  const [validations, setValidations] = useState([]); // Assuming this state is needed for fetchPayoutValidations
 
-  const handleSaveRules = async () => {
-    try {
-        const payload = {
-            "Minimum Amount": Number(payoutRules.minAmount),
-            "Minimum Days": Number(payoutRules.minDays)
-        };
-        if (payoutRules._id) {
-            await genericApi.update("payouts", payoutRules._id, payload);
-        } else {
-            await genericApi.create("payouts", payload);
-        }
-        alert("Payout rules updated successfully!");
-    } catch (error) {
-        console.error("Error updating rules:", error);
-        alert("Failed to update rules.");
-    }
-  };
 
   // API Call (using JSONPlaceholder as fakeapi)
   useEffect(() => {
     fetchPayoutRequests();
   }, []);
 
-  const fetchPayoutValidations = async () => {
-    try {
-      const resp = await genericApi.getAll("payouts");
-      const rules = resp.data.results?.[0] || resp.data?.[0] || {};
-      setPayoutRules({
-        minAmount: rules["Minimum Amount"] || 500,
-        minDays: rules["Minimum Days"] || 7,
-        _id: rules._id
-      });
-
-      // Since there's no history collection yet, we empty the audit table
-      // or we can pull from payout requests and filter
-      const reqResp = await genericApi.getAll("payout requests");
-      const requests = reqResp.data.results || reqResp.data || [];
-      
-      setValidations(requests.filter(r => r.Status === "Approved").map((item, index) => ({
-          id: item._id || index + 1,
-          storeName: item.Store || "N/A",
-          phone: item.Phone || "N/A",
-          amount: `₹${item.Amount || 0}`,
-          method: item["Payment Method"] || "Bank Transfer",
-          referenceId: item["Reference ID"] || `REF-${index}`,
-          date: item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : "N/A",
-          status: "Validated"
-      })));
-
-    } catch (error) {
-      console.error("Error fetching payout validations:", error);
-    }
-  };
 
   const fetchPayoutRequests = async () => {
     try {

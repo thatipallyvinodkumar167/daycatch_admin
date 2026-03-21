@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -27,7 +27,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { genericApi } from "../api/genericApi";
-import { useEffect } from "react";
+
 
 const Reports = () => {
   const [activeTab, setActiveTab] = useState("main");
@@ -39,6 +39,7 @@ const Reports = () => {
     if (activeTab !== "main") {
       fetchReportData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   const fetchReportData = async () => {

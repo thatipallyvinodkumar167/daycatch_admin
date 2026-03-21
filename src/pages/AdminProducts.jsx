@@ -14,8 +14,6 @@ import {
   Stack,
   IconButton,
   Chip,
-  useTheme,
-  alpha,
   Avatar,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -25,7 +23,6 @@ import { useNavigate } from "react-router-dom";
 import * as productApi from "../api/productApi";
 
 const AdminProducts = () => {
-  const theme = useTheme();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
