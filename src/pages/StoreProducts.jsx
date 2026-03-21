@@ -37,11 +37,11 @@ const StoreProducts = () => {
       const formattedData = results.map((item, index) => {
         return {
           id: item._id || index,
-          storeName: item.storeName || item.store || item.company?.name || `Store ${index}`,
-          storeImage: item.storeImage || item.logo || `https://ui-avatars.com/api/?name=${item.storeName || "S"}&background=random`,
-          productName: item.productName || item.name || `Product ${index}`,
+          storeName: item.Store || item.storeName || item.store || `Store ${index}`,
+          storeImage: item.Image || item.storeImage || item.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.Store || "S")}&background=random`,
+          productName: item["Product Name"] || item.productName || item.name || `Product ${index}`,
           category: item.category || "Uncategorized",
-          price: item.price ? `₹${item.price}` : "₹0",
+          price: item.Price || item.price ? `₹${item.Price || item.price}` : "₹0",
           status: item.status || "Live"
         };
       });

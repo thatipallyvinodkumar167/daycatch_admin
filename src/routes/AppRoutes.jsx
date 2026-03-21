@@ -5,7 +5,6 @@ import AdminLayout from "../layouts/AdminLayout";
 
 // Pages
 import Dashboard from "../pages/Dashboard";
-import Products from "../pages/Products";
 import Orders from "../pages/Orders";
 import Payments from "../pages/Payments";
 import Coupons from "../pages/Coupons";
@@ -118,7 +117,6 @@ const AppRoutes = () => {
 
         <Route index element={<Dashboard />} />
 
-        <Route path="products" element={<Products />} />
         <Route path="orders" element={<Orders />} />
         <Route path="payments" element={<Payments />} />
         <Route path="coupons" element={<Coupons />} />

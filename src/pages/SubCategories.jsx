@@ -39,9 +39,9 @@ const SubCategories = () => {
       
       const formattedData = results.map((item) => ({
         id: item._id,
-        name: item["Sub Category Name"] || item.name || "Unnamed",
-        parentCategory: item["Parent Category"] || item.parentCategory || "General",
-        image: item["Sub Category Image"] || `https://ui-avatars.com/api/?name=${encodeURIComponent(item["Sub Category Name"] || "S")}&background=random`,
+        name: item["Title"] || item["Sub Category Name"] || item.name || "Unnamed",
+        parentCategory: item["Category"] || item["Parent Category"] || item.parentCategory || "General",
+        image: item["Image"] || item["Sub Category Image"] || `https://ui-avatars.com/api/?name=${encodeURIComponent(item["Title"] || item["Sub Category Name"] || "S")}&background=random`,
         productCount: item.productCount || 0,
       }));
       setSubCategories(formattedData);
@@ -55,7 +55,7 @@ const SubCategories = () => {
     try {
       const parentRes = await getParentCategories();
       const pResults = parentRes.data?.results || parentRes.data?.data || [];
-      const formattedParents = pResults.map(p => p["Category Name"] || p.name);
+      const formattedParents = pResults.map(p => p["Title"] || p["Category Name"] || p.name);
       setParentCats(formattedParents);
       if (formattedParents.length > 0) setSelectedParent(formattedParents[0]);
 
