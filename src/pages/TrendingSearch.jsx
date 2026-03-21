@@ -19,7 +19,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const TrendingSearch = () => {
   const [trending, setTrending] = useState([]);
@@ -33,17 +33,14 @@ const TrendingSearch = () => {
 
   const fetchTrendingKeywords = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/posts?_limit=10"
-      );
+      const response = await genericApi.getAll("trending_search");
+      const results = response.data.results || response.data || [];
       
-      // Map fake data to trending keywords
-      const keywords = ["Organic Milk", "Farm Fresh Eggs", "Local Honey", "Hybrid Tomatoes", "Cold Pressed Oil", "A2 Ghee", "Basmati Rice", "Sugarfree Dates", "Green Tea", "Himalayan Salt"];
-      const formattedData = response.data.map((item, index) => ({
-        id: item.id,
-        keyword: keywords[index % keywords.length],
-        searchCount: Math.floor(Math.random() * 5000) + 100,
-        lastUpdated: "2024-03-16"
+      const formattedData = results.map((item, index) => ({
+        id: item._id || index + 1,
+        keyword: item.Keyword || item.keyword || "Unnamed",
+        searchCount: Number(item["Search Count"] || item.searchCount || 0),
+        lastUpdated: item["Last Updated"] ? new Date(item["Last Updated"]).toLocaleDateString() : "N/A"
       }));
 
       setTrending(formattedData);
@@ -52,21 +49,34 @@ const TrendingSearch = () => {
     }
   };
 
-  const handleAddKeyword = () => {
+  const handleAddKeyword = async () => {
     if (!newKeyword.trim()) return;
-    const newItem = {
-        id: Date.now(),
-        keyword: newKeyword.trim(),
-        searchCount: 0,
-        lastUpdated: new Date().toISOString().split('T')[0]
-    };
-    setTrending([newItem, ...trending]);
-    setNewKeyword("");
-    alert("Trending keyword added!");
+    try {
+      const payload = {
+        Keyword: newKeyword.trim(),
+        "Search Count": 0,
+        "Last Updated": new Date().toISOString()
+      };
+      await genericApi.create("trending_search", payload);
+      setNewKeyword("");
+      fetchTrendingKeywords();
+      alert("Trending keyword added!");
+    } catch (error) {
+      console.error("Error adding keyword:", error);
+      alert("Failed to add keyword.");
+    }
   };
 
-  const handleDelete = (id) => {
-    setTrending(prev => prev.filter(item => item.id !== id));
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this trending keyword?")) {
+      try {
+        await genericApi.delete("trending_search", id);
+        fetchTrendingKeywords();
+      } catch (error) {
+        console.error("Error deleting keyword:", error);
+        alert("Failed to delete keyword.");
+      }
+    }
   };
 
   const filtered = trending.filter(item => 
