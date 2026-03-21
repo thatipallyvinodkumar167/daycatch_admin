@@ -64,6 +64,8 @@ import BulkUpload from "../pages/BulkUpload";
 import TrendingSearch from "../pages/TrendingSearch";
 import StoreProducts from "../pages/StoreProducts";
 import AdminProducts from "../pages/AdminProducts";
+import AddProduct from "../pages/AddProduct";
+import EditProduct from "../pages/EditProduct";
 import PayoutRequests from "../pages/PayoutRequests";
 import PayoutProcess from "../pages/PayoutProcess";
 import PayoutDetails from "../pages/PayoutDetails";
@@ -166,6 +168,8 @@ const AppRoutes = () => {
 
       {/* Product catalog */}
       <Route path="products" element={<AdminProducts />}/>
+      <Route path="products/add" element={<AddProduct />}/>
+      <Route path="products/edit/:id" element={<EditProduct />}/>
    <Route path="store-products" element={<StoreProducts />}/>
      <Route path="trending-search" element={<TrendingSearch />}/>
        <Route path="bulk-upload-products" element={<BulkUpload />}/>

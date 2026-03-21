@@ -30,19 +30,27 @@ const DayWiseOrders = () => {
         const response = await genericApi.getAll("day wise orders");
         const results = response.data.results || response.data || [];
         
-        const formattedData = results.map((order, index) => ({
-          id: order._id || index + 1,
-          cartId: order["Cart ID"] || `ORD-DAY-${index}`,
-          cartPrice: typeof order["Cart price"] === "number" ? `₹${order["Cart price"]}` : (order["Cart price"] || `₹0`),
-          userName: order["User"] || order.user || "Unknown",
-          userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
-          deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toISOString().split("T")[0] : "N/A",
-          deliveryBoy: order["Boy Name"] || order.deliveryBoy || "N/A",
-          cartProducts: Array.isArray(order["Products"]) ? `${order["Products"].length} items` : "N/A",
-          payment: order["Payment Type"] || order.payment || "COD",
-          status: order["Status"] || "Pending",
-          store: order["Store Name"] || order.store || "N/A",
-        }));
+        const formattedData = results.map((order, index) => {
+          const rawPrice = order["Cart price"] || order.cartPrice;
+          const displayPrice = typeof rawPrice === "object" ? (rawPrice.value || rawPrice.amount || 0) : (rawPrice || 0);
+
+          const rawPayment = order["Payment Type"] || order.payment;
+          const displayPayment = typeof rawPayment === "object" ? (rawPayment.mode || rawPayment.type || JSON.stringify(rawPayment)) : (rawPayment || "COD");
+
+          return {
+            id: order._id || index + 1,
+            cartId: order["Cart ID"] || `ORD-DAY-${index}`,
+            cartPrice: `₹${displayPrice}`,
+            userName: order["User"] || order.user || "Unknown",
+            userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+            deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toISOString().split("T")[0] : "N/A",
+            deliveryBoy: order["Boy Name"] || order.deliveryBoy || "N/A",
+            cartProducts: Array.isArray(order["Products"]) ? `${order["Products"].length} items` : "N/A",
+            payment: displayPayment,
+            status: order["Status"] || "Pending",
+            store: order["Store Name"] || order.store || "N/A",
+          };
+        });
 
         setOrders(formattedData);
       } catch (error) {

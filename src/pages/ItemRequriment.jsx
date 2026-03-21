@@ -16,14 +16,16 @@ import {
   InputAdornment,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EventNoteIcon from "@mui/icons-material/EventNote";
+import AssessmentIcon from "@mui/icons-material/Assessment";
+import { useNavigate } from "react-router-dom";
 import { genericApi } from "../api/genericApi";
 
 const ItemRequirement = () => {
+  const navigate = useNavigate();
   const [view, setView] = useState("list"); // 'list' or 'detail'
   const [requirements, setRequirements] = useState([]);
   const [search, setSearch] = useState("");
@@ -52,11 +54,6 @@ const ItemRequirement = () => {
     }
   };
 
-  const handleViewDetails = (store) => {
-    setSelectedStore(store);
-    setView("detail");
-    setDetailItems([]); // Simulated empty on first view
-  };
 
   const filteredRequirements = requirements.filter((item) =>
     item.storeName.toLowerCase().includes(search.toLowerCase()) ||
@@ -93,22 +90,41 @@ const ItemRequirement = () => {
             <Typography variant="h4" fontWeight="800" color="#2b3674">Hi, Day Catch Super Admin Panel.</Typography>
             <Typography variant="h6" color="#707eae" fontWeight="500">Analyze inventory requirements based on incoming orders for each store.</Typography>
         </Box>
-        <Button 
-            variant="contained" 
-            startIcon={<FileDownloadIcon />}
-            sx={{ 
-                backgroundColor: "#2d60ff", 
-                borderRadius: "12px",
-                textTransform: "none",
-                px: 3,
-                py: 1.5,
-                fontWeight: "700",
-                boxShadow: "0 4px 12px rgba(45, 96, 255, 0.2)",
-                "&:hover": { backgroundColor: "#2046cc" }
-            }}
-        >
-            Download Summary
-        </Button>
+        <Stack direction="row" spacing={2}>
+            <Button 
+                variant="outlined" 
+                startIcon={<AssessmentIcon />}
+                onClick={() => navigate("/sales-report")}
+                sx={{ 
+                    borderRadius: "12px",
+                    textTransform: "none",
+                    px: 3,
+                    py: 1.5,
+                    fontWeight: "700",
+                    color: "#2d60ff",
+                    borderColor: "#2d60ff",
+                    "&:hover": { borderColor: "#2046cc", backgroundColor: "#f0f4ff" }
+                }}
+            >
+                Item Sale Report
+            </Button>
+            <Button 
+                variant="contained" 
+                startIcon={<FileDownloadIcon />}
+                sx={{ 
+                    backgroundColor: "#2d60ff", 
+                    borderRadius: "12px",
+                    textTransform: "none",
+                    px: 3,
+                    py: 1.5,
+                    fontWeight: "700",
+                    boxShadow: "0 4px 12px rgba(45, 96, 255, 0.2)",
+                    "&:hover": { backgroundColor: "#2046cc" }
+                }}
+            >
+                Download Summary
+            </Button>
+        </Stack>
       </Box>
 
       <Box sx={{ mb: 6 }}>
@@ -150,7 +166,7 @@ const ItemRequirement = () => {
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>CITY</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>MOBILE</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>EMAIL</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3, pr: 4 }}>ACTION</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>ITEM SALE</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -164,24 +180,14 @@ const ItemRequirement = () => {
                     <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>{item.city}</TableCell>
                     <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{item.mobile}</TableCell>
                     <TableCell sx={{ color: "#a3aed0" }}>{item.email}</TableCell>
-                    <TableCell align="right" sx={{ pr: 4 }}>
+                    <TableCell>
                       <Button 
-                        variant="contained" 
                         size="small" 
-                        startIcon={<VisibilityIcon />}
-                        onClick={() => handleViewDetails(item)}
-                        sx={{ 
-                            backgroundColor: "#2d60ff", 
-                            borderRadius: "12px",
-                            textTransform: "none",
-                            fontWeight: "600",
-                            px: 3,
-                            py: 1,
-                            boxShadow: "0 4px 12px rgba(45,96,255,0.2)",
-                            "&:hover": { backgroundColor: "#2046cc" }
-                        }}
+                        variant="text" 
+                        onClick={() => navigate("/sales-report")}
+                        sx={{ color: "#2d60ff", fontWeight: "700", textTransform: "none" }}
                       >
-                        Details
+                        Item Sale report
                       </Button>
                     </TableCell>
                   </TableRow>

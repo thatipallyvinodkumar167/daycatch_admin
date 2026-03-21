@@ -46,18 +46,22 @@ const StoresList = () => {
 
   const fetchStores = async () => {
     try {
-      const response = await genericApi.getAll("store");
+      const response = await genericApi.getAll("storeList");
       const results = response.data.results || response.data || [];
       
       const formattedData = results.map((store, index) => ({
         id: store._id || index,
-        name: store["Store Name"] || store.name || store.storeName || "Unnamed Store",
-        email: store.email || store["Email"] || "N/A",
-        phone: store.phone || store.mobile || store["Phone"] || "N/A",
-        city: store.city || store["City"] || "N/A",
-        totalOrders: store.orders || store["Orders"] || 0,
-        status: store.status || store["Status"] || "Active",
-        logo: store.logo || store["Logo"] || `https://ui-avatars.com/api/?name=${store["Store Name"] || store.name || "S"}&background=random&color=fff`,
+        name: store["Store Name"] || store.name || "Unnamed Store",
+        email: store.Email || store.email || store.mail || "N/A",
+        phone: store.Mobile || store.phone || store.contact || "N/A",
+        city: store.City || store.city || "N/A",
+        totalOrders: store.orders || store.Orders || 0,
+        status: store.status || "Active",
+        logo: store["Profile Pic"] || store.logo || `https://ui-avatars.com/api/?name=${store["Store Name"] || store.name || "S"}&background=random&color=fff`,
+        owner: store["owner name"] || "N/A",
+        address: store.address || "N/A",
+        time: store.time || "N/A",
+        adminShare: store["admin share"] || 0
       }));
 
       setStores(formattedData);

@@ -29,22 +29,18 @@ const Rejectedbystore = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await genericApi.getAll("orders");
+      const response = await genericApi.getAll("rejectedbystore");
       const results = response.data.results || response.data || [];
       
-      // Filter for rejected status if the backend doesn't have a specific collection
-      const rejectedOrders = results.filter(order => 
-        (order["Status"] || "").toLowerCase().includes("reject")
-      );
-
-      const formattedData = rejectedOrders.map((order, index) => ({
+      const formattedData = results.map((order, index) => ({
         id: order._id || index + 1,
         cartId: order["Cart ID"] || `ORD-REJ-${index}`,
         cartPrice: typeof order["Cart price"] === "number" ? `₹${order["Cart price"]}` : (order["Cart price"] || `₹0`),
         userName: order["User"] || order.user || "Unknown",
         userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
-        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleString() : "N/A",
+        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toISOString().split("T")[0] : "N/A",
         status: order["Status"] || "Rejected by Store",
+        store: order["Store Name"] || order.store || "N/A",
       }));
 
       setOrders(formattedData);

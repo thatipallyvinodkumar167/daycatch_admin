@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ImageIcon from "@mui/icons-material/Image";
 import { genericApi } from "../api/genericApi";
 
 import ReactQuill from 'react-quill';
@@ -37,16 +38,27 @@ const AddMembership = () => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.size > 1000 * 1024) {
-      alert("Image size should be less than 1000 KB");
-      return;
+    if (file) {
+      if (file.size > 1000 * 1024) {
+        alert("Image size should be less than 1000 KB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, image: reader.result });
+      };
+      reader.readAsDataURL(file);
     }
-    setFormData({ ...formData, image: file });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      if (!formData.name || !formData.days || !formData.price) {
+          alert("Please fill in basic plan details (Name, Days, Price)");
+          return;
+      }
+
       const payload = {
         "Plan Name": formData.name,
         "Plan Days": Number(formData.days),
@@ -196,24 +208,46 @@ const AddMembership = () => {
             {/* Image URL */}
             <Grid item xs={12}>
               <Typography variant="body2" fontWeight="700" color="#1b2559" sx={{ mb: 1.5 }}>
-                Image URL (e.g. https://example.com/image.png)
+                Image (Max. Size 1000 KB)
               </Typography>
-              <TextField
-                fullWidth
-                name="image"
-                value={formData.image}
-                onChange={handleInputChange}
-                placeholder="https://..."
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
-              />
+              <Box 
+                sx={{ 
+                  border: "2px dashed #E0E5F2", 
+                  borderRadius: "15px", 
+                  p: 3, 
+                  textAlign: "center",
+                  cursor: "pointer",
+                  "&:hover": { borderColor: "#2d60ff", bgcolor: "#f1f4ff" }
+                }}
+                onClick={() => document.getElementById("image-upload").click()}
+              >
+                <input
+                  type="file"
+                  id="image-upload"
+                  hidden
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+                <Stack direction="row" spacing={2} alignItems="center" justifyContent="center">
+                  <Box sx={{ p: 1, bgcolor: "#f4f7fe", borderRadius: "10px" }}>
+                    <ImageIcon sx={{ color: "#2d60ff" }} />
+                  </Box>
+                  <Box sx={{ textAlign: "left" }}>
+                    <Typography variant="body2" fontWeight="700" color="#1b2559">
+                      {formData.image ? "Change Image" : "Choose File"}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      Click to choose file · PNG, JPG, WEBP
+                    </Typography>
+                  </Box>
+                  <Button variant="outlined" size="small" sx={{ ml: "auto", borderRadius: "8px", textTransform: "none" }}>
+                    Choose File
+                  </Button>
+                </Stack>
+              </Box>
               {formData.image && (
                 <Box sx={{ mt: 2, position: "relative", width: 100, height: 100, borderRadius: "12px", overflow: "hidden", border: "1px solid #E0E5F2" }}>
-                  <img 
-                    src={formData.image} 
-                    alt="Preview" 
-                    onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=Invalid+URL"; }}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                  />
+                  <img src={formData.image} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </Box>
               )}
             </Grid>

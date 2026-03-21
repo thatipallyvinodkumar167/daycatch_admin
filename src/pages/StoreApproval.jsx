@@ -32,22 +32,20 @@ const StoreApproval = () => {
 
   const fetchPendingStores = async () => {
     try {
-      const response = await genericApi.getAll("store");
+      const response = await genericApi.getAll("storeapproval");
       const results = response.data.results || response.data || [];
       
-      const formattedData = results
-        .filter(store => (store.status || store["Status"]) === "Pending")
-        .map((store, index) => ({
-          id: store._id || index,
-          storeName: store["Store Name"] || store.name || store.storeName || "Unnamed Store",
-          city: store.city || store["City"] || "N/A",
-          mobile: store.phone || store.mobile || store["Phone"] || "N/A",
-          email: store.email || store["Email"] || "N/A",
-          adminShare: store.adminShare || "10%",
-          ownerName: store.ownerName || store["Owner Name"] || "N/A",
-          status: store.status || store["Status"] || "Pending",
-          logo: store.logo || store["Logo"] || `https://ui-avatars.com/api/?name=${store["Store Name"] || store.name || "S"}&background=random`
-        }));
+      const formattedData = results.map((store, index) => ({
+        id: store._id || index,
+        storeName: store["Store Name"] || store.name || "Unnamed Store",
+        city: store.City || store.city || "N/A",
+        mobile: store.Mobile || store.phone || "N/A",
+        email: store.Email || store.email || "N/A",
+        adminShare: store["Admin Share"] || "10%",
+        ownerName: store["Owner name"] || store.ownerName || "N/A",
+        status: store.status || "Pending",
+        logo: store["Profile Pic"] || store.logo || `https://ui-avatars.com/api/?name=${store["Store Name"] || store.name || "S"}&background=random`
+      }));
 
       setStores(formattedData);
     } catch (error) {
@@ -58,7 +56,7 @@ const StoreApproval = () => {
   const handleApprove = async (id) => {
     if (window.confirm("Approve this store to start selling?")) {
         try {
-            await genericApi.update("store", id, { Status: "Active" });
+            await genericApi.update("storeapproval", id, { status: "Active" });
             setStores(prev => prev.filter(s => s.id !== id));
             alert("Store approved successfully!");
         } catch (error) {

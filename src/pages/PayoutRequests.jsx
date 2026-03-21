@@ -18,46 +18,90 @@ import {
 import CancelIcon from "@mui/icons-material/Cancel";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PaymentsIcon from "@mui/icons-material/Payments";
-import axios from "axios";
 
 import { useNavigate } from "react-router-dom";
+import { genericApi } from "../api/genericApi";
 
 const PayoutRequests = () => {
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [search, setSearch] = useState("");
+  const [payoutRules, setPayoutRules] = useState({ minAmount: 500, minDays: 7, _id: null });
+  const [validations, setValidations] = useState([]); // Assuming this state is needed for fetchPayoutValidations
+
+  const handleSaveRules = async () => {
+    try {
+        const payload = {
+            "Minimum Amount": Number(payoutRules.minAmount),
+            "Minimum Days": Number(payoutRules.minDays)
+        };
+        if (payoutRules._id) {
+            await genericApi.update("payouts", payoutRules._id, payload);
+        } else {
+            await genericApi.create("payouts", payload);
+        }
+        alert("Payout rules updated successfully!");
+    } catch (error) {
+        console.error("Error updating rules:", error);
+        alert("Failed to update rules.");
+    }
+  };
 
   // API Call (using JSONPlaceholder as fakeapi)
   useEffect(() => {
     fetchPayoutRequests();
   }, []);
 
+  const fetchPayoutValidations = async () => {
+    try {
+      const resp = await genericApi.getAll("payouts");
+      const rules = resp.data.results?.[0] || resp.data?.[0] || {};
+      setPayoutRules({
+        minAmount: rules["Minimum Amount"] || 500,
+        minDays: rules["Minimum Days"] || 7,
+        _id: rules._id
+      });
+
+      // Since there's no history collection yet, we empty the audit table
+      // or we can pull from payout requests and filter
+      const reqResp = await genericApi.getAll("payout requests");
+      const requests = reqResp.data.results || reqResp.data || [];
+      
+      setValidations(requests.filter(r => r.Status === "Approved").map((item, index) => ({
+          id: item._id || index + 1,
+          storeName: item.Store || "N/A",
+          phone: item.Phone || "N/A",
+          amount: `₹${item.Amount || 0}`,
+          method: item["Payment Method"] || "Bank Transfer",
+          referenceId: item["Reference ID"] || `REF-${index}`,
+          date: item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : "N/A",
+          status: "Validated"
+      })));
+
+    } catch (error) {
+      console.error("Error fetching payout validations:", error);
+    }
+  };
+
   const fetchPayoutRequests = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users"
-      );
+      const response = await genericApi.getAll("payout requests");
+      const results = response.data.results || response.data || [];
       
-      // Map fake data to our requested columns
-      const formattedData = response.data.map((item, index) => {
-        const totalRevenue = Math.floor(Math.random() * 50000) + 10000;
-        const alreadyPaid = Math.floor(Math.random() * (totalRevenue * 0.7));
-        const pendingBalance = totalRevenue - alreadyPaid;
-        const requestedAmount = Math.floor(Math.random() * (pendingBalance * 0.5)) + 500;
-        
-        return {
-          id: item.id,
-          storeName: `${item.company.name} ${index % 2 === 0 ? "Outlet" : "Store"}`,
-          phone: item.phone,
-          address: `${item.address.suite}, ${item.address.city}`,
-          totalRevenue: `₹${totalRevenue}`,
-          bankDetails: `A/C: ****${5566 + item.id} | IFSC: VNAQ0001`,
-          alreadyPaid: `₹${alreadyPaid}`,
-          pendingBalance: `₹${pendingBalance}`,
-          amount: `₹${requestedAmount}`,
-          status: index % 3 === 0 ? "Pending" : "Approved"
-        };
-      });
+      const formattedData = results.map((item, index) => ({
+        id: item._id || index + 1,
+        storeName: item.Store || "Direct Store",
+        phone: item.Phone || item.Mobile || "N/A",
+        address: item.Address || "N/A",
+        totalRevenue: `₹${item["Total Revenue"] || 0}`,
+        bankDetails: typeof item["Bank Account Details"] === "object" ? 
+          `A/C: ${item["Bank Account Details"].accountNumber || "****"} | IFSC: ${item["Bank Account Details"].ifsc || "N/A"}` : 
+          (item["Bank Account Details"] || "N/A"),
+        alreadyPaid: `₹${item["Already Paid"] || 0}`,
+        pendingBalance: `₹${item["Pending Balance"] || 0}`,
+        amount: `₹${item.Amount || 0}`,
+        status: item.Status || "Pending"
+      }));
 
       setRequests(formattedData);
     } catch (error) {
@@ -195,7 +239,30 @@ const PayoutRequests = () => {
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <Tooltip title="Approve & Pay">
                             <IconButton 
-                                onClick={() => navigate(`/payout-requests/process/${item.id}`)}
+                                onClick={() => {
+                                    // This block is likely intended for a separate component (e.g., PayoutProcess)
+                                    // but is included here as per the instruction's placement.
+                                    // In a real application, this logic would be in the component
+                                    // that handles the actual approval and payment process.
+                                    // For now, we'll keep the navigation as the primary action.
+                                    navigate(`/payout-requests/process/${item.id}`);
+                                    /*
+                                    try {
+                                        await genericApi.update("payout requests", item.id, {
+                                            Status: "Approved",
+                                            "Payment Method": formData.paymentMethod, // formData would need to be defined
+                                            "Reference ID": formData.referenceId,
+                                            "Notes": formData.notes,
+                                            "Paid Amount": Number(formData.amount)
+                                        });
+                                        alert(`Payout of ₹${formData.amount} approved and processed successfully!`);
+                                        navigate("/payout-requests");
+                                    } catch (error) {
+                                        console.error("Error processing payout:", error);
+                                        alert("Failed to process payout.");
+                                    }
+                                    */
+                                }}
                                 sx={{ 
                                     backgroundColor: "#e6f9ed", 
                                     color: "#24d164",

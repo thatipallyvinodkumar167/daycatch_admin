@@ -29,24 +29,25 @@ const StoreEarningPaments = () => {
   const fetchOrders = async () => {
     try {
 
-      const response = await genericApi.getAll("store");
+      const response = await genericApi.getAll("storepayments");
       const results = response.data.results || response.data || [];
-      setOrders(results.map((store, index) => ({
-        _id: store._id || index,
-        cartId: store["Store Name"] || store.name || `Store ${index}`,
-        cartPrice: store["Address"] || store.address || "N/A",
-        user: { name: store["Total Revenue"] || 0, phone: "Paid" },
-        deliveryDate: store["Paid"] || 0,
-        status: store["Status"] || "Active",
+      setOrders(results.map((item, index) => ({
+        _id: item._id || index,
+        store: item.Store || item.store || "Direct Store",
+        address: item.Address || item.address || "N/A",
+        totalRevenue: item["Total Revenue"] || item.total_revenue || 0,
+        alreadyPaid: item["Already Paid"] || item.already_paid || 0,
+        pendingBalance: item["Pending Balance"] || item.pending_balance || 0,
+        status: item.status || "Active",
       })));
 
     } catch (error) {
-      console.error("Error fetching orders:", error);
+      console.error("Error fetching store payments:", error);
     }
   };
 
   const filteredOrders = orders.filter((order) =>
-    order.cartId?.toLowerCase().includes(search.toLowerCase())
+    order.store?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -114,32 +115,20 @@ const StoreEarningPaments = () => {
 
                     <TableCell>{index + 1}</TableCell>
 
-                    <TableCell>{order.cartId}</TableCell>
+                    <TableCell>{order.store}</TableCell>
 
-                    <TableCell>{order.cartPrice}</TableCell>
+                    <TableCell>{order.address}</TableCell>
 
                     <TableCell>
-                      {order.user?.name} ({order.user?.phone})
+                      ₹{order.totalRevenue?.toLocaleString()}
                     </TableCell>
 
-                    <TableCell>{order.deliveryDate}</TableCell>
+                    <TableCell>₹{order.alreadyPaid?.toLocaleString()}</TableCell>
+
+                    <TableCell>₹{order.pendingBalance?.toLocaleString()}</TableCell>
 
                     <TableCell>
-                      <Chip
-                        label={order.status}
-                        color={
-                          order.status === "Pending"
-                            ? "warning"
-                            : order.status === "Completed"
-                            ? "success"
-                            : "default"
-                        }
-                        size="small"
-                      />
-                    </TableCell>
-
-                    <TableCell>
-                      <Button variant="contained" size="small">
+                      <Button variant="contained" size="small" sx={{ borderRadius: "8px", textTransform: "none" }}>
                         Details
                       </Button>
                     </TableCell>

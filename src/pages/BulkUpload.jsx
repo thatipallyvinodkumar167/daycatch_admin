@@ -17,6 +17,7 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import InfoIcon from "@mui/icons-material/Info";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import { genericApi } from "../api/genericApi";
 
 const BulkUpload = () => {
   const [file, setFile] = useState(null);
@@ -29,27 +30,74 @@ const BulkUpload = () => {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!file) {
       alert("Please select a file first.");
       return;
     }
 
     setUploading(true);
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += 10;
-      setProgress(currentProgress);
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
+    setProgress(10);
+    
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const text = e.target.result;
+        setProgress(30);
+        
+        // Simple CSV parser (assuming first row is headers)
+        const lines = text.split("\n").filter(line => line.trim());
+        const headers = lines[0].split(",").map(h => h.trim());
+        const data = lines.slice(1).map(line => {
+          const values = line.split(",").map(v => v.trim());
+          const obj = {};
+          headers.forEach((header, index) => {
+            obj[header] = values[index];
+          });
+          return obj;
+        });
+
+        setProgress(60);
+        
+        // Send to backend bulk endpoint
+        try {
+          const response = await genericApi.create("Adminproducts/bulk", data);
+          setProgress(100);
+          setTimeout(() => {
+            setUploading(false);
+            setFile(null);
+            setProgress(0);
+            alert(`Successfully uploaded ${data.length} products!`);
+          }, 500);
+        } catch (error) {
+          console.error("Bulk upload error:", error);
+          alert(error.response?.data?.error || "Failed to upload products to the database.");
           setUploading(false);
-          setFile(null);
-          setProgress(0);
-          alert("Bulk products uploaded successfully!");
-        }, 500);
-      }
-    }, 200);
+        }
+      };
+      
+      reader.onerror = () => {
+        alert("Error reading file.");
+        setUploading(false);
+      };
+      
+      reader.readAsText(file);
+      
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Something went wrong during upload.");
+      setUploading(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const headers = "Product Id,Product Name,Category,Type,Product Image,Quantity,EAN code,Tags,Unit,MRP,price,description";
+    const blob = new Blob([headers], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "product_template.csv";
+    a.click();
   };
 
   const commonCardStyles = {
@@ -190,6 +238,7 @@ const BulkUpload = () => {
               <Button
                 variant="outlined"
                 startIcon={<FileDownloadIcon />}
+                onClick={downloadTemplate}
                 sx={secondaryBtnStyles}
               >
                 Download Template

@@ -58,24 +58,26 @@ export const unwrapApiPayload = (value) => {
 };
 
 export const extractCollection = (response, preferredKeys = []) => {
-  const payload = unwrapApiPayload(response);
+    const payload = unwrapApiPayload(response);
 
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (!payload || typeof payload !== "object") {
-    return [];
-  }
-
-  for (const key of preferredKeys) {
-    if (Array.isArray(payload[key])) {
-      return payload[key];
+    if (Array.isArray(payload)) {
+        return payload;
     }
-  }
 
-  const firstArray = Object.values(payload).find((entry) => Array.isArray(entry));
-  return Array.isArray(firstArray) ? firstArray : [];
+    if (!payload || typeof payload !== "object") {
+        return [];
+    }
+
+    const allPreferredKeys = [...preferredKeys, "data", "results"];
+
+    for (const key of allPreferredKeys) {
+        if (Array.isArray(payload[key])) {
+            return payload[key];
+        }
+    }
+
+    const firstArray = Object.values(payload).find((entry) => Array.isArray(entry));
+    return Array.isArray(firstArray) ? firstArray : [];
 };
 
 export const pickFirstValue = (source, keys = []) => {
@@ -149,7 +151,7 @@ const formatCode = (prefix, rawValue, index) => {
 
 export const getCityNameFromRecord = (record) => {
   const directCityName = normalizeString(
-    pickFirstValue(record, ["cityName", "city_name"])
+    pickFirstValue(record, ["City Name", "cityName", "city_name"])
   );
 
   if (directCityName) {
@@ -223,11 +225,11 @@ export const normalizeCityRecord = (record, index) => {
     backendId: id,
     code: formatCode(
       "CTY",
-      pickFirstValue(record, ["cityId", "cityID", "cityCode", "code"]),
+      pickFirstValue(record, ["City ID", "cityId", "cityID", "cityCode", "code"]),
       index
     ),
     name: normalizeString(
-      pickFirstValue(record, ["cityName", "name", "city", "title"]),
+      pickFirstValue(record, ["City Name", "cityName", "name", "city", "title"]),
       `City ${index + 1}`
     ),
     status: normalizeStatus(
@@ -246,6 +248,7 @@ export const normalizeAreaRecord = (record, index) => {
     backendId: id,
     name: normalizeString(
       pickFirstValue(record, [
+        "Society Name",
         "areaName",
         "name",
         "area",
@@ -267,7 +270,10 @@ export const normalizeAreaRecord = (record, index) => {
 export const buildCityPayloads = (name) => {
   const normalizedName = normalizeString(name);
 
-  return dedupePayloads([{ cityName: normalizedName }]).map(compactObject);
+  return dedupePayloads([
+    { "City Name": normalizedName },
+    { cityName: normalizedName }
+  ]).map(compactObject);
 };
 
 export const buildAreaPayloads = ({ name, cityId, cityName }) => {
@@ -276,6 +282,10 @@ export const buildAreaPayloads = ({ name, cityId, cityName }) => {
   const normalizedCityName = normalizeString(cityName);
 
   return dedupePayloads([
+    {
+      "City Name": normalizedCityName,
+      "Society Name": normalizedAreaName,
+    },
     {
       cityId: normalizedCityId,
       cityName: normalizedCityName,

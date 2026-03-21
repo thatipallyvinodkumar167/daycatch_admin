@@ -45,12 +45,12 @@ const AdminProducts = () => {
       const formattedData = productList.map((item, index) => {
         return {
           id: item._id || item.id,
+          productID: item["Product Id"] || item.id || "N/A",
           name: item["Product Name"] || item.name || "Unnamed Product",
           category: item["Category"] || item.category || "N/A",
-          subCategory: item["Sub Category"] || item.subCategory || "N/A",
-          price: `₹${item["Price"] || item.price || 0}`,
+          type: item["Type"] || item.type || "N/A",
           image: item["Product Image"] || item.image || `https://picsum.photos/seed/${item._id}/100`,
-          status: item.status || (index % 3 === 0 ? "Out of Stock" : "In Stock")
+          hide: item.hide || false
         };
       });
 
@@ -63,7 +63,8 @@ const AdminProducts = () => {
   const filteredProducts = React.useMemo(() => {
     return products.filter((item) =>
       item.name.toLowerCase().includes(search.toLowerCase().trim()) ||
-      item.category.toLowerCase().includes(search.toLowerCase().trim())
+      item.category.toLowerCase().includes(search.toLowerCase().trim()) ||
+      item.productID.toLowerCase().includes(search.toLowerCase().trim())
     );
   }, [products, search]);
 
@@ -98,21 +99,21 @@ const AdminProducts = () => {
           startIcon={<AddIcon />}
           onClick={() => navigate("/products/add")}
           sx={{ 
-            backgroundColor: theme.palette.primary.main, 
-            "&:hover": { backgroundColor: theme.palette.primary.dark },
+            backgroundColor: "#2d60ff", 
+            "&:hover": { backgroundColor: "#2046cc" },
             borderRadius: "10px",
             textTransform: "none",
             px: 3,
             py: 1.2,
             fontWeight: "700",
-            boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`
+            boxShadow: "0 4px 12px rgba(45, 96, 255, 0.3)"
           }}
         >
           Add New Product
         </Button>
       </Box>
 
-      <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+      <Paper sx={{ borderRadius: "20px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
         
         {/* Card Header & Search */}
         <Box 
@@ -124,14 +125,14 @@ const AdminProducts = () => {
             borderBottom: "1px solid #f1f1f1"
           }}
         >
-          <Typography variant="h6" fontWeight="600" color="#1b2559">
+          <Typography variant="h6" fontWeight="700" color="#1b2559">
             Admin Products List
           </Typography>
           <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="body2" sx={{ fontWeight: "500" }}>Search:</Typography>
+            <Typography variant="body2" sx={{ fontWeight: "600", color: "#1b2559" }}>Search:</Typography>
             <TextField
               size="small"
-              placeholder="Search by name or category..."
+              placeholder="Search by name, ID or category..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               sx={{ 
@@ -144,18 +145,23 @@ const AdminProducts = () => {
         </Box>
 
         {/* Table */}
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ 
+          maxHeight: "calc(100vh - 350px)",
+          msOverflowStyle: "none",
+          scrollbarWidth: "none",
+          "&::-webkit-scrollbar": { display: "none" }
+        }}>
+          <Table stickyHeader>
             <TableHead>
-              <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Image</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Product Name</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Category</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Sub-Category</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Price</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Status</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2", pr: 4 }}>Action</TableCell>
+              <TableRow>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>#</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>Product Name</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>Product id</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>category</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>type</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>image</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>hide</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc", pr: 4 }}>actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -172,6 +178,10 @@ const AdminProducts = () => {
                     sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}
                   >
                     <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{index + 1}</TableCell>
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "700", maxWidth: "180px" }}>{item.name}</TableCell>
+                    <TableCell sx={{ color: "#2d60ff", fontWeight: "700" }}>{item.productID}</TableCell>
+                    <TableCell sx={{ color: "#475467" }}>{item.category}</TableCell>
+                    <TableCell sx={{ color: "#475467" }}>{item.type}</TableCell>
                     <TableCell>
                         <Avatar 
                             src={item.image} 
@@ -179,31 +189,29 @@ const AdminProducts = () => {
                             sx={{ width: 45, height: 45, borderRadius: "10px", border: "1px solid #f1f1f1" }} 
                         />
                     </TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "700", maxWidth: "180px" }}>{item.name}</TableCell>
-                    <TableCell sx={{ color: "#475467" }}>{item.category}</TableCell>
-                    <TableCell sx={{ color: "#475467" }}>{item.subCategory}</TableCell>
-                    <TableCell sx={{ color: theme.palette.primary.main, fontWeight: "800" }}>{item.price}</TableCell>
                     <TableCell>
                         <Chip 
-                            label={item.status} 
+                            label={item.hide ? "Hidden" : "Visible"} 
                             size="small" 
                             sx={{ 
-                                backgroundColor: item.status === "In Stock" ? "#e6f9ed" : "#fff1f0", 
-                                color: item.status === "In Stock" ? "#24d164" : "#ff4d49",
+                                backgroundColor: item.hide ? "#fff1f0" : "#e6f9ed", 
+                                color: item.hide ? "#ff4d49" : "#24d164",
                                 fontWeight: "700",
-                                borderRadius: "6px"
+                                borderRadius: "8px"
                             }} 
                         />
                     </TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                      <Stack direction="row" spacing={2} justifyContent="flex-end">
                         <IconButton 
                           onClick={() => navigate(`/products/edit/${item.id}`)}
                           sx={{ 
-                            backgroundColor: "#f4f7fe", 
-                            color: "#2b3674",
-                            borderRadius: "8px",
-                            "&:hover": { backgroundColor: "#e0e7ff", color: "#4318ff" }
+                            backgroundColor: "#00d26a", 
+                            color: "#fff",
+                            borderRadius: "10px",
+                            width: "40px",
+                            height: "40px",
+                            "&:hover": { backgroundColor: "#00b85c" }
                           }}
                         >
                           <EditIcon fontSize="small" />
@@ -211,10 +219,12 @@ const AdminProducts = () => {
                         <IconButton 
                           onClick={() => handleDelete(item.id)}
                           sx={{ 
-                            backgroundColor: "#fff1f0", 
-                            color: "#ff4d49",
-                            borderRadius: "8px",
-                            "&:hover": { backgroundColor: "#ffccc7" }
+                            backgroundColor: "#ff4d49", 
+                            color: "#fff",
+                            borderRadius: "10px",
+                            width: "40px",
+                            height: "40px",
+                            "&:hover": { backgroundColor: "#d13c38" }
                           }}
                         >
                           <DeleteIcon fontSize="small" />

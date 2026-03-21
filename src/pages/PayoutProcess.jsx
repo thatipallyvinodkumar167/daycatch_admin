@@ -14,7 +14,7 @@ import {
   Divider,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const PayoutProcess = () => {
@@ -33,11 +33,16 @@ const PayoutProcess = () => {
   useEffect(() => {
     const fetchStore = async () => {
       try {
-        const response = await axios.get(`https://jsonplaceholder.typicode.com/users/${id}`);
+        const response = await genericApi.getOne("payout requests", id);
+        const data = response.data;
         setStore({
-          ...response.data,
-          requestedAmount: Math.floor(Math.random() * 5000) + 1000,
-          bankDetails: `A/C: ****${5566 + response.data.id} | IFSC: VNAQ0001`
+          id: data._id,
+          company: { name: data.Store || "Store" },
+          phone: data.Phone || data.Mobile || "N/A",
+          requestedAmount: data.Amount || 0,
+          bankDetails: typeof data["Bank Account Details"] === "object" ? 
+            `A/C: ${data["Bank Account Details"].accountNumber || "****"} | IFSC: ${data["Bank Account Details"].ifsc || "N/A"}` : 
+            (data["Bank Account Details"] || "N/A")
         });
         setLoading(false);
       } catch (error) {
@@ -61,9 +66,12 @@ const PayoutProcess = () => {
 
     setIsSubmitting(true);
     try {
-      await axios.post("https://jsonplaceholder.typicode.com/posts", {
-        storeId: id,
-        ...formData
+      await genericApi.update("payout requests", id, {
+        Status: "Approved",
+        "Payment Method": formData.paymentMethod,
+        "Reference ID": formData.referenceId,
+        "Notes": formData.notes,
+        "Paid Amount": Number(formData.amount)
       });
       alert(`Payout of ₹${formData.amount} approved and processed successfully!`);
       navigate("/payout-requests");

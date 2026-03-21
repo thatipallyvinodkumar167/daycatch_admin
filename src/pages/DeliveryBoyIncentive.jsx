@@ -14,12 +14,11 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { genericApi } from "../api/genericApi";
 import PaymentIcon from "@mui/icons-material/Payment";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import HistoryIcon from "@mui/icons-material/History";
-import axios from "axios";
-
-import { useNavigate } from "react-router-dom";
 
 const DeliveryBoyIncentive = () => {
   const navigate = useNavigate();
@@ -33,20 +32,20 @@ const DeliveryBoyIncentive = () => {
 
   const fetchIncentives = async () => {
     try {
-      const response = await axios.get(
-        "https://daycatch-backend-1.onrender.com/api/deliveryBoyIncentive/getDeliveryBoyIncentive"
-      );
-      const list = Array.isArray(response.data) ? response.data : (response.data.data || []);
+      const response = await genericApi.getAll("deliveryboy_incentives");
+      const list = response.data.results || response.data || [];
 
-      const formattedData = list.map((item) => ({
-        id: item._id || item.id,
-        name: item.name || item.deliveryBoyName || "—",
-        phone: item.phone || item.deliveryBoyPhone || "—",
-        address: item.address || "—",
-        bankUpi: item.bankDetails || item.upi || item.bankUpi || "—",
-        totalIncentive: `₹${item.totalIncentive ?? 0}`,
-        paidIncentive: `₹${item.paidIncentive ?? 0}`,
-        pendingIncentive: `₹${item.pendingIncentive ?? 0}`,
+      const formattedData = list.map((item, index) => ({
+        id: item._id || index + 1,
+        name: item["Delivery Boy"] || "—",
+        phone: item.Phone || item.Mobile || "—",
+        address: item.Address || "—",
+        bankUpi: typeof item["Bank/UPI"] === "object" ? 
+          `UPI: ${item["Bank/UPI"].upi || "N/A"}` : 
+          (item["Bank/UPI"] || "—"),
+        totalIncentive: `₹${item["Total Incentive"] ?? 0}`,
+        paidIncentive: `₹${item["Paid Incentive"] ?? 0}`,
+        pendingIncentive: `₹${item["Pending Incentive"] ?? 0}`,
       }));
 
       setIncentives(formattedData);
