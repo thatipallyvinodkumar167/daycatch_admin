@@ -24,6 +24,7 @@ import CardMembershipIcon from "@mui/icons-material/CardMembership";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { useNavigate } from "react-router-dom";
+import { genericApi } from "../api/genericApi";
 
 const MembershipPlain = () => {
   const navigate = useNavigate();
@@ -36,54 +37,19 @@ const MembershipPlain = () => {
 
   const fetchPlans = async () => {
     try {
-      // Simulate API call using axios
-      // In production, replace with: const response = await axios.get("https://api.daycatch.in/membership");
-      // For now, we simulate the structure of an API response
-      const apiResponse = {
-        data: [
-          {
-            id: 1,
-            name: "Monthly Starter",
-            days: 30,
-            price: 299,
-            freeDelivery: true,
-            instantDelivery: false,
-            rewards: "2",
-            description: "Perfect for regular household needs.",
-            image: "5672200.png" // Filename from API
-          },
-          {
-            id: 2,
-            name: "Quarterly Pro",
-            days: 90,
-            price: 799,
-            freeDelivery: true,
-            instantDelivery: true,
-            rewards: "3",
-            description: "Our most popular value plan.",
-            image: "2583344.png" // Filename from API
-          },
-          {
-            id: 3,
-            name: "Annual Elite",
-            days: 365,
-            price: 2499,
-            freeDelivery: true,
-            instantDelivery: true,
-            rewards: "5",
-            description: "Premium benefits for heavy users.",
-            image: "2583319.png" // Filename from API
-          }
-        ]
-      };
-
-      // Base URL for images retrieved from the API
-      const BASE_IMG_URL = "https://cdn-icons-png.flaticon.com/512/5672/"; // Example external source
-      const FLATICON_PRO_URL = "https://cdn-icons-png.flaticon.com/512/2583/";
-
-      const processedPlans = apiResponse.data.map(plan => ({
-        ...plan,
-        image: plan.id === 1 ? `${BASE_IMG_URL}${plan.image}` : `${FLATICON_PRO_URL}${plan.image}`
+      const response = await genericApi.getAll("membership");
+      const results = response.data.results || response.data || [];
+      
+      const processedPlans = results.map(plan => ({
+        id: plan._id,
+        name: plan.name || plan["Plan Name"] || "Unnamed Plan",
+        days: plan.days || plan["Plan Days"] || 0,
+        price: plan.price || plan["Plan Price"] || 0,
+        freeDelivery: plan.freeDelivery ?? plan["Free Delivery"] ?? false,
+        instantDelivery: plan.instantDelivery ?? plan["Instant Delivery"] ?? false,
+        rewards: plan.rewards || plan.Reward || 0,
+        description: plan.description || plan.Description || "",
+        image: plan.image || plan.Image || ""
       }));
 
       setPlans(processedPlans);
@@ -93,10 +59,16 @@ const MembershipPlain = () => {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this membership plan?")) {
-      setPlans(plans.filter(p => p.id !== id));
-      alert("Plan deleted successfully!");
+      try {
+        await genericApi.delete("membership", id);
+        fetchPlans();
+        alert("Plan deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting plan:", error);
+        alert("Error deleting membership plan.");
+      }
     }
   };
 

@@ -51,8 +51,8 @@ const Taxes = () => {
       const results = response.data.results || response.data || [];
       const formattedTaxes = results.map((tax, index) => ({
         id: tax._id,
-        name: tax.name || tax["Tax Name"] || "Unnamed Tax",
-        rate: tax.rate || tax["Tax Rate"] || 0,
+        name: tax.name || tax["Tax Name"] || tax["Tax Type name"] || "Unnamed Tax",
+        rate: tax.rate || tax["Tax Rate"] || tax["Tax percentage"] || 0,
         status: tax.status || "Active",
       }));
       setTaxes(formattedTaxes);
@@ -99,8 +99,8 @@ const Taxes = () => {
 
     try {
       const payload = {
-        name: formData.name,
-        rate: Number(formData.rate),
+        "Tax Type name": formData.name,
+        "Tax percentage": Number(formData.rate),
         status: formData.status
       };
 
