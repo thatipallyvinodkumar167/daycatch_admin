@@ -14,8 +14,7 @@ import {
   Stack,
   IconButton,
   Grid,
-  Card,
-  CardContent,
+  CircularProgress,
   InputAdornment,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
@@ -25,10 +24,70 @@ import DeliveryDiningIcon from "@mui/icons-material/DeliveryDining";
 import PeopleIcon from "@mui/icons-material/People";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import { genericApi } from "../api/genericApi";
+import { useEffect } from "react";
 
 const Reports = () => {
   const [activeTab, setActiveTab] = useState("main");
   const [search, setSearch] = useState("");
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab !== "main") {
+      fetchReportData();
+    }
+  }, [activeTab]);
+
+  const fetchReportData = async () => {
+    setLoading(true);
+    try {
+      let collectionName = "";
+      
+      if (activeTab.startsWith("delivery")) collectionName = "deliveryboy";
+      else if (activeTab.startsWith("users")) collectionName = "users";
+      else if (activeTab.startsWith("store")) collectionName = "storeList";
+
+      if (collectionName) {
+        const response = await genericApi.getAll(collectionName);
+        const results = response.data.results || response.data || [];
+        
+        let formatted = [];
+        if (collectionName === "deliveryboy") {
+          formatted = results.sort((a, b) => (b.Orders || 0) - (a.Orders || 0)).map((d, i) => ({
+            id: i + 1,
+            name: d["Boy Name"] || d.name || "Unknown",
+            mobile: d["Boy Phone"] || d.mobile || "N/A",
+            orders: d.Orders || 0
+          }));
+        } else if (collectionName === "users") {
+          formatted = results.map((u, i) => ({
+            id: i + 1,
+            name: u["User Name"] || u.name || "Unknown",
+            userMobile: u["User Phone"] || u.mobile || "N/A",
+            currentMonth: u.ordersThisMonth || 0,
+            previousMonth: u.ordersPrevMonth || 0,
+            difference: (u.ordersThisMonth || 0) - (u.ordersPrevMonth || 0)
+          }));
+          if (activeTab === "users_top") formatted.sort((a, b) => b.currentMonth - a.currentMonth);
+          else formatted.sort((a, b) => a.currentMonth - b.currentMonth);
+        } else if (collectionName === "storeList") {
+          formatted = results.map((s, i) => ({
+            id: i + 1,
+            name: s["Store Name"] || s.name || "Unknown",
+            storeId: s.id || s._id || i + 1,
+            orders: s.orders || 0
+          }));
+          formatted.sort((a, b) => b.orders - a.orders);
+        }
+        setData(formatted);
+      }
+    } catch (error) {
+      console.error("Error fetching report data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const mainCategories = [
     { 
@@ -183,25 +242,31 @@ const Reports = () => {
   );
 
   const renderActiveReport = () => {
+    if (loading) return (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
+            <CircularProgress sx={{ color: "#2d60ff" }} />
+        </Box>
+    );
+
     switch (activeTab) {
         case "delivery_top":
             return renderTable(
                 ["#", "DELIVERY BOY", "LAST 30 DAYS ORDERS"],
-                [{ id: 1, name: "Bharath", mobile: "9441457677", orders: 1 }],
+                data,
                 "Top Delivery Boys",
                 true
             );
         case "delivery_orders":
             return renderTable(
                 ["#", "DELIVERY BOY", "LAST 30 DAYS ORDERS"],
-                [{ id: 1, name: "Bharath", mobile: "9441457677", orders: 1 }],
+                data,
                 "Delivery Boy Orders Reports",
                 true
             );
         case "users_top":
             return renderTable(
                 ["#", "USER", "CURRENT MONTH", "PREVIOUS MONTH", "DIFFERENCE"],
-                [{ id: 1, name: "Srinivasan", userMobile: "9876543210", currentMonth: 45, previousMonth: 32, difference: "+13" }],
+                data,
                 "Top 10 Users Reports",
                 false,
                 false,
@@ -210,7 +275,7 @@ const Reports = () => {
         case "users_worst":
             return renderTable(
                 ["#", "USER", "CURRENT MONTH", "PREVIOUS MONTH", "DIFFERENCE"],
-                [{ id: 1, name: "Varun", userMobile: "9440123456", currentMonth: 2, previousMonth: 15, difference: "-13" }],
+                data,
                 "Worst 10 Users Reports",
                 false,
                 false,
@@ -219,15 +284,15 @@ const Reports = () => {
         case "store_top":
             return renderTable(
                 ["#", "STORE", "LAST 30 DAYS ORDERS"],
-                [{ id: 1, name: "Vijayawada Store", storeId: "2", orders: 1 }],
+                data,
                 "Top Stores",
                 false,
                 true
             );
         case "store_orders":
             return renderTable(
-                ["#", "STORE", "LAST 30 DAYS ORDERS", "PREVIOUS MONTH ORDERS", "LAST 3 MONTHS ORDERS"],
-                [{ id: 1, name: "Hyderabad Store", storeId: "1", orders: 0, prevMonthOrders: 0, last3MonthsOrders: 0 }],
+                ["#", "STORE", "LAST 30 DAYS ORDERS"],
+                data,
                 "Store Orders Reports",
                 false,
                 true

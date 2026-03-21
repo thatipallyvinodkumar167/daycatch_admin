@@ -25,8 +25,7 @@ const EditMembership = () => {
     rewardPoint: "",
     freeDelivery: "No",
     instantDelivery: "No",
-    image: null,
-    existingImage: "",
+    image: "", // Changed to string for URL
     description: "",
   });
 
@@ -36,14 +35,14 @@ const EditMembership = () => {
         const response = await genericApi.get("membership", id);
         const data = response.data.data;
         setFormData({
-          name: data?.name || "",
-          days: data?.days || "",
-          price: data?.price || "",
-          rewardPoint: data?.rewardPoint || "",
-          freeDelivery: data?.freeDelivery || "No",
-          instantDelivery: data?.instantDelivery || "No",
-          existingImage: data?.existingImage || data?.image || "",
-          description: data?.description || "",
+          name: data?.name || data?.["Plan Name"] || "",
+          days: data?.days || data?.["Plan Days"] || "",
+          price: data?.price || data?.["Plan Price"] || "",
+          rewardPoint: data?.rewardPoint || data?.Reward || "",
+          freeDelivery: (data?.freeDelivery ?? data?.["Free Delivery"]) ? "Yes" : "No",
+          instantDelivery: (data?.instantDelivery ?? data?.["Instant Delivery"]) ? "Yes" : "No",
+          image: data?.image || data?.Image || "",
+          description: data?.description || data?.Description || "",
         });
       } catch (error) {
         console.error("Error fetching membership plan:", error);
@@ -69,15 +68,16 @@ const EditMembership = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = { ...formData };
-      delete payload.existingImage;
-      if (payload.image && typeof payload.image !== 'string') {
-        // In a real scenario, you'd upload the image first and get a URL
-        // For now, we'll just send the file object if the API handles it, 
-        // or omit it if it's just a mock-to-real transition.
-      } else {
-        delete payload.image;
-      }
+      const payload = {
+        "Plan Name": formData.name,
+        "Plan Days": Number(formData.days),
+        "Plan Price": Number(formData.price),
+        "Free Delivery": formData.freeDelivery === "Yes",
+        "Instant Delivery": formData.instantDelivery === "Yes",
+        Reward: Number(formData.rewardPoint),
+        Image: formData.image,
+        Description: formData.description
+      };
 
       await genericApi.update("membership", id, payload);
       alert("Membership updated successfully!");
@@ -210,49 +210,25 @@ const EditMembership = () => {
               </TextField>
             </Grid>
 
-            {/* Image Upload */}
+            {/* Image URL */}
             <Grid item xs={12}>
               <Typography variant="body2" fontWeight="700" color="#1b2559" sx={{ mb: 1.5 }}>
-                Image (It Should Be Less Then 1000 KB)
+                Image URL (e.g. https://example.com/image.png)
               </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  border: "1px solid #E0E5F2",
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                  mb: (formData.image || formData.existingImage) ? 2 : 0
-                }}
-              >
-                <Box sx={{ p: 2, flex: 1, color: "text.secondary" }}>
-                  {formData.image ? formData.image.name : "Choose file"}
-                </Box>
-                <Button
-                  component="label"
-                  variant="contained"
-                  sx={{
-                    borderRadius: "0",
-                    height: "56px",
-                    px: 4,
-                    backgroundColor: "#e9edf7",
-                    color: "#2b3674",
-                    boxShadow: "none",
-                    borderLeft: "1px solid #E0E5F2",
-                    "&:hover": { backgroundColor: "#d1d9e8", boxShadow: "none" },
-                    textTransform: "none",
-                    fontWeight: "600",
-                  }}
-                >
-                  Browse
-                  <input type="file" hidden accept="image/*" onChange={handleFileChange} />
-                </Button>
-              </Box>
-              {(formData.image || formData.existingImage) && (
-                <Box sx={{ position: "relative", width: 100, height: 100, borderRadius: "12px", overflow: "hidden", border: "1px solid #E0E5F2" }}>
+              <TextField
+                fullWidth
+                name="image"
+                value={formData.image}
+                onChange={handleInputChange}
+                placeholder="https://..."
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+              />
+              {formData.image && (
+                <Box sx={{ mt: 2, position: "relative", width: 100, height: 100, borderRadius: "12px", overflow: "hidden", border: "1px solid #E0E5F2" }}>
                   <img 
-                    src={formData.image ? URL.createObjectURL(formData.image) : formData.existingImage} 
+                    src={formData.image} 
                     alt="Preview" 
+                    onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=Invalid+URL"; }}
                     style={{ width: "100%", height: "100%", objectFit: "cover" }} 
                   />
                 </Box>

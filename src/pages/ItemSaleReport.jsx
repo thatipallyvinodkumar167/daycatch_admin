@@ -34,8 +34,8 @@ const ItemSaleReport = () => {
       const formattedData = results.map((item, index) => ({
         id: item._id || index + 1,
         productName: item["Product Name"] || item.productName || "Unknown Product",
-        variantSize: item["Variant Size"] || item.variantSize || "N/A",
-        quantity: Number(item["Quantity"] || item.quantity || 0),
+        variantSize: item["Variant Size"] || item.variantSize || item.Variant || "N/A",
+        quantity: Number(item["Quantity"] || item.quantity || item.Stock || 0),
         totalWeight: item["Total Weight"] || item.totalWeight || "0",
       }));
       setSales(formattedData);

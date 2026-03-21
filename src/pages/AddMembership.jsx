@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { genericApi } from "../api/genericApi";
 
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -25,7 +26,7 @@ const AddMembership = () => {
     rewardPoint: "",
     freeDelivery: "No",
     instantDelivery: "No",
-    image: null,
+    image: "", // Changed to string for URL
     description: "",
   });
 
@@ -43,12 +44,27 @@ const AddMembership = () => {
     setFormData({ ...formData, image: file });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate API call
-    console.log("Saving Membership:", formData);
-    alert("Membership added successfully!");
-    navigate("/membership-plain");
+    try {
+      const payload = {
+        "Plan Name": formData.name,
+        "Plan Days": Number(formData.days),
+        "Plan Price": Number(formData.price),
+        "Free Delivery": formData.freeDelivery === "Yes",
+        "Instant Delivery": formData.instantDelivery === "Yes",
+        Reward: Number(formData.rewardPoint),
+        Image: formData.image,
+        Description: formData.description
+      };
+
+      await genericApi.create("membership", payload);
+      alert("Membership added successfully!");
+      navigate("/membership-plain");
+    } catch (error) {
+      console.error("Error saving membership:", error);
+      alert("Error saving membership. Check console for details.");
+    }
   };
 
   return (
@@ -177,49 +193,25 @@ const AddMembership = () => {
               </TextField>
             </Grid>
 
-            {/* Image Upload */}
+            {/* Image URL */}
             <Grid item xs={12}>
               <Typography variant="body2" fontWeight="700" color="#1b2559" sx={{ mb: 1.5 }}>
-                Image (It Should Be Less Then 1000 KB)
+                Image URL (e.g. https://example.com/image.png)
               </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  border: "1px solid #E0E5F2",
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                  mb: formData.image ? 2 : 0
-                }}
-              >
-                <Box sx={{ p: 2, flex: 1, color: "text.secondary" }}>
-                  {formData.image ? formData.image.name : "Choose file"}
-                </Box>
-                <Button
-                  component="label"
-                  variant="contained"
-                  sx={{
-                    borderRadius: "0",
-                    height: "56px",
-                    px: 4,
-                    backgroundColor: "#e9edf7",
-                    color: "#2b3674",
-                    boxShadow: "none",
-                    borderLeft: "1px solid #E0E5F2",
-                    "&:hover": { backgroundColor: "#d1d9e8", boxShadow: "none" },
-                    textTransform: "none",
-                    fontWeight: "600",
-                  }}
-                >
-                  Browse
-                  <input type="file" hidden accept="image/*" onChange={handleFileChange} />
-                </Button>
-              </Box>
+              <TextField
+                fullWidth
+                name="image"
+                value={formData.image}
+                onChange={handleInputChange}
+                placeholder="https://..."
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+              />
               {formData.image && (
-                <Box sx={{ position: "relative", width: 100, height: 100, borderRadius: "12px", overflow: "hidden", border: "1px solid #E0E5F2" }}>
+                <Box sx={{ mt: 2, position: "relative", width: 100, height: 100, borderRadius: "12px", overflow: "hidden", border: "1px solid #E0E5F2" }}>
                   <img 
-                    src={URL.createObjectURL(formData.image)} 
+                    src={formData.image} 
                     alt="Preview" 
+                    onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=Invalid+URL"; }}
                     style={{ width: "100%", height: "100%", objectFit: "cover" }} 
                   />
                 </Box>
