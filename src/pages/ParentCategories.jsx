@@ -39,8 +39,8 @@ const ParentCategories = () => {
       
       const formattedData = results.map((item) => ({
         id: item._id,
-        name: item["Category Name"] || item.name || "Unnamed",
-        image: item["Category Image"] || `https://ui-avatars.com/api/?name=${encodeURIComponent(item["Category Name"] || "C")}&background=random`,
+        name: item["Title"] || item["Category Name"] || item.name || "Unnamed",
+        image: item["Image"] || item["Category Image"] || `https://ui-avatars.com/api/?name=${encodeURIComponent(item["Title"] || item["Category Name"] || "C")}&background=random`,
         subCategoryCount: item.subCategoryCount || 0,
         productCount: item.productCount || 0,
       }));

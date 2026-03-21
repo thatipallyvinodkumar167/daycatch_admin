@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const WalletHistory = () => {
   const [records, setRecords] = useState([]);
@@ -30,23 +30,19 @@ const WalletHistory = () => {
 
   const fetchRecords = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users"
-      );
+      const response = await genericApi.getAll("Wallet_Rechage_History");
+      const results = response.data.results || response.data || [];
 
-      const methods = ["UPI", "Net Banking", "Credit Card", "Debit Card", "Wallet"];
-      const statuses = ["Success", "Success", "Success", "Failed", "Pending"];
-
-      const formattedData = response.data.map((user, index) => ({
-        id: user.id,
-        userName: user.name,
-        userPhone: user.phone.split(" ")[0],
-        rechargeAmount: (index + 1) * 100 + 50,
-        rechargeDate: `2024-03-${String(index + 1).padStart(2, "0")}`,
-        status: statuses[index % statuses.length],
-        medium: methods[index % methods.length],
-        currentBalance: (index + 2) * 100,
-        avatar: `https://ui-avatars.com/api/?name=${user.name}&background=random&color=fff`,
+      const formattedData = results.map((item, index) => ({
+        id: item._id || index + 1,
+        userName: item["User Name"] || item.userName || "Unknown User",
+        userPhone: item["User Phone"] || item.userPhone || "N/A",
+        rechargeAmount: Number(item["Recharge Amount"] || item.rechargeAmount || 0),
+        rechargeDate: item["Recharge Date"] ? new Date(item["Recharge Date"]).toLocaleDateString() : "N/A",
+        status: item.Status || item.status || "Pending",
+        medium: item.Medium || item.medium || "N/A",
+        currentBalance: Number(item["Current Amount"] || item.currentBalance || 0),
+        avatar: `https://ui-avatars.com/api/?name=${item["User Name"] || item.userName || "U"}&background=random&color=fff`,
       }));
 
       setRecords(formattedData);
