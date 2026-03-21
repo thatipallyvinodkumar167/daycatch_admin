@@ -12,6 +12,7 @@ import {
   Divider,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { genericApi } from "../api/genericApi";
 
 const AddRole = () => {
   const navigate = useNavigate();
@@ -46,19 +47,40 @@ const AddRole = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!roleName.trim()) {
       alert("Please enter a role name.");
       return;
     }
-    // Simulate API call
-    console.log("Adding Role:", { roleName, permissions });
-    alert("Role added successfully!");
-    navigate("/roles");
+    
+    try {
+      const payload = {
+        name: roleName.trim(),
+        permissions: permissions
+      };
+      
+      const response = await genericApi.create("roles", payload);
+      console.log("Role created:", response.data);
+      alert("Role added successfully!");
+      navigate("/roles");
+    } catch (error) {
+      console.error("Error adding role:", error);
+      const msg = error.response?.data?.message || error.message;
+      alert("Failed to add role: " + msg);
+    }
   };
 
-  const sections = Object.keys(permissions);
+  const permissionCategories = {
+    "Core Management": ["Dashboard", "Users"],
+    "Inventory & Sales": ["Category", "Product", "Orders"],
+    "Operations": ["Store", "Delivery Boy", "Area"],
+    "Financials": ["Tax", "Id", "Payout"],
+    "Promotions": ["Rewards", "Membership"],
+    "Communications": ["Notification"],
+    "Support & Pages": ["Callback", "Feedback", "Pages"],
+    "System Settings": ["Settings", "Cancelling Reasons"]
+  };
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
@@ -106,51 +128,58 @@ const AddRole = () => {
             <Typography variant="h6" fontWeight="700" color="#1b2559" sx={{ mb: 3, textAlign: "center" }}>
               Enable Sections
             </Typography>
-            <Grid container spacing={2}>
-              {sections.map((section) => (
-                <Grid item xs={12} sm={6} md={3} key={section}>
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 1.5,
-                      borderRadius: "12px",
-                      border: permissions[section] ? "2px solid #4318ff" : "1px solid #e0e5f2",
-                      backgroundColor: permissions[section] ? "#f4f7fe" : "transparent",
-                      transition: "all 0.2s",
-                      "&:hover": {
-                        backgroundColor: "#f4f7fe",
-                      },
-                    }}
-                  >
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={permissions[section]}
-                          onChange={handleCheckboxChange}
-                          name={section}
-                          sx={{
-                            color: "#d1d5db",
-                            "&.Mui-checked": {
-                              color: "#4318ff",
-                            },
-                          }}
+            {Object.entries(permissionCategories).map(([category, keys]) => (
+              <Box key={category} sx={{ mb: 4 }}>
+                <Typography variant="subtitle1" fontWeight="700" color="#2b3674" sx={{ mb: 2, borderBottom: "1px solid #e0e5f2", pb: 1 }}>
+                  {category}
+                </Typography>
+                <Grid container spacing={2}>
+                  {keys.map((section) => (
+                    <Grid item xs={12} sm={6} md={3} key={section}>
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 1.5,
+                          borderRadius: "12px",
+                          border: permissions[section] ? "2px solid #4318ff" : "1px solid #e0e5f2",
+                          backgroundColor: permissions[section] ? "#f4f7fe" : "transparent",
+                          transition: "all 0.2s",
+                          "&:hover": {
+                            backgroundColor: "#f4f7fe",
+                          },
+                        }}
+                      >
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={permissions[section]}
+                              onChange={handleCheckboxChange}
+                              name={section}
+                              sx={{
+                                color: "#d1d5db",
+                                "&.Mui-checked": {
+                                  color: "#4318ff",
+                                },
+                              }}
+                            />
+                          }
+                          label={
+                            <Typography
+                              variant="body2"
+                              fontWeight={permissions[section] ? "700" : "500"}
+                              color={permissions[section] ? "#1b2559" : "#475467"}
+                            >
+                              {section}
+                            </Typography>
+                          }
+                          sx={{ width: "100%", m: 0 }}
                         />
-                      }
-                      label={
-                        <Typography
-                          variant="body2"
-                          fontWeight={permissions[section] ? "700" : "500"}
-                          color={permissions[section] ? "#1b2559" : "#475467"}
-                        >
-                          {section}
-                        </Typography>
-                      }
-                      sx={{ width: "100%", m: 0 }}
-                    />
-                  </Paper>
+                      </Paper>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              </Box>
+            ))}
           </Box>
 
           <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 4 }}>

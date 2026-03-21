@@ -1,8 +1,43 @@
 import React from 'react';
 import { Box, Container, Paper, Typography, TextField, Button, Link as MuiLink, Divider } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import axios from 'axios';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await axios.post('http://localhost:5001/api/v1/auth/login', {
+        email,
+        password
+      });
+
+      const { token, data } = response.data;
+      const { user } = data;
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("user_role", user["role Name"]);
+      localStorage.setItem("user_email", user.Email);
+      localStorage.setItem("user_name", user.Name);
+
+      alert(`Welcome back, ${user.Name}!`);
+      navigate("/");
+      window.location.reload(); 
+    } catch (error) {
+      console.error('Login error:', error);
+      alert(error.response?.data?.error || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box sx={{ py: 12, bgcolor: '#F8F9FA', minHeight: '80vh', display: 'flex', alignItems: 'center' }}>
       <Container maxWidth="xs">
@@ -16,13 +51,15 @@ const LoginPage = () => {
             Enter your details to access your account
           </Typography>
 
-          <Box component="form">
+          <Box component="form" onSubmit={handleSubmit}>
             <TextField
               fullWidth
               label="Email Address"
               margin="normal"
               required
               variant="outlined"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               sx={{ mb: 2 }}
             />
 
@@ -33,13 +70,17 @@ const LoginPage = () => {
               margin="normal"
               required
               variant="outlined"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               sx={{ mb: 3 }}
             />
 
             <Button
               fullWidth
+              type="submit"
               variant="contained"
               size="large"
+              disabled={loading}
               sx={{
                 py: 1.5,
                 fontWeight: 700,

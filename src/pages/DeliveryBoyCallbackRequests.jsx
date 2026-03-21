@@ -17,6 +17,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const DeliveryBoyCallbackRequests = () => {
   const navigate = useNavigate();
@@ -30,17 +31,14 @@ const DeliveryBoyCallbackRequests = () => {
 
   const fetchRequests = async () => {
     try {
-      // Fetching users as mock data for delivery boy callback requests
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users"
-      );
+      const response = await genericApi.getAll("deliveryboycallbackrequests");
+      const results = response.data.results || response.data || [];
       
-      // Map fake data to our columns (#, ID, Delivery Boy Name, Delivery Boy Phone, Added By, Actions)
-      const formattedData = response.data.map(item => ({
-        id: item.id,
-        deliveryBoyName: item.name,
-        deliveryBoyPhone: item.phone,
-        addedBy: "Admin", // Hardcoded for mockup
+      const formattedData = results.map((item, index) => ({
+        id: item._id || index,
+        deliveryBoyName: item.deliveryBoyName || item.name || "Unknown",
+        deliveryBoyPhone: item.deliveryBoyPhone || item.phone || "N/A",
+        addedBy: item.addedBy || "Admin",
       }));
 
       setRequests(formattedData);
@@ -56,10 +54,16 @@ const DeliveryBoyCallbackRequests = () => {
     );
   }, [requests, search]);
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this delivery boy callback request?")) {
-      setRequests(prev => prev.filter(item => item.id !== id));
-      alert("Delivery boy callback request deleted successfully!");
+      try {
+        await genericApi.remove("deliveryboycallbackrequests", id);
+        setRequests(prev => prev.filter(item => item.id !== id));
+        alert("Delivery boy callback request deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting callback request:", error);
+        alert("Failed to delete request.");
+      }
     }
   };
 

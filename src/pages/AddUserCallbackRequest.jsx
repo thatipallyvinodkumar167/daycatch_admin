@@ -8,7 +8,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const AddUserCallbackRequest = () => {
   const navigate = useNavigate();
@@ -32,14 +32,15 @@ const AddUserCallbackRequest = () => {
 
     setIsSubmitting(true);
     try {
-      // Mock POST request to fake API
-      await axios.post("https://jsonplaceholder.typicode.com/posts", {
-        title: `Callback for ${formData.userName}`,
-        body: formData.userPhone,
-        userId: 1,
-      });
-
-      alert("Callback request created successfully (Mock API)!");
+      const payload = {
+        "User Name": formData.userName.trim(),
+        "User Phone": formData.userPhone.trim(),
+        "Callback To": formData.callbackTo.trim(),
+        "Status": "Pending",
+        "Date": new Date().toISOString()
+      };
+      await genericApi.create("usercallbackrequests", payload);
+      alert("Callback request created successfully!");
       navigate("/user-callback-request");
     } catch (error) {
       console.error("Error creating callback request:", error);

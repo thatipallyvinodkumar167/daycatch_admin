@@ -26,6 +26,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import FingerprintIcon from "@mui/icons-material/Fingerprint";
+import { genericApi } from "../api/genericApi";
 
 const Id = () => {
   const [ids, setIds] = useState([]);
@@ -44,15 +45,14 @@ const Id = () => {
 
   const fetchIds = async () => {
     try {
-      // Mock data for ID configurations
-      const mockIds = [
-        { id: 1, name: "Aadhar Card", status: "Active" },
-        { id: 2, name: "PAN Card", status: "Active" },
-        { id: 3, name: "Business Proof", status: "Active" },
-        { id: 4, name: "Voter ID", status: "Active" },
-        { id: 5, name: "Driving License", status: "Active" },
-      ];
-      setIds(mockIds);
+      const response = await genericApi.getAll("id");
+      const results = response.data.results || response.data || [];
+      const formattedIds = results.map((item, index) => ({
+        id: item._id,
+        name: item.name || item["ID Name"] || "Unnamed ID",
+        status: item.status || "Active",
+      }));
+      setIds(formattedIds);
     } catch (error) {
       console.error("Error fetching ID configurations:", error);
     }
@@ -93,29 +93,36 @@ const Id = () => {
     }
 
     try {
+      const payload = {
+        name: formData.name,
+        status: formData.status
+      };
+
       if (editMode) {
-        // Mock update
-        setIds(prev => prev.map(item => item.id === selectedId.id ? { ...item, ...formData } : item));
-        alert("ID update successfully!");
+        await genericApi.update("id", selectedId.id, payload);
+        alert("ID updated successfully!");
       } else {
-        // Mock create
-        const newItem = {
-          id: ids.length > 0 ? Math.max(...ids.map(i => i.id)) + 1 : 1,
-          ...formData,
-        };
-        setIds([...ids, newItem]);
+        await genericApi.create("id", payload);
         alert("ID added successfully!");
       }
+      fetchIds();
       handleClose();
     } catch (error) {
       console.error("Error saving ID:", error);
+      alert("Error saving ID configuration.");
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this ID configuration?")) {
-      setIds(ids.filter(item => item.id !== id));
-      alert("ID deleted successfully!");
+      try {
+        await genericApi.delete("id", id);
+        fetchIds();
+        alert("ID deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting ID:", error);
+        alert("Error deleting ID configuration.");
+      }
     }
   };
 

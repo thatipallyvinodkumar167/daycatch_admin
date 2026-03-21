@@ -19,6 +19,7 @@ import ImageIcon from "@mui/icons-material/Image";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import CloseIcon from "@mui/icons-material/Close";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const SendNotificationUsers = () => {
   const fileInputRef = useRef(null);
@@ -68,7 +69,7 @@ const SendNotificationUsers = () => {
 
     setIsSubmitting(true);
     try {
-      await axios.post("https://jsonplaceholder.typicode.com/posts", {
+      await genericApi.create("user_notifications", {
         ...formData,
         image: imageFile ? imageFile.name : null,
       });

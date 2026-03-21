@@ -50,6 +50,8 @@ const AddDeliveryBoy = () => {
     address: "",
     stores: [],
     status: DELIVERY_BOY_STATUS.ON_DUTY,
+    earnings: 0,
+    rating: 5.0,
   });
   const [idImage, setIdImage] = useState(null);
 
@@ -106,6 +108,8 @@ const AddDeliveryBoy = () => {
         "Boy Phone": formData.phone,
         "Boy Password": formData.password,
         "Status": normalizeDeliveryBoyStatus(formData.status),
+        "Total Earnings": Number(formData.earnings),
+        "Rating": Number(formData.rating),
         "Details": {
           "Email": formData.email,
           "City": formData.city,
@@ -323,6 +327,39 @@ const AddDeliveryBoy = () => {
                   name="address"
                   placeholder="Enter a location"
                   value={formData.address}
+                  onChange={handleChange}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                />
+              </Grid>
+
+              {/* Earnings */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
+                  Total Earnings (Rs.)
+                </Typography>
+                <TextField
+                  fullWidth
+                  name="earnings"
+                  type="number"
+                  placeholder="0"
+                  value={formData.earnings}
+                  onChange={handleChange}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                />
+              </Grid>
+
+              {/* Rating */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
+                  Initial Rating (1-5)
+                </Typography>
+                <TextField
+                  fullWidth
+                  name="rating"
+                  type="number"
+                  inputProps={{ step: 0.1, min: 0, max: 5 }}
+                  placeholder="5.0"
+                  value={formData.rating}
                   onChange={handleChange}
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                 />

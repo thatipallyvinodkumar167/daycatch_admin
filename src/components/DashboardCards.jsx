@@ -176,14 +176,7 @@ const DashboardCards = () => {
     return { color: "#808191", icon: <AccessTimeFilledIcon />, label: status };
   };
 
-  if (loading) return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-      <Box className="premium-orbit-loader" />
-      <Typography variant="body2" sx={{ mt: 3, fontWeight: 700, color: "text.secondary", letterSpacing: 2 }}>
-        SYNCING ENGINE...
-      </Typography>
-    </Box>
-  );
+
 
   return (
     <Box sx={{ py: 3, px: { xs: 1, md: 3 } }}>

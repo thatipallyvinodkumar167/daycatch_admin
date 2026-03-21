@@ -18,6 +18,7 @@ import {
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const PaymentFailedOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -29,19 +30,18 @@ const PaymentFailedOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users?_limit=4"
-      );
+      const response = await genericApi.getAll("payment failed orders");
+      const results = response.data.results || response.data || [];
       
-      const formattedData = response.data.map((user, index) => ({
-        id: index + 1,
-        cartId: `ORD-FAL-${6000 + user.id}`,
-        cartPrice: `₹${Math.floor(Math.random() * 5000) + 1000}`,
-        userName: user.name,
-        userPhone: user.phone.split(" ")[0],
-        deliveryDate: "N/A",
-        status: "Payment Failed",
-        method: index % 2 === 0 ? "UPI" : "Card"
+      const formattedData = results.map((order, index) => ({
+        id: order._id || index + 1,
+        cartId: order["Cart ID"] || `ORD-FAL-${index}`,
+        cartPrice: typeof order["Cart price"] === "number" ? `₹${order["Cart price"]}` : `₹0`,
+        userName: order["User"] || order.user || "Unknown",
+        userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleDateString() : "N/A",
+        status: order["Status"] || "Payment Failed",
+        method: order.Details?.gateway || order.method || "N/A"
       }));
 
       setOrders(formattedData);

@@ -35,21 +35,26 @@ const DeliveryBoyDetails = () => {
         const found = list.find(b => String(b._id) === String(id) || String(b.id) === String(id));
 
         if (found) {
-          const detailsInfo = found.Details || found.details || {};
+          const detailsInfo = typeof found.Details === "object" ? found.Details : (typeof found.details === "object" ? found.details : {});
+          
           setBoy({
-            name: found.boyName || found.name || found["Boy Name"] || "N/A",
-            phone: found.boyMobile || found.phone || found["Boy Phone"] || "N/A",
-            email: found.boyEmail || found.email || found["Boy Email"] || detailsInfo.Email || detailsInfo.boyEmail || "N/A",
-            status: normalizeDeliveryBoyStatus(found.status || found["Status"]),
-            city: detailsInfo.City || typeof found.city === 'object' ? found.city?.cityName : (found.city || found["City"] || "N/A"),
-            idType: normalizeDeliveryBoyIdType(detailsInfo["ID Type"] || found.idType || found["ID Type"]),
-            idNumber: detailsInfo["ID Number"] || found.idNumber || found["ID Number"] || "N/A",
-            addressLine: detailsInfo["Boy Address"] || found.boyAddress || found.address || found["Boy Address"] || "N/A",
-            stores: detailsInfo.Store ? (Array.isArray(detailsInfo.Store) ? detailsInfo.Store : [detailsInfo.Store]) : (found.store ? (Array.isArray(found.store) ? found.store : [found.store]) : (found["Store"] ? (Array.isArray(found["Store"]) ? found["Store"] : [found["Store"]]) : [])),
-            idImage: detailsInfo["ID Image"] || found.idImage || found["ID Image"] || "",
-            createdAt: found.createdAt ? new Date(found.createdAt).toLocaleDateString() : "N/A",
-            orders: found.orders || found["Orders"] || 0,
-            totalEarnings: "N/A"
+            name: found["Boy Name"] || found.boyName || found.name || "N/A",
+            phone: found["Boy Phone"] || found.boyMobile || found.phone || "N/A",
+            email: found["Boy Email"] || detailsInfo.Email || detailsInfo.email || detailsInfo.boyEmail || found.email || "N/A",
+            status: normalizeDeliveryBoyStatus(found["Status"] || found.status),
+            city: detailsInfo.City || detailsInfo.city || found["City"] || (typeof found.city === 'object' ? found.city?.cityName : found.city) || "N/A",
+            idType: normalizeDeliveryBoyIdType(detailsInfo["ID Type"] || detailsInfo.idType || found["ID Type"] || found.idType || "N/A"),
+            idNumber: detailsInfo["ID Number"] || detailsInfo.idNumber || found["ID Number"] || found.idNumber || "N/A",
+            addressLine: detailsInfo["Boy Address"] || detailsInfo.address || detailsInfo.boyAddress || found["Boy Address"] || found.address || found.boyAddress || "N/A",
+            stores: (() => {
+               const st = detailsInfo.Store || detailsInfo.store || detailsInfo.stores || found["Store"] || found.store || found.stores || [];
+               return Array.isArray(st) ? st : [st];
+            })(),
+            idImage: detailsInfo["ID Image"] || detailsInfo.idImage || found["ID Image"] || found.idImage || "",
+            createdAt: found.createdAt || found.date ? new Date(found.createdAt || found.date).toLocaleDateString() : "N/A",
+            orders: found["Orders"] || found.orders || 0,
+            totalEarnings: found["Total Earnings"] || found.totalEarnings || 0,
+            rating: found["Rating"] || found.rating || 4.8
           });
         }
         setLoading(false);
@@ -157,7 +162,7 @@ const DeliveryBoyDetails = () => {
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                     <Typography variant="body2" color="textSecondary">Rating</Typography>
-                    <Typography variant="body2" fontWeight="700" color="#ffb800">4.8 ★</Typography>
+                    <Typography variant="body2" fontWeight="700" color="#ffb800">{boy.rating} ★</Typography>
                 </Box>
             </Stack>
           </Paper>

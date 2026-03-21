@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -21,65 +21,68 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const Rewards = () => {
   const navigate = useNavigate();
-  const [rewards, setRewards] = useState(() => {
-    const saved = localStorage.getItem("daycatch_reward_rules");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [loading, setLoading] = useState(false);
+  const [rewards, setRewards] = useState([]);
   const [search, setSearch] = useState("");
   const [newRule, setNewRule] = useState({ cartValue: "", points: "" });
 
-  useEffect(() => {
-    const fetchRewards = async () => {
-      try {
-        const response = await axios.get(
-          "https://jsonplaceholder.typicode.com/posts?_limit=8"
-        );
-        
-        const formattedData = response.data.map((item, index) => ({
-          id: item.id,
-          cartValue: 500 + (index * 250),
-          rewardPoints: 10 + (index * 5),
-        }));
-
-        setRewards(formattedData);
-      } catch (error) {
-        console.error("Error fetching rewards:", error);
-      }
-    };
-
-    if (rewards.length === 0) {
-      fetchRewards();
+  const fetchRewards = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await genericApi.getAll("rewards");
+      const results = response.data.results || response.data || [];
+      const formattedData = results.map((item) => ({
+        id: item._id,
+        cartValue: item["Cart Value"] || item.cartValue || 0,
+        rewardPoints: item["Reward Points"] || item.rewardPoints || 0,
+      }));
+      setRewards(formattedData);
+    } catch (error) {
+      console.error("Error fetching rewards:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [rewards.length]);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem("daycatch_reward_rules", JSON.stringify(rewards));
-  }, [rewards]);
+    fetchRewards();
+  }, [fetchRewards]);
 
   const filteredRewards = rewards.filter((item) =>
     item.cartValue.toString().includes(search.trim()) ||
     item.rewardPoints.toString().includes(search.trim())
   );
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newRule.cartValue || !newRule.points) return;
-    const newItem = {
-      id: Date.now(),
-      cartValue: parseInt(newRule.cartValue),
-      rewardPoints: parseInt(newRule.points),
-    };
-    setRewards([newItem, ...rewards]);
-    setNewRule({ cartValue: "", points: "" });
-    alert("Reward rule added!");
+    try {
+      const payload = {
+        "Cart Value": Number(newRule.cartValue),
+        "Reward Points": Number(newRule.points),
+      };
+      await genericApi.create("rewards", payload);
+      alert("Reward rule added!");
+      setNewRule({ cartValue: "", points: "" });
+      fetchRewards();
+    } catch (error) {
+      console.error("Error adding reward:", error);
+      alert("Error adding reward rule.");
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this reward rule?")) {
-      setRewards(prev => prev.filter(item => item.id !== id));
+      try {
+        await genericApi.delete("rewards", id);
+        fetchRewards();
+      } catch (error) {
+        console.error("Error deleting reward:", error);
+        alert("Error deleting reward rule.");
+      }
     }
   };
 

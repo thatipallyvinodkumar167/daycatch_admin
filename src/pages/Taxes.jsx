@@ -27,6 +27,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import { genericApi } from "../api/genericApi";
 
 const Taxes = () => {
   const [taxes, setTaxes] = useState([]);
@@ -46,15 +47,15 @@ const Taxes = () => {
 
   const fetchTaxes = async () => {
     try {
-      // Mock tax data - in production replace with axios.get("/api/taxes")
-      const mockTaxes = [
-        { id: 1, name: "GST 5%", rate: 5, status: "Active" },
-        { id: 2, name: "GST 12%", rate: 12, status: "Active" },
-        { id: 3, name: "GST 18%", rate: 18, status: "Active" },
-        { id: 4, name: "Luxury Tax", rate: 28, status: "Active" },
-        { id: 5, name: "Zero Rated", rate: 0, status: "Active" },
-      ];
-      setTaxes(mockTaxes);
+      const response = await genericApi.getAll("tax");
+      const results = response.data.results || response.data || [];
+      const formattedTaxes = results.map((tax, index) => ({
+        id: tax._id,
+        name: tax.name || tax["Tax Name"] || "Unnamed Tax",
+        rate: tax.rate || tax["Tax Rate"] || 0,
+        status: tax.status || "Active",
+      }));
+      setTaxes(formattedTaxes);
     } catch (error) {
       console.error("Error fetching taxes:", error);
     }
@@ -97,30 +98,37 @@ const Taxes = () => {
     }
 
     try {
+      const payload = {
+        name: formData.name,
+        rate: Number(formData.rate),
+        status: formData.status
+      };
+
       if (editMode) {
-        // Mock update
-        setTaxes(prev => prev.map(t => t.id === selectedTax.id ? { ...t, ...formData, rate: Number(formData.rate) } : t));
+        await genericApi.update("tax", selectedTax.id, payload);
         alert("Tax updated successfully!");
       } else {
-        // Mock create
-        const newTax = {
-          id: Date.now(),
-          ...formData,
-          rate: Number(formData.rate),
-        };
-        setTaxes([newTax, ...taxes]);
+        await genericApi.create("tax", payload);
         alert("Tax added successfully!");
       }
+      fetchTaxes();
       handleClose();
     } catch (error) {
       console.error("Error saving tax:", error);
+      alert("Error saving tax details.");
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this tax type?")) {
-      setTaxes(taxes.filter(tax => tax.id !== id));
-      alert("Tax deleted successfully!");
+      try {
+        await genericApi.delete("tax", id);
+        fetchTaxes();
+        alert("Tax deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting tax:", error);
+        alert("Error deleting tax.");
+      }
     }
   };
 

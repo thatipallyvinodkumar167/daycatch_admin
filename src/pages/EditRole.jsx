@@ -12,6 +12,7 @@ import {
   Divider,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
+import { genericApi } from "../api/genericApi";
 
 const EditRole = () => {
   const navigate = useNavigate();
@@ -41,36 +42,23 @@ const EditRole = () => {
   });
 
   useEffect(() => {
-    // Simulate fetching existing role data
-    const fetchRoleData = () => {
-        const mockRoleData = {
-            id: id,
-            name: id === "1" ? "Super Admin" : "Manager",
-            permissions: {
-                Dashboard: true,
-                Category: true,
-                Tax: true,
-                Id: true,
-                Membership: true,
-                Reports: true,
-                Notification: true,
-                Users: true,
-                Product: true,
-                Area: true,
-                Store: true,
-                Orders: true,
-                Payout: id === "1",
-                Rewards: true,
-                "Delivery Boy": true,
-                Pages: true,
-                Feedback: true,
-                Callback: true,
-                Settings: true,
-                "Cancelling Reasons": true,
+    const fetchRoleData = async () => {
+        try {
+            const response = await genericApi.getOne("roles", id);
+            const role = response.data;
+            if (role) {
+                setRoleName(role.name || "");
+                if (role.permissions) {
+                    setPermissions(prev => ({
+                        ...prev,
+                        ...role.permissions
+                    }));
+                }
             }
-        };
-        setRoleName(mockRoleData.name);
-        setPermissions(mockRoleData.permissions);
+        } catch (error) {
+            console.error("Error fetching role data:", error);
+            alert("Failed to load role details.");
+        }
     };
 
     fetchRoleData();
@@ -83,19 +71,38 @@ const EditRole = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!roleName.trim()) {
       alert("Please enter a role name.");
       return;
     }
-    // Simulate API call
-    console.log("Updating Role:", { id, roleName, permissions });
-    alert("Role updated successfully!");
-    navigate("/roles");
+    
+    try {
+      const payload = {
+        name: roleName.trim(),
+        permissions: permissions
+      };
+      
+      await genericApi.update("roles", id, payload);
+      alert("Role updated successfully!");
+      navigate("/roles");
+    } catch (error) {
+      console.error("Error updating role:", error);
+      alert("Failed to update role.");
+    }
   };
 
-  const sections = Object.keys(permissions);
+  const permissionCategories = {
+    "Core Management": ["Dashboard", "Users"],
+    "Inventory & Sales": ["Category", "Product", "Orders"],
+    "Operations": ["Store", "Delivery Boy", "Area"],
+    "Financials": ["Tax", "Id", "Payout"],
+    "Promotions": ["Rewards", "Membership"],
+    "Communications": ["Notification"],
+    "Support & Pages": ["Callback", "Feedback", "Pages"],
+    "System Settings": ["Settings", "Cancelling Reasons"]
+  };
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
@@ -143,51 +150,58 @@ const EditRole = () => {
             <Typography variant="h6" fontWeight="700" color="#1b2559" sx={{ mb: 3, textAlign: "center" }}>
               Update Permissions
             </Typography>
-            <Grid container spacing={2}>
-              {sections.map((section) => (
-                <Grid item xs={12} sm={6} md={3} key={section}>
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 1.5,
-                      borderRadius: "12px",
-                      border: permissions[section] ? "2px solid #4318ff" : "1px solid #e0e5f2",
-                      backgroundColor: permissions[section] ? "#f4f7fe" : "transparent",
-                      transition: "all 0.2s",
-                      "&:hover": {
-                        backgroundColor: "#f4f7fe",
-                      },
-                    }}
-                  >
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={permissions[section]}
-                          onChange={handleCheckboxChange}
-                          name={section}
-                          sx={{
-                            color: "#d1d5db",
-                            "&.Mui-checked": {
-                              color: "#4318ff",
-                            },
-                          }}
+            {Object.entries(permissionCategories).map(([category, keys]) => (
+              <Box key={category} sx={{ mb: 4 }}>
+                <Typography variant="subtitle1" fontWeight="700" color="#2b3674" sx={{ mb: 2, borderBottom: "1px solid #e0e5f2", pb: 1 }}>
+                  {category}
+                </Typography>
+                <Grid container spacing={2}>
+                  {keys.map((section) => (
+                    <Grid item xs={12} sm={6} md={3} key={section}>
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 1.5,
+                          borderRadius: "12px",
+                          border: permissions[section] ? "2px solid #4318ff" : "1px solid #e0e5f2",
+                          backgroundColor: permissions[section] ? "#f4f7fe" : "transparent",
+                          transition: "all 0.2s",
+                          "&:hover": {
+                            backgroundColor: "#f4f7fe",
+                          },
+                        }}
+                      >
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={permissions[section]}
+                              onChange={handleCheckboxChange}
+                              name={section}
+                              sx={{
+                                color: "#d1d5db",
+                                "&.Mui-checked": {
+                                  color: "#4318ff",
+                                },
+                              }}
+                            />
+                          }
+                          label={
+                            <Typography
+                              variant="body2"
+                              fontWeight={permissions[section] ? "700" : "500"}
+                              color={permissions[section] ? "#1b2559" : "#475467"}
+                            >
+                              {section}
+                            </Typography>
+                          }
+                          sx={{ width: "100%", m: 0 }}
                         />
-                      }
-                      label={
-                        <Typography
-                          variant="body2"
-                          fontWeight={permissions[section] ? "700" : "500"}
-                          color={permissions[section] ? "#1b2559" : "#475467"}
-                        >
-                          {section}
-                        </Typography>
-                      }
-                      sx={{ width: "100%", m: 0 }}
-                    />
-                  </Paper>
+                      </Paper>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              </Box>
+            ))}
           </Box>
 
           <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 4 }}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -20,70 +20,68 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const RedeemValues = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [redeemValues, setRedeemValues] = useState([]);
   const [search, setSearch] = useState("");
   const [newRule, setNewRule] = useState({ points: "", value: "" });
 
-  useEffect(() => {
-    fetchRedeemValues();
+  const fetchRedeemValues = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await genericApi.getAll("reedm value");
+      const results = response.data.results || response.data || [];
+      const formattedData = results.map((item) => ({
+        id: item._id,
+        rewardPoints: item["Reward Points"] || item.rewardPoints || 0,
+        redeemValue: item["Redeem Value"] || item.redeemValue || 0,
+      }));
+      setRedeemValues(formattedData);
+    } catch (error) {
+      console.error("Error fetching redeem values:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (redeemValues.length > 0) {
-      localStorage.setItem("daycatch_redeem_values_v2", JSON.stringify(redeemValues));
-    }
-  }, [redeemValues]);
-
-  const fetchRedeemValues = async () => {
-    try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/posts?_limit=6"
-      );
-      
-      const formattedData = response.data.map((item, index) => {
-        const points = (index + 1) * 10;
-        return {
-          id: item.id,
-          rewardPoints: points,
-          redeemValue: points * 0.5,
-        };
-      });
-
-      // Merge any user-added entries (from localStorage) on top
-      const saved = localStorage.getItem("daycatch_redeem_values_v2");
-      const savedEntries = saved ? JSON.parse(saved) : [];
-      // savedEntries that are NOT in the mock data (user-added have Date.now() IDs > 100)
-      const userAdded = savedEntries.filter(e => e.id > 100);
-      setRedeemValues([...userAdded, ...formattedData]);
-    } catch (error) {
-      console.error("Error fetching redeem values:", error);
-    }
-  };
+    fetchRedeemValues();
+  }, [fetchRedeemValues]);
 
   const filteredValues = redeemValues.filter((item) =>
     item.rewardPoints.toString().includes(search.trim()) ||
     item.redeemValue.toString().includes(search.trim())
   );
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newRule.points || !newRule.value) return;
-    const newItem = {
-      id: Date.now(),
-      rewardPoints: parseInt(newRule.points),
-      redeemValue: parseFloat(newRule.value),
-    };
-    setRedeemValues([newItem, ...redeemValues]);
-    setNewRule({ points: "", value: "" });
-    alert("Redemption rule added!");
+    try {
+      const payload = {
+        "Reward Points": Number(newRule.points),
+        "Redeem Value": Number(newRule.value),
+      };
+      await genericApi.create("reedm value", payload);
+      alert("Redemption rule added!");
+      setNewRule({ points: "", value: "" });
+      fetchRedeemValues();
+    } catch (error) {
+      console.error("Error adding redeem value:", error);
+      alert("Error adding redemption rule.");
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this redemption rule?")) {
-      setRedeemValues(prev => prev.filter(item => item.id !== id));
+      try {
+        await genericApi.delete("reedm value", id);
+        fetchRedeemValues();
+      } catch (error) {
+        console.error("Error deleting redeem value:", error);
+        alert("Error deleting redemption rule.");
+      }
     }
   };
 

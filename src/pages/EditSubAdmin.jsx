@@ -19,6 +19,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { genericApi } from "../api/genericApi";
 
 const EditSubAdmin = () => {
   const navigate = useNavigate();
@@ -35,41 +36,40 @@ const EditSubAdmin = () => {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Default roles to show when API is unavailable
+  const DEFAULT_ROLES = ["Super Admin", "Manager", "Delivery Manager", "Support", "Inventory Manager"];
+
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const mockRoles = [
-          { id: 1, name: "Manager" },
-          { id: 2, name: "Editor" },
-          { id: 3, name: "Support" },
-          { id: 4, name: "Inventory Manager" },
-          { id: 5, name: "Delivery Lead" },
-        ];
-        setRoles(mockRoles);
-      } catch (error) {
-        console.error("Error fetching roles:", error);
+        const response = await genericApi.getAll("roles");
+        const results = response.data.results || response.data || [];
+        if (results.length > 0) {
+          setRoles(results.map(r => ({ id: r._id, name: r.name })));
+        } else {
+          setRoles(DEFAULT_ROLES.map(name => ({ id: name, name })));
+        }
+      } catch {
+        // Fallback to default roles if API fails
+        setRoles(DEFAULT_ROLES.map(name => ({ id: name, name })));
       }
     };
 
     const fetchAdminDetails = async () => {
       try {
         setLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const response = await genericApi.getOne("sub-admin", id);
+        const admin = response.data;
         
-        const mockAdmin = {
-          name: "John Doe",
-          email: "john@example.com",
-          roleName: "Manager",
-          image: `https://i.pravatar.cc/150?u=${id}`
-        };
-        
-        setFormData(prev => ({
-          ...prev,
-          name: mockAdmin.name,
-          email: mockAdmin.email,
-          roleName: mockAdmin.roleName,
-        }));
-        setImagePreview(mockAdmin.image);
+        if (admin) {
+          setFormData(prev => ({
+            ...prev,
+            name: admin["Name"] || admin.name || "",
+            email: admin["Email"] || admin["Email ID"] || admin.email || "",
+            roleName: admin["role Name"] || admin.roleName || admin.role || "",
+          }));
+          setImagePreview(admin.Image || admin.image || admin.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(admin["Name"] || "Admin")}&background=random`);
+        }
         setLoading(false);
       } catch (error) {
         console.error("Error fetching admin details:", error);
@@ -97,13 +97,23 @@ const EditSubAdmin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.roleName) {
-      alert("Please fill in all required fields.");
+    if (!formData.name || !formData.email) {
+      alert("Please fill in name and email.");
       return;
     }
 
     try {
-      console.log("Updating Sub-Admin Data:", formData);
+      const payload = {
+          "Name": formData.name,
+          "Email": formData.email,
+          "role Name": formData.roleName || "Manager",
+      };
+      
+      if (formData.password) {
+          payload["password"] = formData.password;
+      }
+
+      await genericApi.update("sub-admin", id, payload);
       alert("Sub-Admin updated successfully!");
       navigate("/sub-admin");
     } catch (error) {

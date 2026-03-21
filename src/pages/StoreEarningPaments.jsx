@@ -14,7 +14,7 @@ import {
   Chip,
   Stack,
 } from "@mui/material";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const StoreEarningPaments = () => {
 
@@ -29,11 +29,16 @@ const StoreEarningPaments = () => {
   const fetchOrders = async () => {
     try {
 
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/posts"
-      );
-
-      setOrders(response.data);
+      const response = await genericApi.getAll("store");
+      const results = response.data.results || response.data || [];
+      setOrders(results.map((store, index) => ({
+        _id: store._id || index,
+        cartId: store["Store Name"] || store.name || `Store ${index}`,
+        cartPrice: store["Address"] || store.address || "N/A",
+        user: { name: store["Total Revenue"] || 0, phone: "Paid" },
+        deliveryDate: store["Paid"] || 0,
+        status: store["Status"] || "Active",
+      })));
 
     } catch (error) {
       console.error("Error fetching orders:", error);

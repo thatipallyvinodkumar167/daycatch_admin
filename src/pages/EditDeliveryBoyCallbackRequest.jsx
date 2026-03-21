@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const EditDeliveryBoyCallbackRequest = () => {
   const { id } = useParams();
@@ -24,12 +25,10 @@ const EditDeliveryBoyCallbackRequest = () => {
   useEffect(() => {
     const fetchRequest = async () => {
       try {
-        const response = await axios.get(
-          `https://jsonplaceholder.typicode.com/users/${id}`
-        );
+        const response = await genericApi.getOne("deliveryboycallbackrequests", id);
         setFormData({
-            deliveryBoyName: response.data.name,
-            deliveryBoyPhone: response.data.phone
+            deliveryBoyName: response.data?.deliveryBoyName || response.data?.name || "",
+            deliveryBoyPhone: response.data?.deliveryBoyPhone || response.data?.phone || ""
         });
         setLoading(false);
       } catch (error) {
@@ -54,14 +53,9 @@ const EditDeliveryBoyCallbackRequest = () => {
 
     setIsSubmitting(true);
     try {
-      // Mock PUT request to fake API
-      await axios.put(`https://jsonplaceholder.typicode.com/posts/${id}`, {
-        title: `Delivery Boy Callback for ${formData.deliveryBoyName}`,
-        body: formData.deliveryBoyPhone,
-        userId: 1,
-      });
+      await genericApi.update("deliveryboycallbackrequests", id, formData);
 
-      alert("Delivery Boy callback request updated successfully (Mock API)!");
+      alert("Delivery Boy callback request updated successfully!");
       navigate("/delivery-boy-callback-request");
     } catch (error) {
       console.error("Error updating delivery boy callback request:", error);

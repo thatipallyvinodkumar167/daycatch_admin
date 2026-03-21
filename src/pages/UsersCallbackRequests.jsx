@@ -17,6 +17,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const UsersCallbackRequests = () => {
   const navigate = useNavigate();
@@ -30,17 +31,14 @@ const UsersCallbackRequests = () => {
 
   const fetchRequests = async () => {
     try {
-      // Fetching users as mock data for callback requests
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users"
-      );
+      const response = await genericApi.getAll("usercallbackrequests");
+      const results = response.data.results || response.data || [];
       
-      // Map fake data to our columns
-      const formattedData = response.data.map(item => ({
-        id: item.id,
-        userName: item.name,
-        userPhone: item.phone,
-        callbackTo: "Support Team", // Hardcoded for mockup
+      const formattedData = results.map((item, index) => ({
+        id: item._id || index,
+        userName: item.userName || item.name || "Unknown User",
+        userPhone: item.userPhone || item.phone || item.mobile || "N/A",
+        callbackTo: item.callbackTo || item.department || "Support Team",
       }));
 
       setRequests(formattedData);
@@ -56,10 +54,16 @@ const UsersCallbackRequests = () => {
     );
   }, [requests, search]);
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this callback request?")) {
-      setRequests(prev => prev.filter(item => item.id !== id));
-      alert("Callback request deleted successfully!");
+      try {
+        await genericApi.remove("usercallbackrequests", id);
+        setRequests(prev => prev.filter(item => item.id !== id));
+        alert("Callback request deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting callback request:", error);
+        alert("Failed to delete request.");
+      }
     }
   };
 

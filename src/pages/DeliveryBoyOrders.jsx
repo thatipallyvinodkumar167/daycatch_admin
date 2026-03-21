@@ -13,7 +13,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const DeliveryBoyOrders = () => {
@@ -27,17 +27,31 @@ const DeliveryBoyOrders = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Fetch boy name
-        const userRes = await axios.get(`https://jsonplaceholder.typicode.com/users/${id}`);
-        setBoyName(userRes.data.name);
+        // Fetch boy name and data
+        const boyRes = await genericApi.get("deliveryboy", id);
+        const boyData = boyRes.data.data;
+        setBoyName(boyData?.["Delivery Boy Name"] || boyData?.name || "Delivery Partner");
 
-        // Fetch mock orders (empty for now as requested by "No data found")
-        // But I will provide a structure for when data exists
-        setOrders([]); 
+        // Fetch all orders and filter by delivery boy phone/id
+        const orderRes = await genericApi.getAll("orders");
+        const allOrders = orderRes.data.results || orderRes.data || [];
         
+        // Use either phone number or _id to match assigned orders
+        const assignedOrders = allOrders.filter(order => 
+            order.delivery_boy?.id === id || 
+            order.delivery_boy?.phone === boyData?.["Delivery Boy Phone"]
+        ).map(order => ({
+            cartId: order["Cart ID"] || order._id,
+            price: order["Cart price"] || 0,
+            user: order["User"] || "Customer",
+            date: order["Delivery Date"] || "N/A",
+            products: order["Cart Products"] || "N/A"
+        }));
+
+        setOrders(assignedOrders);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching delivery boy data:", error);
         setLoading(false);
       }
     };

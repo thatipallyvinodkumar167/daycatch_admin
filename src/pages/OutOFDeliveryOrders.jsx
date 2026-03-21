@@ -18,6 +18,7 @@ import {
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import MopedIcon from "@mui/icons-material/Moped";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const OutOFDeliveryOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -29,19 +30,18 @@ const OutOFDeliveryOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users?_limit=5"
-      );
+      const response = await genericApi.getAll("out for orders");
+      const results = response.data.results || response.data || [];
       
-      const formattedData = response.data.map((user, index) => ({
-        id: index + 1,
-        cartId: `ORD-OUT-${5000 + user.id}`,
-        cartPrice: `₹${Math.floor(Math.random() * 1500) + 300}`,
-        userName: user.name,
-        userPhone: user.phone.split(" ")[0],
-        deliveryDate: "Today",
-        status: "Out for Delivery",
-        driver: `Driver ${String.fromCharCode(65 + index)}`
+      const formattedData = results.map((order, index) => ({
+        id: order._id || index + 1,
+        cartId: order["Cart ID"] || `ORD-OUT-${index}`,
+        cartPrice: typeof order["Cart price"] === "number" ? `₹${order["Cart price"]}` : `₹0`,
+        userName: order["User"] || order.user || "Unknown",
+        userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleDateString() : "Today",
+        status: order["Status"] || "Out for Delivery",
+        driver: order["Assign"] || order["Delivery Boy"] || order.driver || "Unassigned"
       }));
 
       setOrders(formattedData);

@@ -16,6 +16,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import EventNoteIcon from "@mui/icons-material/EventNote";
 import AssessmentIcon from "@mui/icons-material/Assessment";
+import { genericApi } from "../api/genericApi";
 
 const TaxReports = () => {
   const [reports, setReports] = useState([]);
@@ -28,12 +29,14 @@ const TaxReports = () => {
 
   const fetchTaxReports = async () => {
     try {
-      const mockData = [
-        { id: 1, productName: "Fresh Chicken", quantity: "2.5 KG" },
-        { id: 2, productName: "Ocean Prawns", quantity: "500 G" },
-        { id: 3, productName: "Rohu Fish Large", quantity: "1 KG" },
-      ];
-      setReports(mockData);
+      const response = await genericApi.getAll("tax_report");
+      const results = response.data.results || response.data || [];
+      const formattedData = results.map((item, index) => ({
+        id: item._id || index + 1,
+        productName: item["Product Name"] || item.productName || "Unknown Product",
+        quantity: item["Quantity"] || item.quantity || "0",
+      }));
+      setReports(formattedData);
     } catch (error) {
       console.error("Error fetching tax reports:", error);
     }

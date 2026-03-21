@@ -20,7 +20,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import StorefrontIcon from "@mui/icons-material/Storefront";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const StoreApproval = () => {
   const [stores, setStores] = useState([]);
@@ -32,22 +32,22 @@ const StoreApproval = () => {
 
   const fetchPendingStores = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users?_limit=6"
-      );
+      const response = await genericApi.getAll("store");
+      const results = response.data.results || response.data || [];
       
-      const cities = ["New York", "Chicago", "Miami", "Austin", "Seattle", "Boston"];
-      const formattedData = response.data.map((user, index) => ({
-        id: user.id,
-        storeName: user.company.name,
-        city: cities[index % cities.length],
-        mobile: user.phone.split(" ")[0],
-        email: user.email,
-        adminShare: "10%",
-        ownerName: user.name,
-        status: "Pending",
-        logo: `https://ui-avatars.com/api/?name=${user.company.name}&background=random`
-      }));
+      const formattedData = results
+        .filter(store => (store.status || store["Status"]) === "Pending")
+        .map((store, index) => ({
+          id: store._id || index,
+          storeName: store["Store Name"] || store.name || store.storeName || "Unnamed Store",
+          city: store.city || store["City"] || "N/A",
+          mobile: store.phone || store.mobile || store["Phone"] || "N/A",
+          email: store.email || store["Email"] || "N/A",
+          adminShare: store.adminShare || "10%",
+          ownerName: store.ownerName || store["Owner Name"] || "N/A",
+          status: store.status || store["Status"] || "Pending",
+          logo: store.logo || store["Logo"] || `https://ui-avatars.com/api/?name=${store["Store Name"] || store.name || "S"}&background=random`
+        }));
 
       setStores(formattedData);
     } catch (error) {
@@ -55,10 +55,16 @@ const StoreApproval = () => {
     }
   };
 
-  const handleApprove = (id) => {
+  const handleApprove = async (id) => {
     if (window.confirm("Approve this store to start selling?")) {
-        setStores(prev => prev.filter(s => s.id !== id));
-        alert("Store approved successfully!");
+        try {
+            await genericApi.update("store", id, { Status: "Active" });
+            setStores(prev => prev.filter(s => s.id !== id));
+            alert("Store approved successfully!");
+        } catch (error) {
+            console.error(error);
+            alert("Failed to approve store.");
+        }
     }
   };
 

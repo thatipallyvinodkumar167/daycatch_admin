@@ -12,7 +12,7 @@ import {
   TextField,
   Stack,
 } from "@mui/material";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const StoreFeedback = () => {
   const [feedbackList, setFeedbackList] = useState([]);
@@ -25,16 +25,13 @@ const StoreFeedback = () => {
 
   const fetchFeedback = async () => {
     try {
-      // Fetching comments as mock data for user feedback
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/comments?_limit=20"
-      );
+      const response = await genericApi.getAll("storefeedback");
+      const results = response.data.results || response.data || [];
       
-      // Map fake data to our columns (#, Users, Feedback)
-      const formattedData = response.data.map(item => ({
-        id: item.id,
-        user: item.email, // Using email as the user identifier
-        feedback: item.body,
+      const formattedData = results.map((item, index) => ({
+        id: item._id || index,
+        user: item.storeName || item.store || item.user || item.email || "Unknown Store",
+        feedback: item.feedback || item.message || item.body || "No feedback content",
       }));
 
       setFeedbackList(formattedData);

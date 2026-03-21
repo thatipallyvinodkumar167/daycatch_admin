@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const StoreProducts = () => {
   const [storeProducts, setStoreProducts] = useState([]);
@@ -31,23 +31,18 @@ const StoreProducts = () => {
 
   const fetchStoreProducts = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users?_limit=8"
-      );
+      const response = await genericApi.getAll("storeProducts");
+      const results = response.data.results || response.data || [];
       
-      // Map fake data to our store product columns
-      const formattedData = response.data.map((item, index) => {
-        const categories = ["Fruits", "Vegetables", "Dairy", "Bakery"];
-        const price = Math.floor(Math.random() * 400) + 30;
-        
+      const formattedData = results.map((item, index) => {
         return {
-          id: item.id,
-          storeName: item.company.name,
-          storeImage: `https://ui-avatars.com/api/?name=${item.company.name}&background=random`,
-          productName: `Premium ${categories[index % 4]} Package`,
-          category: categories[index % 4],
-          price: `₹${price}`,
-          status: index % 4 === 0 ? "Pending Approval" : "Live"
+          id: item._id || index,
+          storeName: item.storeName || item.store || item.company?.name || `Store ${index}`,
+          storeImage: item.storeImage || item.logo || `https://ui-avatars.com/api/?name=${item.storeName || "S"}&background=random`,
+          productName: item.productName || item.name || `Product ${index}`,
+          category: item.category || "Uncategorized",
+          price: item.price ? `₹${item.price}` : "₹0",
+          status: item.status || "Live"
         };
       });
 

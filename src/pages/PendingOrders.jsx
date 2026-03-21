@@ -18,6 +18,7 @@ import {
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const PendingOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -29,18 +30,17 @@ const PendingOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users?_limit=8"
-      );
+      const response = await genericApi.getAll("pending orders");
+      const results = response.data.results || response.data || [];
       
-      const formattedData = response.data.map((user, index) => ({
-        id: index + 1,
-        cartId: `ORD-PEN-${2000 + user.id}`,
-        cartPrice: `₹${Math.floor(Math.random() * 3000) + 400}`,
-        userName: user.name,
-        userPhone: user.phone.split(" ")[0],
-        deliveryDate: `2024-03-${25 + (index % 5)}`,
-        status: "Pending",
+      const formattedData = results.map((order, index) => ({
+        id: order._id || index + 1,
+        cartId: order["Cart ID"] || `ORD-PEN-${index}`,
+        cartPrice: typeof order["Cart price"] === "number" ? `₹${order["Cart price"]}` : `₹0`,
+        userName: order["User"] || order.user || "Unknown",
+        userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleDateString() : "Pending",
+        status: order["Status"] || "Pending",
       }));
 
       setOrders(formattedData);

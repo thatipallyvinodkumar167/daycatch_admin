@@ -17,6 +17,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AssessmentIcon from "@mui/icons-material/Assessment";
+import { genericApi } from "../api/genericApi";
 
 const ItemSaleReport = () => {
   const [sales, setSales] = useState([]);
@@ -28,13 +29,16 @@ const ItemSaleReport = () => {
 
   const fetchSalesReport = async () => {
     try {
-      const mockData = [
-        { id: 1, productName: "Chicken Pickle", variantSize: "1000G", quantity: 2, totalWeight: "2000G" },
-        { id: 2, productName: "Fresh Prawns", variantSize: "500G", quantity: 5, totalWeight: "2500G" },
-        { id: 3, productName: "Rohu Fish", variantSize: "1KG", quantity: 3, totalWeight: "3KG" },
-        { id: 4, productName: "Mutton Boneless", variantSize: "500G", quantity: 4, totalWeight: "2000G" },
-      ];
-      setSales(mockData);
+      const response = await genericApi.getAll("item_sale_report");
+      const results = response.data.results || response.data || [];
+      const formattedData = results.map((item, index) => ({
+        id: item._id || index + 1,
+        productName: item["Product Name"] || item.productName || "Unknown Product",
+        variantSize: item["Variant Size"] || item.variantSize || "N/A",
+        quantity: Number(item["Quantity"] || item.quantity || 0),
+        totalWeight: item["Total Weight"] || item.totalWeight || "0",
+      }));
+      setSales(formattedData);
     } catch (error) {
       console.error("Error fetching sales report:", error);
     }

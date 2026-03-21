@@ -8,7 +8,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const AddDeliveryBoyCallbackRequest = () => {
   const navigate = useNavigate();
@@ -31,14 +31,14 @@ const AddDeliveryBoyCallbackRequest = () => {
 
     setIsSubmitting(true);
     try {
-      // Mock POST request to fake API
-      await axios.post("https://jsonplaceholder.typicode.com/posts", {
-        title: `Delivery Boy Callback for ${formData.deliveryBoyName}`,
-        body: formData.deliveryBoyPhone,
-        userId: 1,
-      });
-
-      alert("Delivery Boy callback request created successfully (Mock API)!");
+      const payload = {
+        "Delivery Boy Name": formData.deliveryBoyName.trim(),
+        "Delivery Boy Phone": formData.deliveryBoyPhone.trim(),
+        "Status": "Pending",
+        "Date": new Date().toISOString()
+      };
+      await genericApi.create("deliveryboycallbackrequests", payload);
+      alert("Delivery Boy callback request created successfully!");
       navigate("/delivery-boy-callback-request");
     } catch (error) {
       console.error("Error creating delivery boy callback request:", error);

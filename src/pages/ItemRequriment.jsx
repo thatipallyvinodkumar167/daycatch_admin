@@ -21,6 +21,7 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EventNoteIcon from "@mui/icons-material/EventNote";
+import { genericApi } from "../api/genericApi";
 
 const ItemRequirement = () => {
   const [view, setView] = useState("list"); // 'list' or 'detail'
@@ -36,14 +37,16 @@ const ItemRequirement = () => {
 
   const fetchRequirements = async () => {
     try {
-      const mockData = [
-        { id: 1, storeName: "FreshMart Central", city: "New York", mobile: "9876543210", email: "contact@freshmart.com" },
-        { id: 2, storeName: "Green Grocers", city: "Los Angeles", mobile: "8765432109", email: "info@greengrocers.com" },
-        { id: 3, storeName: "Daily Needs", city: "Chicago", mobile: "7654321098", email: "orders@dailyneeds.in" },
-        { id: 4, storeName: "Organic Hub", city: "Houston", mobile: "6543210987", email: "hello@organichub.com" },
-        { id: 5, storeName: "Nature's Basket", city: "Phoenix", mobile: "5432109876", email: "support@naturesbasket.com" },
-      ];
-      setRequirements(mockData);
+      const response = await genericApi.getAll("item_requirement");
+      const results = response.data.results || response.data || [];
+      const formattedData = results.map((item, index) => ({
+        id: item._id || index + 1,
+        storeName: item["Store Name"] || item.storeName || "Unknown Store",
+        city: item["City"] || item.city || "N/A",
+        mobile: item["Mobile"] || item.mobile || "N/A",
+        email: item["Email"] || item.email || "N/A",
+      }));
+      setRequirements(formattedData);
     } catch (error) {
       console.error("Error fetching requirements:", error);
     }

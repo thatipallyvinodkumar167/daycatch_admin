@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const EditUserCallbackRequest = () => {
   const { id } = useParams();
@@ -25,13 +26,11 @@ const EditUserCallbackRequest = () => {
   useEffect(() => {
     const fetchRequest = async () => {
       try {
-        const response = await axios.get(
-          `https://jsonplaceholder.typicode.com/users/${id}`
-        );
+        const response = await genericApi.getOne("usercallbackrequests", id);
         setFormData({
-            userName: response.data.name,
-            userPhone: response.data.phone,
-            callbackTo: "Support Team"
+            userName: response.data?.userName || response.data?.name || "",
+            userPhone: response.data?.userPhone || response.data?.phone || "",
+            callbackTo: response.data?.callbackTo || "Support Team"
         });
         setLoading(false);
       } catch (error) {
@@ -56,14 +55,9 @@ const EditUserCallbackRequest = () => {
 
     setIsSubmitting(true);
     try {
-      // Mock PUT request to fake API
-      await axios.put(`https://jsonplaceholder.typicode.com/posts/${id}`, {
-        title: `Callback for ${formData.userName}`,
-        body: formData.userPhone,
-        userId: 1,
-      });
+      await genericApi.update("usercallbackrequests", id, formData);
 
-      alert("Callback request updated successfully (Mock API)!");
+      alert("Callback request updated successfully!");
       navigate("/user-callback-request");
     } catch (error) {
       console.error("Error updating callback request:", error);

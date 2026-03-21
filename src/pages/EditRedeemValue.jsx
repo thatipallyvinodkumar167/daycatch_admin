@@ -9,7 +9,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const EditRedeemValue = () => {
@@ -25,11 +25,12 @@ const EditRedeemValue = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await axios.get(`https://jsonplaceholder.typicode.com/posts/${id}`);
-        // Mocking values
+        setLoading(true);
+        const response = await genericApi.get("reedm value", id);
+        const data = response.data.data;
         setFormData({
-          rewardPoints: 500,
-          redeemValue: 50,
+          rewardPoints: data?.["Reward Points"] || data?.rewardPoints || "",
+          redeemValue: data?.["Redeem Value"] || data?.redeemValue || "",
         });
         setLoading(false);
       } catch (error) {
@@ -48,7 +49,11 @@ const EditRedeemValue = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await axios.put(`https://jsonplaceholder.typicode.com/posts/${id}`, formData);
+      const payload = {
+        "Reward Points": Number(formData.rewardPoints),
+        "Redeem Value": Number(formData.redeemValue),
+      };
+      await genericApi.update("reedm value", id, payload);
       alert("Redeem value updated successfully!");
       navigate("/redeem-value");
     } catch (error) {

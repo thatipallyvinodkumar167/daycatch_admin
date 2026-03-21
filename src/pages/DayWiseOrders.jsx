@@ -15,7 +15,7 @@ import {
   MenuItem,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const DayWiseOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -27,31 +27,22 @@ const DayWiseOrders = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await axios.get(
-          "https://jsonplaceholder.typicode.com/users?_limit=9"
-        );
+        const response = await genericApi.getAll("day wise orders");
+        const results = response.data.results || response.data || [];
         
-        const formattedData = response.data.map((user, index) => {
-          // Generate a random date between fromDate and toDate
-          const start = new Date(fromDate);
-          const end = new Date(toDate);
-          const randomDate = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-          const dateString = randomDate.toISOString().split("T")[0];
-
-          return {
-            id: index + 1,
-            cartId: `ORD-DAY-${8000 + user.id}`,
-            cartPrice: `₹${Math.floor(Math.random() * 3000) + 400}`,
-            userName: user.name,
-            userPhone: user.phone.split(" ")[0],
-            deliveryDate: dateString,
-            deliveryBoy: `Boy ${index + 1}`,
-            cartProducts: `${Math.floor(Math.random() * 5) + 1} items`,
-            payment: index % 2 === 0 ? "COD" : "Online",
-            status: index % 4 === 0 ? "Pending" : "Completed",
-            store: `Store ${index + 1}`,
-          };
-        });
+        const formattedData = results.map((order, index) => ({
+          id: order._id || index + 1,
+          cartId: order["Cart ID"] || `ORD-DAY-${index}`,
+          cartPrice: typeof order["Cart price"] === "number" ? `₹${order["Cart price"]}` : (order["Cart price"] || `₹0`),
+          userName: order["User"] || order.user || "Unknown",
+          userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+          deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toISOString().split("T")[0] : "N/A",
+          deliveryBoy: order["Boy Name"] || order.deliveryBoy || "N/A",
+          cartProducts: Array.isArray(order["Products"]) ? `${order["Products"].length} items` : "N/A",
+          payment: order["Payment Type"] || order.payment || "COD",
+          status: order["Status"] || "Pending",
+          store: order["Store Name"] || order.store || "N/A",
+        }));
 
         setOrders(formattedData);
       } catch (error) {

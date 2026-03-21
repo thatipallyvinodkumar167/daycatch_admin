@@ -9,7 +9,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const EditReward = () => {
@@ -25,11 +25,12 @@ const EditReward = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await axios.get(`https://jsonplaceholder.typicode.com/posts/${id}`);
-        // Mocking the data
+        setLoading(true);
+        const response = await genericApi.get("rewards", id);
+        const data = response.data.data;
         setFormData({
-          cartValue: Math.floor(Math.random() * 2000) + 500,
-          rewardPoints: Math.floor(Math.random() * 100) + 10,
+          cartValue: data?.["Cart Value"] || data?.cartValue || "",
+          rewardPoints: data?.["Reward Points"] || data?.rewardPoints || "",
         });
         setLoading(false);
       } catch (error) {
@@ -48,7 +49,11 @@ const EditReward = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await axios.put(`https://jsonplaceholder.typicode.com/posts/${id}`, formData);
+      const payload = {
+        "Cart Value": Number(formData.cartValue),
+        "Reward Points": Number(formData.rewardPoints),
+      };
+      await genericApi.update("rewards", id, payload);
       alert("Reward points updated successfully!");
       navigate("/rewards-list");
     } catch (error) {

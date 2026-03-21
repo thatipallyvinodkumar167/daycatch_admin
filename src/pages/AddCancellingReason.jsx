@@ -8,7 +8,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const AddCancellingReason = () => {
   const navigate = useNavigate();
@@ -24,14 +24,12 @@ const AddCancellingReason = () => {
 
     setIsSubmitting(true);
     try {
-      // Mock POST request to fake API
-      await axios.post("https://jsonplaceholder.typicode.com/todos", {
-        title: reason.toUpperCase(),
-        completed: false,
-        userId: 1,
-      });
-
-      alert("Reason added successfully (Mock API)!");
+      const payload = {
+        reason: reason.trim(),
+        status: "Active"
+      };
+      await genericApi.create("cancelling reason", payload);
+      alert("Reason added successfully!");
       navigate("/cancelling-reasons");
     } catch (error) {
       console.error("Error adding reason:", error);

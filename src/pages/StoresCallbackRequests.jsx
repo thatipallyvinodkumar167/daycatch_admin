@@ -17,6 +17,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const StoresCallbackRequests = () => {
   const navigate = useNavigate();
@@ -30,16 +31,13 @@ const StoresCallbackRequests = () => {
 
   const fetchRequests = async () => {
     try {
-      // Fetching users as mock data for store callback requests
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users"
-      );
+      const response = await genericApi.getAll("storecallbackrequests");
+      const results = response.data.results || response.data || [];
       
-      // Map fake data to our columns (ID, Store Name, Store Phone)
-      const formattedData = response.data.map(item => ({
-        id: item.id,
-        storeName: item.company?.name || item.name,
-        storePhone: item.phone,
+      const formattedData = results.map((item, index) => ({
+        id: item._id || index,
+        storeName: item.storeName || item.store || item.company?.name || item.name || "Unknown Store",
+        storePhone: item.storePhone || item.phone || item.mobile || "N/A",
       }));
 
       setRequests(formattedData);
@@ -55,10 +53,16 @@ const StoresCallbackRequests = () => {
     );
   }, [requests, search]);
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this store callback request?")) {
-      setRequests(prev => prev.filter(item => item.id !== id));
-      alert("Store callback request deleted successfully!");
+      try {
+        await genericApi.remove("storecallbackrequests", id);
+        setRequests(prev => prev.filter(item => item.id !== id));
+        alert("Store callback request deleted successfully!");
+      } catch (error) {
+        console.error(error);
+        alert("Failed to delete request.");
+      }
     }
   };
 

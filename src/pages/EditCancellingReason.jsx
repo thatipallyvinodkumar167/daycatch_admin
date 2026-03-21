@@ -8,7 +8,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const EditCancellingReason = () => {
   const { id } = useParams();
@@ -21,10 +21,10 @@ const EditCancellingReason = () => {
   useEffect(() => {
     const fetchReason = async () => {
       try {
-        const response = await axios.get(
-          `https://jsonplaceholder.typicode.com/todos/${id}`
-        );
-        setReason(response.data.title.toUpperCase());
+        setLoading(true);
+        const response = await genericApi.get("cancelling reason", id);
+        const data = response.data.data;
+        setReason(data?.reason || "");
         setLoading(false);
       } catch (error) {
         console.error("Error fetching reason:", error);
@@ -44,14 +44,12 @@ const EditCancellingReason = () => {
 
     setIsSubmitting(true);
     try {
-      // Mock PUT request to fake API
-      await axios.put(`https://jsonplaceholder.typicode.com/todos/${id}`, {
-        title: reason.toUpperCase(),
-        completed: false,
-        userId: 1,
-      });
-
-      alert("Reason updated successfully (Mock API)!");
+      const payload = {
+        reason: reason.trim(),
+        status: "Active"
+      };
+      await genericApi.update("cancelling reason", id, payload);
+      alert("Reason updated successfully!");
       navigate("/cancelling-reasons");
     } catch (error) {
       console.error("Error updating reason:", error);
@@ -129,8 +127,6 @@ const EditCancellingReason = () => {
             </Stack>
           </form>
         </Box>
-
-       
 
       </Paper>
     </Box>

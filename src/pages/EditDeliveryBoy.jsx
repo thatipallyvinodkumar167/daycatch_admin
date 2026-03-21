@@ -52,6 +52,8 @@ const EditDeliveryBoy = () => {
     address: "",
     stores: [],
     status: DELIVERY_BOY_STATUS.ON_DUTY,
+    earnings: 0,
+    rating: 5.0,
   });
   const [idImage, setIdImage] = useState(null);
   const [existingImageUrl, setExistingImageUrl] = useState("");
@@ -75,20 +77,27 @@ const EditDeliveryBoy = () => {
         const found = list.find(b => String(b._id) === String(id) || String(b.id) === String(id));
 
         if (found) {
-          const detailsInfo = found.Details || found.details || {};
+          const detailsInfo = typeof found.Details === "object" ? found.Details : (typeof found.details === "object" ? found.details : {});
+          
+          let stList = detailsInfo.Store || detailsInfo.store || detailsInfo.stores || found["Store"] || found.store || found.stores || [];
+          if (!Array.isArray(stList)) stList = [stList];
+
           setFormData({
-            name: found.boyName || found.name || found["Boy Name"] || "",
-            phone: found.boyMobile || found.phone || found["Boy Phone"] || "",
-            email: found.boyEmail || found.email || found["Boy Email"] || detailsInfo.Email || detailsInfo.boyEmail || "",
-            password: found.boyPassword || found.password || found["Boy Password"] || "",
-            city: detailsInfo.City || typeof found.city === 'object' ? found.city?._id : (found.city || ""),
-            idType: normalizeDeliveryBoyIdType(detailsInfo["ID Type"] || found.idType),
-            idNumber: detailsInfo["ID Number"] || found.idNumber || "",
-            address: detailsInfo["Boy Address"] || found.boyAddress || found.address || "",
-            stores: detailsInfo.Store ? [detailsInfo.Store] : found.store ? (Array.isArray(found.store) ? found.store : [typeof found.store === 'object' ? found.store._id : found.store]) : (found.stores || []),
-            status: normalizeDeliveryBoyStatus(found.status || found.Status),
+            name: found["Boy Name"] || found.boyName || found.name || "",
+            phone: found["Boy Phone"] || found.boyMobile || found.phone || "",
+            email: found["Boy Email"] || detailsInfo.Email || detailsInfo.email || detailsInfo.boyEmail || found.email || "",
+            password: found["Boy Password"] || found.boyPassword || found.password || "",
+            city: detailsInfo.City || detailsInfo.city || found["City"] || (typeof found.city === 'object' ? found.city?._id : found.city) || "",
+            idType: normalizeDeliveryBoyIdType(detailsInfo["ID Type"] || detailsInfo.idType || found["ID Type"] || found.idType || ""),
+            idNumber: detailsInfo["ID Number"] || detailsInfo.idNumber || found["ID Number"] || found.idNumber || "",
+            address: detailsInfo["Boy Address"] || detailsInfo.address || detailsInfo.boyAddress || found["Boy Address"] || found.address || found.boyAddress || "",
+            stores: stList.map(s => typeof s === 'object' ? s._id : s),
+            status: normalizeDeliveryBoyStatus(found["Status"] || found.status),
+            earnings: found["Total Earnings"] || found.totalEarnings || 0,
+            rating: found["Rating"] || found.rating || 5.0,
           });
-          if (detailsInfo["ID Image"] || found.idImage) setExistingImageUrl(detailsInfo["ID Image"] || found.idImage);
+          const imgUrl = detailsInfo["ID Image"] || detailsInfo.idImage || found["ID Image"] || found.idImage || "";
+          if (imgUrl) setExistingImageUrl(imgUrl);
         }
         setLoading(false);
       } catch (error) {
@@ -145,7 +154,9 @@ const EditDeliveryBoy = () => {
           "Boy Address": formData.address,
           "Store": formData.stores && formData.stores.length > 0 ? formData.stores[0] : "",
           "ID Image": idImage ? idImage.name : (existingImageUrl || "placeholder_image.jpg")
-        }
+        },
+        "Total Earnings": Number(formData.earnings),
+        "Rating": Number(formData.rating)
       };
 
       const response = await updateDeliveryBoy(id, payload);
@@ -361,6 +372,39 @@ const EditDeliveryBoy = () => {
                   name="address"
                   placeholder="Enter a location"
                   value={formData.address}
+                  onChange={handleChange}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                />
+              </Grid>
+
+              {/* Earnings */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
+                  Total Earnings (Rs.)
+                </Typography>
+                <TextField
+                  fullWidth
+                  name="earnings"
+                  type="number"
+                  placeholder="0"
+                  value={formData.earnings}
+                  onChange={handleChange}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                />
+              </Grid>
+
+              {/* Rating */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
+                  Rating (1-5)
+                </Typography>
+                <TextField
+                  fullWidth
+                  name="rating"
+                  type="number"
+                  inputProps={{ step: 0.1, min: 0, max: 5 }}
+                  placeholder="5.0"
+                  value={formData.rating}
                   onChange={handleChange}
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                 />

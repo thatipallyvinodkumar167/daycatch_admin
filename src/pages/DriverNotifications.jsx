@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const DriverNotifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -27,16 +28,15 @@ const DriverNotifications = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/posts?_limit=5"
-      );
+      const response = await genericApi.getAll("driver_notifications");
+      const results = response.data.results || response.data || [];
       
-      const formattedData = response.data.map((item, index) => ({
-        id: item.id,
-        title: item.title.slice(0, 30),
-        image: "https://via.placeholder.com/50",
-        driver: "Driver Name " + (index + 1),
-        message: item.body.slice(0, 50) + "...",
+      const formattedData = results.map((item, index) => ({
+        id: item._id || index,
+        title: item.title?.slice(0, 30) || "Alert",
+        image: item.image || item.logo || "https://via.placeholder.com/50",
+        driver: item.driver || item.selectDrivers || "Driver " + (index + 1),
+        message: item.message?.slice(0, 50) + "..." || item.body || "Notification...",
       }));
 
       setNotifications(formattedData);

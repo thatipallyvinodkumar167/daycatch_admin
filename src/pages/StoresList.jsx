@@ -22,7 +22,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import StorefrontIcon from "@mui/icons-material/Storefront";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const StoresList = () => {
   const [stores, setStores] = useState([]);
@@ -46,20 +46,18 @@ const StoresList = () => {
 
   const fetchStores = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users"
-      );
+      const response = await genericApi.getAll("store");
+      const results = response.data.results || response.data || [];
       
-      const cities = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Ahmedabad", "Chennai"];
-      const formattedData = response.data.map((user, index) => ({
-        id: user.id,
-        name: user.company.name,
-        email: user.email,
-        phone: user.phone.split(" ")[0],
-        city: cities[index % cities.length],
-        totalOrders: Math.floor(Math.random() * 500) + 50,
-        status: index % 4 === 0 ? "Pending" : "Active",
-        logo: `https://ui-avatars.com/api/?name=${user.company.name}&background=random&color=fff`,
+      const formattedData = results.map((store, index) => ({
+        id: store._id || index,
+        name: store["Store Name"] || store.name || store.storeName || "Unnamed Store",
+        email: store.email || store["Email"] || "N/A",
+        phone: store.phone || store.mobile || store["Phone"] || "N/A",
+        city: store.city || store["City"] || "N/A",
+        totalOrders: store.orders || store["Orders"] || 0,
+        status: store.status || store["Status"] || "Active",
+        logo: store.logo || store["Logo"] || `https://ui-avatars.com/api/?name=${store["Store Name"] || store.name || "S"}&background=random&color=fff`,
       }));
 
       setStores(formattedData);

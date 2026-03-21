@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import StoreIcon from "@mui/icons-material/Store";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const Rejectedbystore = () => {
   const [orders, setOrders] = useState([]);
@@ -29,18 +29,22 @@ const Rejectedbystore = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users?_limit=3"
-      );
+      const response = await genericApi.getAll("orders");
+      const results = response.data.results || response.data || [];
       
-      const formattedData = response.data.map((user, index) => ({
-        id: index + 1,
-        cartId: `ORD-REJ-${10000 + user.id}`,
-        cartPrice: `₹${Math.floor(Math.random() * 4000) + 1000}`,
-        userName: user.name,
-        userPhone: user.phone.split(" ")[0],
-        deliveryDate: "2024-03-20 10:30 AM",
-        status: "Rejected by Store",
+      // Filter for rejected status if the backend doesn't have a specific collection
+      const rejectedOrders = results.filter(order => 
+        (order["Status"] || "").toLowerCase().includes("reject")
+      );
+
+      const formattedData = rejectedOrders.map((order, index) => ({
+        id: order._id || index + 1,
+        cartId: order["Cart ID"] || `ORD-REJ-${index}`,
+        cartPrice: typeof order["Cart price"] === "number" ? `₹${order["Cart price"]}` : (order["Cart price"] || `₹0`),
+        userName: order["User"] || order.user || "Unknown",
+        userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleString() : "N/A",
+        status: order["Status"] || "Rejected by Store",
       }));
 
       setOrders(formattedData);

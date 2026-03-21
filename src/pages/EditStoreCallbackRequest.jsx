@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const EditStoreCallbackRequest = () => {
   const { id } = useParams();
@@ -24,12 +25,10 @@ const EditStoreCallbackRequest = () => {
   useEffect(() => {
     const fetchRequest = async () => {
       try {
-        const response = await axios.get(
-          `https://jsonplaceholder.typicode.com/users/${id}`
-        );
+        const response = await genericApi.getOne("storecallbackrequests", id);
         setFormData({
-            storeName: response.data.company?.name || response.data.name,
-            storePhone: response.data.phone
+            storeName: response.data?.storeName || response.data?.store || response.data?.name || "",
+            storePhone: response.data?.storePhone || response.data?.phone || ""
         });
         setLoading(false);
       } catch (error) {
@@ -54,14 +53,9 @@ const EditStoreCallbackRequest = () => {
 
     setIsSubmitting(true);
     try {
-      // Mock PUT request to fake API
-      await axios.put(`https://jsonplaceholder.typicode.com/posts/${id}`, {
-        title: `Store Callback for ${formData.storeName}`,
-        body: formData.storePhone,
-        userId: 1,
-      });
+      await genericApi.update("storecallbackrequests", id, formData);
 
-      alert("Store callback request updated successfully (Mock API)!");
+      alert("Store callback request updated successfully!");
       navigate("/store-callback-request");
     } catch (error) {
       console.error("Error updating store callback request:", error);

@@ -8,7 +8,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const AddStoreCallbackRequest = () => {
   const navigate = useNavigate();
@@ -31,14 +31,14 @@ const AddStoreCallbackRequest = () => {
 
     setIsSubmitting(true);
     try {
-      // Mock POST request to fake API
-      await axios.post("https://jsonplaceholder.typicode.com/posts", {
-        title: `Store Callback for ${formData.storeName}`,
-        body: formData.storePhone,
-        userId: 1,
-      });
-
-      alert("Store callback request created successfully (Mock API)!");
+      const payload = {
+        "Store Name": formData.storeName.trim(),
+        "Store Phone": formData.storePhone.trim(),
+        "Status": "Pending",
+        "Date": new Date().toISOString()
+      };
+      await genericApi.create("storecallbackrequests", payload);
+      alert("Store callback request created successfully!");
       navigate("/store-callback-request");
     } catch (error) {
       console.error("Error creating store callback request:", error);

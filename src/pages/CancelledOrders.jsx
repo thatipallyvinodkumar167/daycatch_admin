@@ -21,7 +21,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import CancelIcon from "@mui/icons-material/Cancel";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const CancelledOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -45,22 +45,21 @@ const CancelledOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users?_limit=6"
-      );
+      const response = await genericApi.getAll("cancelled orders");
+      const results = response.data.results || response.data || [];
       
-      const formattedData = response.data.map((user, index) => ({
-        id: index + 1,
-        cartId: `ORD-CAN-${3000 + user.id}`,
-        cartPrice: `₹${Math.floor(Math.random() * 2000) + 200}`,
-        userName: user.name,
-        userPhone: user.phone.split(" ")[0],
-        store: `Store ${index + 1}`,
-        deliveryBoy: `Boy ${index + 1}`,
-        deliveryDate: `2024-03-${10 + (index % 5)}`,
-        status: "Cancelled",
-        reason: index % 2 === 0 ? "Out of Stock" : "Customer Request",
-        cartProducts: `${Math.floor(Math.random() * 5) + 1} items (${user.company.catchPhrase.split(" ")[0]})`,
+      const formattedData = results.map((order, index) => ({
+        id: order._id || index + 1,
+        cartId: order["Cart ID"] || `ORD-CAN-${index}`,
+        cartPrice: typeof order["Cart price"] === "number" ? `₹${order["Cart price"]}` : (order["Cart price"] || `₹0`),
+        userName: order["User"] || order.user || "Unknown",
+        userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+        store: order["Store Name"] || order.store || "N/A",
+        deliveryBoy: order["Boy Name"] || order.deliveryBoy || "N/A",
+        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleDateString() : "N/A",
+        status: order["Status"] || "Cancelled",
+        reason: order["Cancelling Reason"] || order.reason || "N/A",
+        cartProducts: Array.isArray(order["Products"]) ? `${order["Products"].length} items` : "N/A",
       }));
 
       setOrders(formattedData);

@@ -13,6 +13,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { genericApi } from "../api/genericApi";
 
 const EditMembership = () => {
   const navigate = useNavigate();
@@ -30,19 +31,25 @@ const EditMembership = () => {
   });
 
   useEffect(() => {
-    // Simulate fetching existing data
-    const mockPlan = {
-      id: id,
-      name: "Monthly Starter",
-      days: "30",
-      price: "299",
-      rewardPoint: "2",
-      freeDelivery: "Yes",
-      instantDelivery: "No",
-      existingImage: "https://cdn-icons-png.flaticon.com/512/5672/5672200.png",
-      description: "Get 2x rewards points for 30 days\nGet free Delivery for 30 days",
+    const fetchPlan = async () => {
+      try {
+        const response = await genericApi.get("membership", id);
+        const data = response.data.data;
+        setFormData({
+          name: data?.name || "",
+          days: data?.days || "",
+          price: data?.price || "",
+          rewardPoint: data?.rewardPoint || "",
+          freeDelivery: data?.freeDelivery || "No",
+          instantDelivery: data?.instantDelivery || "No",
+          existingImage: data?.existingImage || data?.image || "",
+          description: data?.description || "",
+        });
+      } catch (error) {
+        console.error("Error fetching membership plan:", error);
+      }
     };
-    setFormData(mockPlan);
+    fetchPlan();
   }, [id]);
 
   const handleInputChange = (e) => {
@@ -59,11 +66,26 @@ const EditMembership = () => {
     setFormData({ ...formData, image: file });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Updating Membership:", formData);
-    alert("Membership updated successfully!");
-    navigate("/membership-plain");
+    try {
+      const payload = { ...formData };
+      delete payload.existingImage;
+      if (payload.image && typeof payload.image !== 'string') {
+        // In a real scenario, you'd upload the image first and get a URL
+        // For now, we'll just send the file object if the API handles it, 
+        // or omit it if it's just a mock-to-real transition.
+      } else {
+        delete payload.image;
+      }
+
+      await genericApi.update("membership", id, payload);
+      alert("Membership updated successfully!");
+      navigate("/membership-plain");
+    } catch (error) {
+      console.error("Error updating membership:", error);
+      alert("Failed to update membership.");
+    }
   };
 
   return (

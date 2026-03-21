@@ -14,7 +14,7 @@ import {
   Stack,
 } from "@mui/material";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
-import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const CompletedOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -26,22 +26,21 @@ const CompletedOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users?_limit=10"
-      );
+      const response = await genericApi.getAll("completed orders");
+      const results = response.data.results || response.data || [];
       
-      const formattedData = response.data.map((user, index) => ({
-        id: index + 1,
-        cartId: `ORD-COM-${7000 + user.id}`,
-        cartPrice: `₹${Math.floor(Math.random() * 6000) + 1000}`,
-        userName: user.name,
-        userPhone: user.phone.split(" ")[0],
-        store: `Store ${index + 1}`,
-        deliveryBoy: `Boy ${index + 1}`,
-        deliveryDate: `2024-03-${1 + (index % 10)}`,
-        status: "Completed",
-        cartProducts: `${Math.floor(Math.random() * 5) + 1} items`,
-        signature: "Signed",
+      const formattedData = results.map((order, index) => ({
+        id: order._id || index + 1,
+        cartId: order["Cart ID"] || `ORD-COM-${index}`,
+        cartPrice: typeof order["Cart price"] === "number" ? `₹${order["Cart price"]}` : (order["Cart price"] || `₹0`),
+        userName: order["User"] || order.user || "Unknown",
+        userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+        store: order["Store Name"] || order.store || "N/A",
+        deliveryBoy: order["Boy Name"] || order.deliveryBoy || "N/A",
+        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleDateString() : "N/A",
+        status: order["Status"] || "Completed",
+        cartProducts: Array.isArray(order["Products"]) ? `${order["Products"].length} items` : "N/A",
+        signature: order["Signature"] || "Signed",
       }));
 
       setOrders(formattedData);

@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { genericApi } from "../api/genericApi";
 
 const AddSubAdmin = () => {
   const navigate = useNavigate();
@@ -37,20 +38,19 @@ const AddSubAdmin = () => {
     fetchRoles();
   }, []);
 
+  const DEFAULT_ROLES = ["Super Admin", "Manager", "Delivery Manager", "Support", "Inventory Manager"];
+
   const fetchRoles = async () => {
     try {
-      // Simulate fetching roles from fake API
-      // In a real app, replace with: const response = await axios.get("/api/roles");
-      const mockRoles = [
-        { id: 1, name: "Manager" },
-        { id: 2, name: "Editor" },
-        { id: 3, name: "Support" },
-        { id: 4, name: "Inventory Manager" },
-        { id: 5, name: "Delivery Lead" },
-      ];
-      setRoles(mockRoles);
-    } catch (error) {
-      console.error("Error fetching roles:", error);
+      const response = await genericApi.getAll("roles");
+      const results = response.data.results || response.data || [];
+      if (results.length > 0) {
+        setRoles(results.map(r => ({ id: r._id, name: r.name })));
+      } else {
+        setRoles(DEFAULT_ROLES.map(name => ({ id: name, name })));
+      }
+    } catch {
+      setRoles(DEFAULT_ROLES.map(name => ({ id: name, name })));
     }
   };
 
@@ -70,18 +70,21 @@ const AddSubAdmin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Basic validation
     if (!formData.name || !formData.email || !formData.roleName || !formData.password) {
       alert("Please fill in all required fields.");
       return;
     }
 
     try {
-      // Simulate API call to add sub-admin
-      console.log("Submitting Sub-Admin Data:", formData);
-      
-      // Fake API simulation
-      // await axios.post("https://jsonplaceholder.typicode.com/users", formData);
+      const payload = {
+          "Name": formData.name,
+          "Email": formData.email,
+          "role Name": formData.roleName,
+          "password": formData.password,
+          "Status": "Active"
+      };
+
+      await genericApi.create("sub-admin", payload);
       
       alert("Sub-Admin added successfully!");
       navigate("/sub-admin");
@@ -171,6 +174,8 @@ const AddSubAdmin = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 variant="outlined"
+                autoComplete="off"
+                inputProps={{ autoComplete: "off" }}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
               />
             </Grid>
@@ -207,11 +212,14 @@ const AddSubAdmin = () => {
                 fullWidth
                 name="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="********"
+                placeholder="Enter password"
                 value={formData.password}
                 onChange={handleInputChange}
                 variant="outlined"
+                autoComplete="new-password"
+                inputProps={{ autoComplete: "new-password" }}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">

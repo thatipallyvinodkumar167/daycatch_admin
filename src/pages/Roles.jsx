@@ -19,8 +19,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { genericApi } from "../api/genericApi";
 
 const Roles = () => {
   const navigate = useNavigate();
@@ -33,13 +33,12 @@ const Roles = () => {
 
   const fetchRoles = async () => {
     try {
-      // Using JSONPlaceholder as fakeapi for demonstration
-      const response = await axios.get("https://jsonplaceholder.typicode.com/users?_limit=5");
+      const response = await genericApi.getAll("roles");
+      const results = response.data.results || response.data || [];
       
-      const roleNames = ["Super Admin", "Manager", "Editor", "Support", "Vendor Admin"];
-      const formattedData = response.data.map((user, index) => ({
-        id: user.id,
-        name: roleNames[index] || `Role ${index + 1}`,
+      const formattedData = results.map((role) => ({
+        id: role._id,
+        name: role.name || "Unnamed Role",
       }));
 
       setRoles(formattedData);
@@ -48,9 +47,16 @@ const Roles = () => {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this role?")) {
-      setRoles(roles.filter(r => r.id !== id));
+      try {
+        await genericApi.remove("roles", id);
+        setRoles(roles.filter(r => r.id !== id));
+        alert("Role deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting role:", error);
+        alert("Failed to delete role.");
+      }
     }
   };
 

@@ -9,8 +9,10 @@ import {
   Collapse,
   useTheme,
   alpha,
-  Typography
+  Typography,
+  CircularProgress,
 } from "@mui/material";
+import { genericApi } from "../api/genericApi";
 
 import { useNavigate } from "react-router-dom";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -51,6 +53,44 @@ function Sidebar({ open }) {
     setOpenMenu(openMenu === menu ? null : menu);
   };
 
+  const [permissions, setPermissions] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchPermissions = async () => {
+      const userRole = localStorage.getItem("user_role");
+      
+      // Super Admin or no role set → show everything
+      if (!userRole || userRole === "Super Admin") {
+        setPermissions("all");
+        setLoading(false);
+        return;
+      }
+
+      // For other roles, try to fetch their permissions
+      // On any error, fall back to showing everything
+      try {
+        const response = await genericApi.getAll("roles");
+        const roles = response.data.results || response.data || [];
+        const foundRole = roles.find(r => r.name === userRole);
+        setPermissions(foundRole?.permissions || "all");
+      } catch {
+        setPermissions("all");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPermissions();
+  }, []);
+
+
+  const hasPermission = (section) => {
+    if (permissions === "all") return true;
+    if (!permissions) return true; // default show all if no permissions set
+    return permissions[section] === true;
+  };
+
   const isChildActive = (paths) => paths.some(path => location.pathname === path);
 
   React.useEffect(() => {
@@ -81,6 +121,7 @@ function Sidebar({ open }) {
   }, [location.pathname]);
 
   const activeMenu = (pathOrName, childPaths = []) => {
+
     const isPath = typeof pathOrName === "string" && pathOrName.startsWith("/");
     const currentPath = location.pathname;
     
@@ -187,10 +228,9 @@ function Sidebar({ open }) {
           msOverflowStyle: "none"
         }
       }}
-    >
-      <List sx={{ pb: 10 }}>
+    >      <List sx={{ pb: 10 }}>
 
-        {/* CORE MANAGEMENT */}
+        {/* NAVIGATION HEADER */}
         <ListItem disablePadding sx={{ mt: 2, px: 2, mb: 1 }}>
           <Typography
             sx={{
@@ -202,641 +242,577 @@ function Sidebar({ open }) {
               pl: 1
             }}
           >
-            CORE MANAGEMENT
+            Navigation
           </Typography>
         </ListItem>
 
         {/* Dashboard */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/") }  sx={activeMenu("/")}>
-            <ListItemIcon>
-              <DashboardIcon />
-            </ListItemIcon>
-            <ListItemText primary="Dashboard" />
-          </ListItemButton>
-        </ListItem>   
-
+        {hasPermission("Dashboard") && (
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => navigate("/") }  sx={activeMenu("/")}>
+              <ListItemIcon>
+                <DashboardIcon />
+              </ListItemIcon>
+              <ListItemText primary="Dashboard" />
+            </ListItemButton>
+          </ListItem>
+        )}
 
         {/* Sub Admin Management */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("subAdmin")} sx={activeMenu("subAdmin", ["/roles", "/sub-admin"])}>
-            <ListItemIcon>
-              <AdminPanelSettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Sub-Admin Management" />
-            {openMenu === "subAdmin" ? <ExpandLess sx={{ color: openMenu === "subAdmin" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
+        {(permissions === "all") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("subAdmin")} sx={activeMenu("subAdmin", ["/roles", "/sub-admin"])}>
+                <ListItemIcon>
+                  <AdminPanelSettingsIcon />
+                </ListItemIcon>
+                <ListItemText primary="Sub-Admin Management" />
+                {openMenu === "subAdmin" ? <ExpandLess sx={{ color: openMenu === "subAdmin" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
 
-        <Collapse in={openMenu === "subAdmin"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton
-              sx={subActiveMenu("/roles")}
-              onClick={() => navigate("/roles")}
-            >
-              <ListItemText primary="Roles" />
-            </ListItemButton>
-            <ListItemButton
-              sx={subActiveMenu("/sub-admin")}
-              onClick={() => navigate("/sub-admin")}
-            >
-              <ListItemText primary="Sub Admin" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* Users Management */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("users")} sx={activeMenu("users", ["/user-data", "/wallet-history"])}>
-            <ListItemIcon>
-              <ManageAccountsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Users Management" />
-            {openMenu === "users" ? <ExpandLess sx={{ color: openMenu === "users" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-
-        <Collapse in={openMenu === "users"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/user-data")} onClick={() => navigate("/user-data")}>
-              <ListItemText primary="User Data" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/wallet-history")} onClick={() => navigate("/wallet-history")}>
-              <ListItemText primary="Wallet Recharge History" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-      
-        {/* INVENTORY & SALES */}
-        <ListItem disablePadding sx={{ mt: 3, px: 2, mb: 1 }}>
-          <Typography
-            sx={{
-              fontSize: "11px",
-              fontWeight: "700",
-              color: "rgba(255,255,255,0.4)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              pl: 1
-            }}
-          >
-            INVENTORY & SALES
-          </Typography>
-        </ListItem>
-
-           {/* Category Management */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("category")} sx={activeMenu("category", ["/categories", "/sub-category"])}>
-            <ListItemIcon>
-              <CategoryIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Category Management" />
-            { openMenu === "category" ? <ExpandLess sx={{ color: openMenu === "category" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-
-        <Collapse in={openMenu === "category"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/categories")} onClick={() => navigate("/categories")}>
-              <ListItemText primary="Parent Category" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/sub-category")} onClick={() => navigate("/sub-category")}>
-              <ListItemText primary="Sub Category" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* Product Catalog */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("products")} sx={activeMenu("products", ["/products"])}>
-            <ListItemIcon>
-              <InventoryIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Product Catalog" />
-            { openMenu === "products" ? <ExpandLess sx={{ color: openMenu === "products" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-
-        <Collapse in={openMenu === "products"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/products")} onClick={() => navigate("/products")}>
-              <ListItemText primary="Admin products" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/store-products")} onClick={() => navigate("/products")}>
-              <ListItemText primary="Store products" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/trending-search")} onClick={() => navigate("/products")}>
-              <ListItemText primary="Trending Search" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/bulk-upload-products")} onClick={() => navigate("/products")}>
-              <ListItemText primary="Bulk Upload" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* Order Management */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("orders")} sx={activeMenu("orders", ["/rejected-by-store", "/all-orders", "/pending-orders", "/cancelled-orders", "/ongoing-orders", "/out-of-delivery-orders", "/payment-failed-orders", "/completed-orders", "/day-wise-orders", "/missed-orders"])}>
-            <ListItemIcon>
-              <ShoppingCartIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Order Management" />
-            { openMenu === "orders" ? <ExpandLess sx={{ color: openMenu === "orders" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-
-        <Collapse in={openMenu === "orders"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/rejected-by-store")} onClick={() => navigate("/rejected-by-store")}>
-              <ListItemText primary="Rejected By Store" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/all-orders")} onClick={() => navigate("/all-orders")}>
-              <ListItemText primary="All Orders" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/pending-orders")} onClick={() => navigate("/pending-orders")}>
-              <ListItemText primary="Pending Orders" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/cancelled-orders")} onClick={() => navigate("/cancelled-orders")}>
-              <ListItemText primary="Cancel Orders" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/ongoing-orders")} onClick={() => navigate("/ongoing-orders")}>
-              <ListItemText primary="Ongoing Orders" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/out-of-delivery-orders")} onClick={() => navigate("/out-of-delivery-orders")}>
-              <ListItemText primary="Out for Delivery Orders" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/payment-failed-orders")} onClick={() => navigate("/payment-failed-orders")}>
-              <ListItemText primary="Payment Failed Orders" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/completed-orders")} onClick={() => navigate("/completed-orders")}>
-              <ListItemText primary="Completed Orders" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/day-wise-orders")} onClick={() => navigate("/day-wise-orders")}>
-              <ListItemText primary="Day Wise Orders" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/missed-orders")} onClick={() => navigate("/missed-orders")}>
-              <ListItemText primary="Missed Orders" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* OPERATIONS */}
-        <ListItem disablePadding sx={{ mt: 3, px: 2, mb: 1 }}>
-          <Typography
-            sx={{
-              fontSize: "11px",
-              fontWeight: "700",
-              color: "rgba(255,255,255,0.4)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              pl: 1
-            }}
-          >
-            OPERATIONS
-          </Typography>
-        </ListItem>
-
-           {/* Store Management */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("stores")} sx={activeMenu("stores", ["/stores-list", "/store-earnings", "/store-approval"])}>
-            <ListItemIcon>
-              <StoreIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Store Management" />
-            { openMenu === "stores" ? <ExpandLess sx={{ color: openMenu === "stores" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-
-        <Collapse in={openMenu === "stores"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/stores-list")} onClick={() => navigate("/stores-list")}>
-              <ListItemText primary="Store List" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/store-earnings")} onClick={() => navigate("/store-earnings")}>
-              <ListItemText primary="Store Earning/Payments" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/store-approval")} onClick={() => navigate("/store-approval")}>
-              <ListItemText primary="Store Approval" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* Delivery Boy */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("delivery")} sx={activeMenu("delivery", ["/delivery-boy-list", "/delivery-boy-incentive"])}>
-            <ListItemIcon>
-              <DeliveryDiningIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Delivery Boy" />
-            { openMenu === "delivery" ? <ExpandLess sx={{ color: openMenu === "delivery" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-
-        <Collapse in={openMenu === "delivery"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/delivery-boy-list")} onClick={() => navigate("/delivery-boy-list")}>
-              <ListItemText primary="Delivery Boy" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/delivery-boy-incentive")} onClick={() => navigate("/delivery-boy-incentive")}>
-              <ListItemText primary="Delivery Boy Incentive" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* Area Management */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("area")} sx={activeMenu("area", ["/cities", "/areas", "/bulk-upload-areas"])}>
-            <ListItemIcon>
-              <LocationOnIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Area Management" />
-            { openMenu === "area" ? <ExpandLess sx={{ color: openMenu === "area" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-
-        <Collapse in={openMenu === "area"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/cities")} onClick={() => navigate("/cities")}>
-              <ListItemText primary="Cities" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/areas")} onClick={() => navigate("/areas")}>
-              <ListItemText primary="Society / Areas" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/bulk-upload-areas")} onClick={() => navigate("/bulk-upload-areas")}>
-              <ListItemText primary="Bulk Map Upload" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* FINANCIALS */}
-        <ListItem disablePadding sx={{ mt: 3, px: 2, mb: 1 }}>
-          <Typography
-            sx={{
-              fontSize: "11px",
-              fontWeight: "700",
-              color: "rgba(255,255,255,0.4)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              pl: 1
-            }}
-          >
-            FINANCIALS
-          </Typography>
-        </ListItem>
+            <Collapse in={openMenu === "subAdmin"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton
+                  sx={subActiveMenu("/roles")}
+                  onClick={() => navigate("/roles")}
+                >
+                  <ListItemText primary="Roles" />
+                </ListItemButton>
+                <ListItemButton
+                  sx={subActiveMenu("/sub-admin")}
+                  onClick={() => navigate("/sub-admin")}
+                >
+                  <ListItemText primary="Sub Admin" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
 
         {/* Taxes */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/taxes")} sx={activeMenu("/taxes")}>
-            <ListItemIcon>
-              <LocalOfferIcon />
-            </ListItemIcon>
-            <ListItemText primary="Taxes" />
-          </ListItemButton>
-        </ListItem>
+        {hasPermission("Tax") && (
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => navigate("/taxes")} sx={activeMenu("/taxes")}>
+              <ListItemIcon>
+                <LocalOfferIcon />
+              </ListItemIcon>
+              <ListItemText primary="Taxes" />
+            </ListItemButton>
+          </ListItem>
+        )}
 
         {/* ID`s */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/id")} sx={activeMenu("/id")}>
-            <ListItemIcon>
-              <BadgeIcon  />
-            </ListItemIcon>
-            <ListItemText primary="ID`s" />
-          </ListItemButton>
-        </ListItem>
+        {hasPermission("Id") && (
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => navigate("/id")} sx={activeMenu("/id")}>
+              <ListItemIcon>
+                <BadgeIcon  />
+              </ListItemIcon>
+              <ListItemText primary="ID`s" />
+            </ListItemButton>
+          </ListItem>
+        )}
+
+        {/* Membership Plans */}
+        {hasPermission("Membership") && (
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => navigate("/membership-plain")} sx={activeMenu("/membership-plain")}>
+              <ListItemIcon>
+                <CardMembershipIcon  />
+              </ListItemIcon>
+              <ListItemText primary="Membership Plans" />
+            </ListItemButton>
+          </ListItem>
+        )}
+
+        {/* Reports */}
+        {hasPermission("Reports") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("reports")} sx={activeMenu("reports", ["/item-requirement", "/sales-report", "/tax-reports", "/reports"])}>
+                <ListItemIcon>
+                  <AssessmentIcon />
+                </ListItemIcon>
+                <ListItemText primary="Reports" />
+                {openMenu === "reports" ? <ExpandLess sx={{ color: openMenu === "reports" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+
+            <Collapse in={openMenu === "reports"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/item-requirement")} onClick={() => navigate("/item-requirement")}>
+                  <ListItemText primary="Item Requirement (Day-Wise)" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/sales-report")} onClick={() => navigate("/sales-report")}>
+                  <ListItemText primary="Item Sales Report (Last 30 Days)" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/tax-reports")} onClick={() => navigate("/tax-reports")}>
+                  <ListItemText primary="Tax Reports" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/reports")} onClick={() => navigate("/reports")}>
+                  <ListItemText primary="Reports" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
+
+        {/* Send Notifications */}
+        {hasPermission("Notification") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("sendNotifications")} sx={activeMenu("sendNotifications", ["/push-notification", "/store-notification", "/driver-notification"])}>
+                <ListItemIcon>
+                  <NotificationsIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Send Notifications" />
+                {openMenu === "sendNotifications" ? <ExpandLess sx={{ color: openMenu === "sendNotifications" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+
+            <Collapse in={openMenu === "sendNotifications"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/users-notification")} onClick={() => navigate("/users-notification")}>
+                  <ListItemText primary="Send Notification to User" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/store-notification")} onClick={() => navigate("/store-notification")}>
+                  <ListItemText primary="Send Notification to Store" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/driver-notification")} onClick={() => navigate("/driver-notification")}>
+                  <ListItemText primary="Send Notification to Driver" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
+
+        {/* List Notifications */}
+        {hasPermission("Notification") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("listNotifications")} sx={activeMenu("listNotifications", ["/user-notifications", "/store-notifications", "/driver-notifications"])}>
+                <ListItemIcon>
+                  <FormatListBulletedIcon  />
+                </ListItemIcon>
+                <ListItemText primary="List Notifications" />
+                {openMenu === "listNotifications" ? <ExpandLess sx={{ color: openMenu === "listNotifications" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+
+            <Collapse in={openMenu === "listNotifications"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/user-notifications")} onClick={() => navigate("/user-notifications")}>
+                  <ListItemText primary="User Notification" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/store-notifications")} onClick={() => navigate("/store-notifications")}>
+                  <ListItemText primary="Store Notification" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/driver-notifications")} onClick={() => navigate("/driver-notifications")}>
+                  <ListItemText primary="Driver Notification" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
+
+        {/* Users Management */}
+        {hasPermission("Users") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("users")} sx={activeMenu("users", ["/user-data", "/wallet-history"])}>
+                <ListItemIcon>
+                  <ManageAccountsIcon />
+                </ListItemIcon>
+                <ListItemText primary="Users Management" />
+                {openMenu === "users" ? <ExpandLess sx={{ color: openMenu === "users" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+
+            <Collapse in={openMenu === "users"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/user-data")} onClick={() => navigate("/user-data")}>
+                  <ListItemText primary="User Data" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/wallet-history")} onClick={() => navigate("/wallet-history")}>
+                  <ListItemText primary="Wallet Recharge History" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
+
+        {/* Category Management */}
+        {hasPermission("Category") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("category")} sx={activeMenu("category", ["/categories", "/sub-category"])}>
+                <ListItemIcon>
+                  <CategoryIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Category Management" />
+                { openMenu === "category" ? <ExpandLess sx={{ color: openMenu === "category" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+
+            <Collapse in={openMenu === "category"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/categories")} onClick={() => navigate("/categories")}>
+                  <ListItemText primary="Parent Category" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/sub-category")} onClick={() => navigate("/sub-category")}>
+                  <ListItemText primary="Sub Category" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
+
+        {/* Product Catalog */}
+        {hasPermission("Product") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("products")} sx={activeMenu("products", ["/products", "/store-products", "/trending-search", "/bulk-upload-products"])}>
+                <ListItemIcon>
+                  <InventoryIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Product Catalog" />
+                { openMenu === "products" ? <ExpandLess sx={{ color: openMenu === "products" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+
+            <Collapse in={openMenu === "products"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/products")} onClick={() => navigate("/products")}>
+                  <ListItemText primary="Admin products" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/store-products")} onClick={() => navigate("/store-products")}>
+                  <ListItemText primary="Store products" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/trending-search")} onClick={() => navigate("/trending-search")}>
+                  <ListItemText primary="Trending Search" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/bulk-upload-products")} onClick={() => navigate("/bulk-upload-products")}>
+                  <ListItemText primary="Bulk Upload" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
+
+        {/* Area Management */}
+        {hasPermission("Area") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("area")} sx={activeMenu("area", ["/cities", "/areas", "/bulk-upload-areas"])}>
+                <ListItemIcon>
+                  <LocationOnIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Area Management" />
+                { openMenu === "area" ? <ExpandLess sx={{ color: openMenu === "area" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+
+            <Collapse in={openMenu === "area"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/cities")} onClick={() => navigate("/cities")}>
+                  <ListItemText primary="Cities" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/areas")} onClick={() => navigate("/areas")}>
+                  <ListItemText primary="Society / Areas" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/bulk-upload-areas")} onClick={() => navigate("/bulk-upload-areas")}>
+                  <ListItemText primary="Bulk Map Upload" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
+
+        {/* Store Management */}
+        {hasPermission("Store") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("stores")} sx={activeMenu("stores", ["/stores-list", "/store-earnings", "/store-approval"])}>
+                <ListItemIcon>
+                  <StoreIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Store Management" />
+                { openMenu === "stores" ? <ExpandLess sx={{ color: openMenu === "stores" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+
+            <Collapse in={openMenu === "stores"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/stores-list")} onClick={() => navigate("/stores-list")}>
+                  <ListItemText primary="Store List" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/store-earnings")} onClick={() => navigate("/store-earnings")}>
+                  <ListItemText primary="Store Earning/Payments" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/store-approval")} onClick={() => navigate("/store-approval")}>
+                  <ListItemText primary="Store Approval" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
+
+        {/* Orders Management */}
+        {hasPermission("Orders") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("orders")} sx={activeMenu("orders", ["/rejected-by-store", "/all-orders", "/pending-orders", "/cancelled-orders", "/ongoing-orders", "/out-of-delivery-orders", "/payment-failed-orders", "/completed-orders", "/day-wise-orders", "/missed-orders"])}>
+                <ListItemIcon>
+                  <ShoppingCartIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Orders Management" />
+                { openMenu === "orders" ? <ExpandLess sx={{ color: openMenu === "orders" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+
+            <Collapse in={openMenu === "orders"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/rejected-by-store")} onClick={() => navigate("/rejected-by-store")}>
+                  <ListItemText primary="Rejected By Store" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/all-orders")} onClick={() => navigate("/all-orders")}>
+                  <ListItemText primary="All Orders" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/pending-orders")} onClick={() => navigate("/pending-orders")}>
+                  <ListItemText primary="Pending Orders" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/cancelled-orders")} onClick={() => navigate("/cancelled-orders")}>
+                  <ListItemText primary="Cancel Orders" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/ongoing-orders")} onClick={() => navigate("/ongoing-orders")}>
+                  <ListItemText primary="Ongoing Orders" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/out-of-delivery-orders")} onClick={() => navigate("/out-of-delivery-orders")}>
+                  <ListItemText primary="Out for Delivery Orders" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/payment-failed-orders")} onClick={() => navigate("/payment-failed-orders")}>
+                  <ListItemText primary="Payment Failed Orders" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/completed-orders")} onClick={() => navigate("/completed-orders")}>
+                  <ListItemText primary="Completed Orders" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/day-wise-orders")} onClick={() => navigate("/day-wise-orders")}>
+                  <ListItemText primary="Day Wise Orders" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/missed-orders")} onClick={() => navigate("/missed-orders")}>
+                  <ListItemText primary="Missed Orders" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
 
         {/* Payout */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("payout")} sx={activeMenu("payout", ["/payout-requests", "/payout-validation"])}>
-            <ListItemIcon>
-              <PaymentsIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Payout" />
-            { openMenu === "payout" ? <ExpandLess sx={{ color: openMenu === "payout" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
+        {hasPermission("Payout") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("payout")} sx={activeMenu("payout", ["/payout-requests", "/payout-validation"])}>
+                <ListItemIcon>
+                  <PaymentsIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Payout" />
+                { openMenu === "payout" ? <ExpandLess sx={{ color: openMenu === "payout" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
 
-        <Collapse in={openMenu === "payout"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/payout-requests")} onClick={() => navigate("/payout-requests")}>
-              <ListItemText primary="Payout Requests" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/payout-validation")} onClick={() => navigate("/payout-validation")}>
-              <ListItemText primary="Payout Validation" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* Payments */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/payments")} sx={activeMenu("/payments")}>
-            <ListItemIcon>
-              <PaymentsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Payments" />
-          </ListItemButton>
-        </ListItem>
-
-        {/* PROMOTIONS */}
-        <ListItem disablePadding sx={{ mt: 3, px: 2, mb: 1 }}>
-          <Typography
-            sx={{
-              fontSize: "11px",
-              fontWeight: "700",
-              color: "rgba(255,255,255,0.4)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              pl: 1
-            }}
-          >
-            PROMOTIONS
-          </Typography>
-        </ListItem>
+            <Collapse in={openMenu === "payout"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/payout-requests")} onClick={() => navigate("/payout-requests")}>
+                  <ListItemText primary="Payout Requests" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/payout-validation")} onClick={() => navigate("/payout-validation")}>
+                  <ListItemText primary="Payout Validation" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
 
         {/* Rewards */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("rewards")} sx={activeMenu("rewards", ["/rewards-list", "/redeem-value"])}>
-            <ListItemIcon>
-              <EmojiEventsIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Rewards" />
-            { openMenu === "rewards" ? <ExpandLess sx={{ color: openMenu === "rewards" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
+        {hasPermission("Rewards") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("rewards")} sx={activeMenu("rewards", ["/rewards-list", "/redeem-value"])}>
+                <ListItemIcon>
+                  <EmojiEventsIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Rewards" />
+                { openMenu === "rewards" ? <ExpandLess sx={{ color: openMenu === "rewards" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
 
-        <Collapse in={openMenu === "rewards"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/rewards-list")} onClick={() => navigate("/rewards-list")}>
-              <ListItemText primary="rewards" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/redeem-value")} onClick={() => navigate("/redeem-value")}>
-              <ListItemText primary="Redeem Value" />
-            </ListItemButton>
-          </List>
-        </Collapse>
+            <Collapse in={openMenu === "rewards"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/rewards-list")} onClick={() => navigate("/rewards-list")}>
+                  <ListItemText primary="Rewards" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/redeem-value")} onClick={() => navigate("/redeem-value")}>
+                  <ListItemText primary="Redeem Value" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
 
-        {/* Coupon Code */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/coupons")} sx={activeMenu("/coupons")}>
-            <ListItemIcon>
-              <LocalOfferIcon />
-            </ListItemIcon>
-            <ListItemText primary="Coupon Code" />
-          </ListItemButton>
-        </ListItem>
+        {/* Delivery Boy */}
+        {hasPermission("Delivery Boy") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("delivery")} sx={activeMenu("delivery", ["/delivery-boy-list", "/delivery-boy-incentive"])}>
+                <ListItemIcon>
+                  <DeliveryDiningIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Delivery Boy list" />
+                { openMenu === "delivery" ? <ExpandLess sx={{ color: openMenu === "delivery" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
 
-        {/* Membership */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/membership-plain")} sx={activeMenu("/membership-plain")}>
-            <ListItemIcon>
-              <CardMembershipIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Membership Plans" />
-          </ListItemButton>
-        </ListItem>
-
-        {/* COMMUNICATIONS */}
-        <ListItem disablePadding sx={{ mt: 3, px: 2, mb: 1 }}>
-          <Typography
-            sx={{
-              fontSize: "11px",
-              fontWeight: "700",
-              color: "rgba(255,255,255,0.4)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              pl: 1
-            }}
-          >
-            COMMUNICATIONS
-          </Typography>
-        </ListItem>
-
-        {/* Send Notification */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("sendNotifications")} sx={activeMenu("sendNotifications", ["/push-notification", "/store-notification", "/driver-notification"])}>
-            <ListItemIcon>
-              <NotificationsIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Send Notification" />
-            {openMenu === "sendNotifications" ? <ExpandLess sx={{ color: openMenu === "sendNotifications" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-
-        <Collapse in={openMenu === "sendNotifications"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/users-notification")} onClick={() => navigate("/users-notification")}>
-              <ListItemText primary="Send Notification to User" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/store-notification")} onClick={() => navigate("/store-notification")}>
-              <ListItemText primary="Send Notification to Store" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/driver-notification")} onClick={() => navigate("/driver-notification")}>
-              <ListItemText primary="Send Notification to Driver" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* List Notification */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("listNotifications")} sx={activeMenu("listNotifications", ["/user-notifications", "/store-notifications", "/driver-notifications"])}>
-            <ListItemIcon>
-              <FormatListBulletedIcon  />
-            </ListItemIcon>
-            <ListItemText primary="List Notification" />
-            {openMenu === "listNotifications" ? <ExpandLess sx={{ color: openMenu === "listNotifications" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-
-        <Collapse in={openMenu === "listNotifications"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/user-notifications")} onClick={() => navigate("/user-notifications")}>
-              <ListItemText primary="User Notification" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/store-notifications")} onClick={() => navigate("/store-notifications")}>
-              <ListItemText primary="Store Notification" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/driver-notifications")} onClick={() => navigate("/driver-notifications")}>
-              <ListItemText primary=" Driver Notification" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* SUPPORT & PAGES */}
-        <ListItem disablePadding sx={{ mt: 3, px: 2, mb: 1 }}>
-          <Typography
-            sx={{
-              fontSize: "11px",
-              fontWeight: "700",
-              color: "rgba(255,255,255,0.4)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              pl: 1
-            }}
-          >
-            SUPPORT & PAGES
-          </Typography>
-        </ListItem>
-
-        {/* Callback Request */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("callback")} sx={activeMenu("callback", ["/user-callback-request", "/store-callback-request", "/delivery-boy-callback-request"])}>
-            <ListItemIcon>
-              <PhoneCallbackIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Callback Request" />
-            { openMenu === "callback" ? <ExpandLess sx={{ color: openMenu === "callback" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-
-        <Collapse in={openMenu === "callback"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/user-callback-request")} onClick={() => navigate("/user-callback-request")}>
-              <ListItemText primary=" User Callback Request" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/store-callback-request")} onClick={() => navigate("/store-callback-request")}>
-              <ListItemText primary="Store Callback Request" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/delivery-boy-callback-request")} onClick={() => navigate("/delivery-boy-callback-request")}>
-              <ListItemText primary="Delivery Boy Callback Request" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* Feedback  */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("feedback")} sx={activeMenu("feedback", ["/user-feedback", "/store-feedback", "/delivery-boy-feedback"])}>
-            <ListItemIcon>
-              <FeedbackIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Feedback" />
-            { openMenu === "feedback" ? <ExpandLess sx={{ color: openMenu === "feedback" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-
-        <Collapse in={openMenu === "feedback"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/user-feedback")} onClick={() => navigate("/user-feedback")}>
-              <ListItemText primary=" User Feedback" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/store-feedback")} onClick={() => navigate("/store-feedback")}>
-              <ListItemText primary="Store Feedback" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/delivery-boy-feedback")} onClick={() => navigate("/delivery-boy-feedback")}>
-              <ListItemText primary="Delivery Boy Feedback" />
-            </ListItemButton>
-          </List>
-        </Collapse>
+            <Collapse in={openMenu === "delivery"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/delivery-boy-list")} onClick={() => navigate("/delivery-boy-list")}>
+                  <ListItemText primary="Delivery Boy list" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/delivery-boy-incentive")} onClick={() => navigate("/delivery-boy-incentive")}>
+                  <ListItemText primary="Delivery Boy Incentive" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
 
         {/* Pages */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("pages")} sx={activeMenu("pages", ["/about-us", "/terms-conditions"])}>
-            <ListItemIcon>
-              <DescriptionIcon  />
-            </ListItemIcon>
-            <ListItemText primary="Pages" />
-            { openMenu === "pages" ? <ExpandLess sx={{ color: openMenu === "pages" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
+        {hasPermission("Pages") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("pages")} sx={activeMenu("pages", ["/about-us", "/terms-conditions"])}>
+                <ListItemIcon>
+                  <DescriptionIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Pages" />
+                { openMenu === "pages" ? <ExpandLess sx={{ color: openMenu === "pages" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
 
-        <Collapse in={openMenu === "pages"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/about-us")} onClick={() => navigate("/about-us")}>
-              <ListItemText primary="About Us" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/terms-conditions")} onClick={() => navigate("/terms-conditions")}>
-              <ListItemText primary="Terms & Conditions" />
-            </ListItemButton>
-          </List>
-        </Collapse>
+            <Collapse in={openMenu === "pages"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/about-us")} onClick={() => navigate("/about-us")}>
+                  <ListItemText primary="About Us" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/terms-conditions")} onClick={() => navigate("/terms-conditions")}>
+                  <ListItemText primary="Terms & Conditions" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
 
-        {/* Reviews */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/reviews")} sx={activeMenu("/reviews")}>
-            <ListItemIcon>
-              <FeedbackIcon />
-            </ListItemIcon>
-            <ListItemText primary="Reviews" />
-          </ListItemButton>
-        </ListItem>
+        {/* Feedback  */}
+        {hasPermission("Feedback") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("feedback")} sx={activeMenu("feedback", ["/user-feedback", "/store-feedback", "/delivery-boy-feedback"])}>
+                <ListItemIcon>
+                  <FeedbackIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Feedback" />
+                { openMenu === "feedback" ? <ExpandLess sx={{ color: openMenu === "feedback" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
 
-        {/* ANALYTICS */}
-        <ListItem disablePadding sx={{ mt: 3, px: 2, mb: 1 }}>
-          <Typography
-            sx={{
-              fontSize: "11px",
-              fontWeight: "700",
-              color: "rgba(255,255,255,0.4)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              pl: 1
-            }}
-          >
-            ANALYTICS
-          </Typography>
-        </ListItem>
+            <Collapse in={openMenu === "feedback"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/user-feedback")} onClick={() => navigate("/user-feedback")}>
+                  <ListItemText primary="User Feedback" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/store-feedback")} onClick={() => navigate("/store-feedback")}>
+                  <ListItemText primary="Store Feedback" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/delivery-boy-feedback")} onClick={() => navigate("/delivery-boy-feedback")}>
+                  <ListItemText primary="Delivery Boy Feedback" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
 
-        {/* Reports & Analytics Dropdown */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleToggle("reports")} sx={activeMenu("reports", ["/item-requirement", "/sales-report", "/tax-reports", "/reports"])}>
-            <ListItemIcon>
-              <AssessmentIcon />
-            </ListItemIcon>
-            <ListItemText primary="Reports & Analytics" />
-            {openMenu === "reports" ? <ExpandLess sx={{ color: openMenu === "reports" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
+        {/* Callback Requests */}
+        {hasPermission("Callback") && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleToggle("callback")} sx={activeMenu("callback", ["/user-callback-request", "/store-callback-request", "/delivery-boy-callback-request"])}>
+                <ListItemIcon>
+                  <PhoneCallbackIcon  />
+                </ListItemIcon>
+                <ListItemText primary="Callback Requests" />
+                { openMenu === "callback" ? <ExpandLess sx={{ color: openMenu === "callback" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
 
-        <Collapse in={openMenu === "reports"} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton sx={subActiveMenu("/item-requirement")} onClick={() => navigate("/item-requirement")}>
-              <ListItemText primary="Item Requirement (Day-Wise)" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/sales-report")} onClick={() => navigate("/sales-report")}>
-              <ListItemText primary="Item Sales Report (Last 30 Days)" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/tax-reports")} onClick={() => navigate("/tax-reports")}>
-              <ListItemText primary="Tax Reports" />
-            </ListItemButton>
-            <ListItemButton sx={subActiveMenu("/reports")} onClick={() => navigate("/reports")}>
-              <ListItemText primary="Reports" />
-            </ListItemButton>
-          </List>
-        </Collapse>
+            <Collapse in={openMenu === "callback"} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton sx={subActiveMenu("/user-callback-request")} onClick={() => navigate("/user-callback-request")}>
+                  <ListItemText primary="User Callback Request" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/store-callback-request")} onClick={() => navigate("/store-callback-request")}>
+                  <ListItemText primary="Store Callback Request" />
+                </ListItemButton>
+                <ListItemButton sx={subActiveMenu("/delivery-boy-callback-request")} onClick={() => navigate("/delivery-boy-callback-request")}>
+                  <ListItemText primary="Delivery Boy Callback Request" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+          </>
+        )}
 
         {/* SYSTEM SETTINGS */}
-        <ListItem disablePadding sx={{ mt: 3, px: 2, mb: 1 }}>
-          <Typography 
-            sx={{ 
-              fontSize: "11px", 
-              fontWeight: "700", 
-              color: "rgba(255,255,255,0.4)", 
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              pl: 1
-            }} 
-          >
-            SYSTEM SETTINGS
-          </Typography>
-        </ListItem>
+        {(hasPermission("Settings") || hasPermission("Cancelling Reasons")) && (
+          <>
+            <ListItem disablePadding sx={{ mt: 3, px: 2, mb: 1 }}>
+              <Typography 
+                sx={{ 
+                  fontSize: "11px", 
+                  fontWeight: "700", 
+                  color: "rgba(255,255,255,0.4)", 
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  pl: 1
+                }} 
+              >
+                Settings
+              </Typography>
+            </ListItem>
 
-        {/* Platform Settings */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/settings")} sx={activeMenu("/settings")}>
-            <ListItemIcon>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Platform Settings" />
-          </ListItemButton>
-        </ListItem>
+            {/* Settings */}
+            {hasPermission("Settings") && (
+              <ListItem disablePadding>
+                <ListItemButton onClick={() => navigate("/settings")} sx={activeMenu("/settings")}>
+                  <ListItemIcon>
+                    <SettingsIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Settings" />
+                </ListItemButton>
+              </ListItem>
+            )}
 
-        {/* Cancelling Reasons */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/cancelling-reasons")} sx={activeMenu("/cancelling-reasons")}>
-            <ListItemIcon>
-              <FormatListBulletedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Cancelling Reasons" />
-          </ListItemButton>
-        </ListItem>
+            {/* Cancelling Reasons */}
+            {hasPermission("Cancelling Reasons") && (
+              <ListItem disablePadding>
+                <ListItemButton onClick={() => navigate("/cancelling-reasons")} sx={activeMenu("/cancelling-reasons")}>
+                  <ListItemIcon>
+                    <FormatListBulletedIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Cancelling Reasons" />
+                </ListItemButton>
+              </ListItem>
+            )}
+          </>
+        )}
       </List>
     </Drawer>
   );

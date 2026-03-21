@@ -22,6 +22,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { genericApi } from "../api/genericApi";
 
 const SubAdmin = () => {
   const navigate = useNavigate();
@@ -34,20 +35,19 @@ const SubAdmin = () => {
 
   const fetchAdmins = async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/users?_limit=8"
-      );
+      const response = await genericApi.getAll("sub-admin");
+      const results = response.data.results || response.data || [];
       
-      const roles = ["Manager", "Editor", "Support", "Inventory Manager", "Delivery Lead"];
-      const formattedData = response.data.map((user, index) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone.split(" ")[0],
-        role: roles[index % roles.length],
-        status: index % 3 === 0 ? "Inactive" : "Active",
-        image: `https://i.pravatar.cc/150?u=${user.id}`
+      const formattedData = results.map((user, index) => ({
+        id: user._id || index,
+        name: user["Name"] || user.name || "Unknown",
+        email: user["Email"] || user["Email ID"] || user.email || "N/A",
+        phone: user["Mobile Number"] || user.phone || "N/A",
+        role: user["role Name"] || user.roleName || user.role || "Admin",
+        status: user.Status || user.status || "Active",
+        image: user.Image || user.image || user.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user["Name"] || "Admin")}&background=random`
       }));
+
 
       setAdmins(formattedData);
     } catch (error) {
@@ -55,9 +55,15 @@ const SubAdmin = () => {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to remove this sub-admin?")) {
-      setAdmins(prev => prev.filter(admin => admin.id !== id));
+      try {
+        await genericApi.remove("sub-admin", id);
+        setAdmins(prev => prev.filter(admin => admin.id !== id));
+      } catch (err) {
+        console.error(err);
+        alert("Failed to delete sub-admin.");
+      }
     }
   };
 

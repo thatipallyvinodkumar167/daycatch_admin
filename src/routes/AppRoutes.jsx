@@ -98,6 +98,7 @@ import DeliveryBoyCallbackRequests from "../pages/DeliveryBoyCallbackRequests";
 import AddDeliveryBoyCallbackRequest from "../pages/AddDeliveryBoyCallbackRequest";
 import EditDeliveryBoyCallbackRequest from "../pages/EditDeliveryBoyCallbackRequest";
 import SendNotificationUsers from "../pages/SendNotificationUsers";
+import ProfilePage from "../pages/Profile";
 
 
 
@@ -123,6 +124,7 @@ const AppRoutes = () => {
         <Route path="coupons" element={<Coupons />} />
         <Route path="reviews" element={<Reviews />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="profile" element={<ProfilePage />} />
         <Route path="cancelling-reasons" element={<CancellingReasons />} />
         <Route path="cancelling-reasons/add" element={<AddCancellingReason />} />
         <Route path="cancelling-reasons/edit/:id" element={<EditCancellingReason />} />
