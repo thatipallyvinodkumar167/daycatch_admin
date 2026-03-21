@@ -17,7 +17,6 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import axios from "axios";
 import { genericApi } from "../api/genericApi";
 
 const PaymentFailedOrders = () => {

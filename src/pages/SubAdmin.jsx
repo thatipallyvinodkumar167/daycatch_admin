@@ -21,7 +21,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { genericApi } from "../api/genericApi";
 
 const SubAdmin = () => {

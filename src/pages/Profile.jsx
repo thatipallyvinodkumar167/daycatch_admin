@@ -25,8 +25,6 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import PersonIcon from "@mui/icons-material/Person";
 import EmailIcon from "@mui/icons-material/Email";
 import ShieldIcon from "@mui/icons-material/Shield";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import axios from "axios";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5001/api/v1";
 

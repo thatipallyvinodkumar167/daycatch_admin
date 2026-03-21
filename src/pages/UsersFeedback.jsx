@@ -12,7 +12,6 @@ import {
   TextField,
   Stack,
 } from "@mui/material";
-import axios from "axios";
 import { genericApi } from "../api/genericApi";
 
 const UsersFeedback = () => {

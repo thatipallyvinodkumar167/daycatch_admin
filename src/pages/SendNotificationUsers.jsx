@@ -18,7 +18,6 @@ import SendIcon from "@mui/icons-material/Send";
 import ImageIcon from "@mui/icons-material/Image";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import CloseIcon from "@mui/icons-material/Close";
-import axios from "axios";
 import { genericApi } from "../api/genericApi";
 
 const SendNotificationUsers = () => {

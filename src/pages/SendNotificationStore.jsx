@@ -18,7 +18,6 @@ import StorefrontIcon from "@mui/icons-material/Storefront";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import ImageIcon from "@mui/icons-material/Image";
 import CloseIcon from "@mui/icons-material/Close";
-import axios from "axios";
 import { genericApi } from "../api/genericApi";
 
 const SendNotificationStore = () => {

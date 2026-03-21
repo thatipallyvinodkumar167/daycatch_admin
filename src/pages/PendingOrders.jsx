@@ -17,7 +17,6 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
-import axios from "axios";
 import { genericApi } from "../api/genericApi";
 
 const PendingOrders = () => {

@@ -17,7 +17,6 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import axios from "axios";
 import { genericApi } from "../api/genericApi";
 
 const OngoingOrders = () => {

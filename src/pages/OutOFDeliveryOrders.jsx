@@ -17,7 +17,6 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import MopedIcon from "@mui/icons-material/Moped";
-import axios from "axios";
 import { genericApi } from "../api/genericApi";
 
 const OutOFDeliveryOrders = () => {

@@ -15,7 +15,6 @@ import {
   Button,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-import axios from "axios";
 import { genericApi } from "../api/genericApi";
 
 const UserNotifications = () => {
