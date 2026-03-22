@@ -9,7 +9,6 @@ import {
   Stack,
   MenuItem,
   Select,
-  FormControl,
   IconButton,
   Tooltip,
   Divider,
@@ -18,7 +17,6 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import Inventory2Icon from "@mui/icons-material/Inventory2";
 import { useNavigate, useParams } from "react-router-dom";
 import { getParentCategories, getSubCategories } from "../api/categoryApi";
 import { getProduct, updateProduct } from "../api/productApi";

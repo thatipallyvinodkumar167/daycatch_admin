@@ -12,7 +12,6 @@ import {
   TextField,
   Button,
   Stack,
-  InputAdornment,
   Tooltip,
   Divider,
   LinearProgress,

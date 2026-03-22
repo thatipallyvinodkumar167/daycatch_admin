@@ -11,7 +11,6 @@ import {
   TableRow,
   TextField,
   Stack,
-  InputAdornment,
   Tooltip,
   Divider,
   LinearProgress,

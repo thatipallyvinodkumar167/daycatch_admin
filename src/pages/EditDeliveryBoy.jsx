@@ -33,7 +33,6 @@ import HomeIcon from "@mui/icons-material/Home";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import PublicIcon from "@mui/icons-material/Public";
 import StarIcon from "@mui/icons-material/Star";
-import PaidIcon from "@mui/icons-material/Paid";
 import {
   DELIVERY_BOY_ID_TYPES,
   DELIVERY_BOY_STATUS,

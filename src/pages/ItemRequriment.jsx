@@ -13,7 +13,6 @@ import {
   Button,
   Stack,
   IconButton,
-  InputAdornment,
   Tooltip,
   Divider,
   LinearProgress,
@@ -22,7 +21,6 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import InventoryIcon from "@mui/icons-material/Inventory";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EventNoteIcon from "@mui/icons-material/EventNote";
 import AssessmentIcon from "@mui/icons-material/Assessment";
@@ -38,9 +36,9 @@ const ItemRequirement = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedStore, setSelectedStore] = useState(null);
+  const selectedStore = null;
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [detailItems, setDetailItems] = useState([]);
+  const detailItems = [];
 
   const fetchRequirements = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);

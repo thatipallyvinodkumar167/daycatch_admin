@@ -16,7 +16,6 @@ import {
   Avatar,
   Stack,
   Tooltip,
-  Divider,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";

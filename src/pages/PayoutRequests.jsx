@@ -26,7 +26,6 @@ const PayoutRequests = () => {
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [search, setSearch] = useState("");
-  const [payoutRules, setPayoutRules] = useState({ minAmount: 500, minDays: 7, _id: null });
 
 
   // API Call (using JSONPlaceholder as fakeapi)
