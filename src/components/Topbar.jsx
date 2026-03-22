@@ -9,13 +9,11 @@ import {
   Avatar, 
   Typography, 
   alpha, 
-  useTheme,
   Divider,
   Stack
 } from "@mui/material";
 import {
   Menu as MenuIcon,
-  NotificationsNone as NotificationsIcon,
   SettingsOutlined as SettingsIcon,
   LogoutOutlined as LogoutIcon,
   AccountCircleOutlined as ProfileIcon,
@@ -27,7 +25,6 @@ import logo from "../assets/logo.png";
 
 function Topbar({ toggleSidebar }) {
   const navigate = useNavigate();
-  const theme = useTheme();
   const isAuth = localStorage.getItem("token");
   const [anchorEl, setAnchorEl] = useState(null);
   const indigoPrimary = "#4318ff";

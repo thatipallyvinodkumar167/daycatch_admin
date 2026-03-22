@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef } from "react";
 import {
   Box,
   Typography,
@@ -16,7 +16,6 @@ import {
   MenuItem,
   Select,
   FormControl,
-  FormControlLabel,
   Radio,
   Snackbar,
   Alert,
@@ -25,27 +24,21 @@ import {
   DialogContent,
   DialogActions,
   Divider,
-  alpha,
-  Avatar
+  alpha
 } from "@mui/material";
 import {
   Close as CloseIcon,
   Save as SaveIcon,
-  Settings as SettingsIcon,
   Sms as SmsIcon,
-  Key as KeyIcon,
-  Payment as PaymentIcon,
   Map as MapIcon,
   DirectionsCar as DirectionsCarIcon,
   Link as LinkIcon,
-  Image as ImageIcon,
+  ImageIcon,
   Campaign as CampaignIcon,
   CloudUpload as BrowseGalleryIcon,
   Hub as HubIcon,
   Shield as ShieldIcon,
-  AccountBalance as AccountBalanceIcon,
-  AutoGraph as AutoGraphIcon,
-  Done as DoneIcon
+  AccountBalance as AccountBalanceIcon
 } from "@mui/icons-material";
 
 const Settings = () => {

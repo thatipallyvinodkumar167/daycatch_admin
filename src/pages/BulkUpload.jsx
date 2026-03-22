@@ -6,20 +6,18 @@ import {
   Button,
   Stack,
   LinearProgress,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Divider,
   IconButton,
   Tooltip,
   Grid,
+  Snackbar,
+  Alert,
+  Fade,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import InfoIcon from "@mui/icons-material/Info";
-import Inventory2Icon from "@mui/icons-material/Inventory2";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { genericApi } from "../api/genericApi";
 
@@ -27,6 +25,11 @@ const BulkUpload = () => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+
+  const showSnackbar = (message, severity = "success") => {
+    setSnackbar({ open: true, message, severity });
+  };
 
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
@@ -69,17 +72,17 @@ const BulkUpload = () => {
             setUploading(false);
             setFile(null);
             setProgress(0);
-            alert(`Operational Sync: ${data.length} SKUs successfully ingested.`);
+            showSnackbar(`Operational Sync: ${data.length} SKUs successfully ingested.`, "success");
           }, 800);
         } catch (error) {
           console.error("Ingestion Error:", error);
-          alert(error.response?.data?.error || "Persistence Sync Error: Bulk ingestion rejected.");
+          showSnackbar(error.response?.data?.error || "Persistence Sync Error: Bulk ingestion rejected.", "error");
           setUploading(false);
         }
       };
       
       reader.onerror = () => {
-        alert("Read Error: IO stream interrupted.");
+        showSnackbar("Read Error: IO stream interrupted.", "error");
         setUploading(false);
       };
       
@@ -207,6 +210,23 @@ const BulkUpload = () => {
         </Paper>
 
       </Stack>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={5000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        TransitionComponent={Fade}
+      >
+        <Alert 
+            onClose={() => setSnackbar({ ...snackbar, open: false })} 
+            severity={snackbar.severity} 
+            variant="filled" 
+            sx={{ borderRadius: "14px", fontWeight: "700", boxShadow: "0 8px 30px rgba(0,0,0,0.15)", bgcolor: snackbar.severity === "success" ? "#00d26a" : "#ff4d49" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

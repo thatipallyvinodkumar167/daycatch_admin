@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Grid,
@@ -18,7 +18,6 @@ import {
   IconButton,
   Tooltip,
   Button,
-  Divider,
   LinearProgress
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,8 +29,6 @@ import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import PersonIcon from "@mui/icons-material/Person";
 import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ErrorIcon from "@mui/icons-material/Error";
-import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import HubIcon from "@mui/icons-material/Hub";
 import InsightIcon from "@mui/icons-material/Insights";
@@ -45,7 +42,7 @@ const cardVariants = {
 };
 
 const DashboardCards = () => {
-  const theme = useTheme();
+  useTheme();
   const navigate = useNavigate();
   const indigoPrimary = "#4318ff";
 

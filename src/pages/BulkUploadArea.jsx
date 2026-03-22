@@ -12,8 +12,9 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Snackbar,
   Alert,
-  IconButton
+  Fade,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
@@ -30,6 +31,11 @@ const BulkUploadArea = () => {
   const [uploadingSociety, setUploadingSociety] = useState(false);
   const [cityProgress, setCityProgress] = useState(0);
   const [societyProgress, setSocietyProgress] = useState(0);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+
+  const showSnackbar = (message, severity = "success") => {
+    setSnackbar({ open: true, message, severity });
+  };
 
   const handleCityFileChange = (e) => {
     if (e.target.files[0]) {
@@ -60,10 +66,32 @@ const BulkUploadArea = () => {
           setStatus(false);
           setFile(null);
           setProgress(0);
-          alert(`Operational Sync: Bulk ${isCity ? "Cities" : "Societies"} ingestion finalized.`);
+          showSnackbar(`Operational Sync: Bulk ${isCity ? "Cities" : "Societies"} ingestion finalized.`, "success");
         }, 500);
       }
     }, 100);
+  };
+
+  const downloadCityTemplate = () => {
+    const headers = "City Name,State,Status";
+    const blob = new Blob([headers], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Daycatch_Cities_Template.csv";
+    a.click();
+    showSnackbar("Metropolitan template downloaded successfully.", "success");
+  };
+
+  const downloadSocietyTemplate = () => {
+    const headers = "Society Name,City ID,Pincode,Address,Status";
+    const blob = new Blob([headers], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Daycatch_Societies_Template.csv";
+    a.click();
+    showSnackbar("Cluster template downloaded successfully.", "success");
   };
 
   const commonCardStyles = {
@@ -183,7 +211,11 @@ const BulkUploadArea = () => {
                     Metropolitan Protocol
                     </Typography>
                 </Stack>
-                <Button startIcon={<FileDownloadIcon />} sx={secondaryBtnStyles}>
+                <Button 
+                    startIcon={<FileDownloadIcon />} 
+                    sx={secondaryBtnStyles}
+                    onClick={downloadCityTemplate}
+                >
                     Sample
                 </Button>
               </Stack>
@@ -257,7 +289,11 @@ const BulkUploadArea = () => {
                     Territory Protocol
                     </Typography>
                 </Stack>
-                <Button startIcon={<FileDownloadIcon />} sx={secondaryBtnStyles}>
+                <Button 
+                    startIcon={<FileDownloadIcon />} 
+                    sx={secondaryBtnStyles}
+                    onClick={downloadSocietyTemplate}
+                >
                     Sample
                 </Button>
               </Stack>
@@ -325,6 +361,23 @@ const BulkUploadArea = () => {
             Precision Note: Ensure CSV logic alignment before execution. Bulk ingestion is atomic and non-reversible.
           </Typography>
       </Paper>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={5000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        TransitionComponent={Fade}
+      >
+        <Alert 
+            onClose={() => setSnackbar({ ...snackbar, open: false })} 
+            severity={snackbar.severity} 
+            variant="filled" 
+            sx={{ borderRadius: "14px", fontWeight: "700", boxShadow: "0 8px 30px rgba(0,0,0,0.15)", bgcolor: snackbar.severity === "success" ? "#00d26a" : "#ff4d49" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

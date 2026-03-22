@@ -16,7 +16,6 @@ import {
   Tooltip,
   Divider,
   Fade,
-  Chip
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import DeliveryDiningIcon from "@mui/icons-material/DeliveryDining";

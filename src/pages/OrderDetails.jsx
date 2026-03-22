@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -15,7 +15,6 @@ import {
   Grid,
   Button,
   IconButton,
-  Tooltip,
   Breadcrumbs,
   Link,
   Chip,
@@ -33,11 +32,7 @@ const OrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchOrderDetails();
-  }, [id]);
-
-  const fetchOrderDetails = async () => {
+  const fetchOrderDetails = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getOrder(id);
@@ -72,7 +67,11 @@ const OrderDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchOrderDetails();
+  }, [id, fetchOrderDetails]);
 
   if (loading) return <Box sx={{ p: 4 }}><Typography>Loading order details...</Typography></Box>;
   if (!order) return <Box sx={{ p: 4 }}><Typography>Order not found.</Typography></Box>;

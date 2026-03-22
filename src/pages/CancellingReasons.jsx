@@ -15,14 +15,12 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
-  Chip
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SearchIcon from "@mui/icons-material/Search";
-import LayersIcon from "@mui/icons-material/Layers";
 import { useNavigate } from "react-router-dom";
 import { genericApi } from "../api/genericApi";
 

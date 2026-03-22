@@ -15,15 +15,12 @@ import {
   Snackbar,
   IconButton,
   Tooltip,
-  Divider,
   Fade
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
-import ImageIcon from "@mui/icons-material/Image";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import CloseIcon from "@mui/icons-material/Close";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
-import SmartPhoneIcon from "@mui/icons-material/Smartphone";
 import { genericApi } from "../api/genericApi";
 
 const SendNotificationUsers = () => {

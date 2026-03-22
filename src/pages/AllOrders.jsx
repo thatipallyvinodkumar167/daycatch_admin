@@ -23,7 +23,6 @@ import {
   CircularProgress
 } from "@mui/material";
 import { 
-  Visibility as VisibilityIcon,
   LocalShipping as LocalShippingIcon,
   Refresh as RefreshIcon,
   Search as SearchIcon,
@@ -31,7 +30,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
+  TrendingUp as TrendingUpIcon,
   DoneAll as DoneAllIcon,
   Warning as WarningIcon
 } from "@mui/icons-material";

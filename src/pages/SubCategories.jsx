@@ -14,7 +14,6 @@ import {
   Stack,
   IconButton,
   MenuItem,
-  FormControl,
   Select,
   Avatar,
   LinearProgress,

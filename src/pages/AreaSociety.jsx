@@ -7,7 +7,6 @@ import {
   CircularProgress,
   FormControl,
   IconButton,
-  InputLabel,
   MenuItem,
   Modal,
   Paper,
