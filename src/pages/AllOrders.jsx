@@ -30,7 +30,6 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   TrendingUp as TrendingUpIcon,
-  TrendingUp as TrendingUpIcon,
   DoneAll as DoneAllIcon,
   Warning as WarningIcon
 } from "@mui/icons-material";
