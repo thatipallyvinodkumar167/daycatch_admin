@@ -1,9 +1,23 @@
-import React from 'react';
-import { Box, Container, Paper, Typography, TextField, Button, Link as MuiLink, Divider, Checkbox, FormControlLabel } from '@mui/material';
+import React, { useState } from 'react';
+import { 
+  Box, 
+  Container, 
+  Paper, 
+  Typography, 
+  TextField, 
+  Button, 
+  Link as MuiLink, 
+  Divider, 
+  Checkbox, 
+  FormControlLabel, 
+  MenuItem, 
+  InputAdornment, 
+  Stack 
+} from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { Person, Email, Lock, AssignmentInd } from '@mui/icons-material';
 import axios from 'axios';
-import { MenuItem } from '@mui/material';
+import logo from '../assets/logo.png';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -40,120 +54,203 @@ const RegisterPage = () => {
   };
 
   return (
-    <Box sx={{ py: 12, bgcolor: '#F8F9FA', minHeight: '80vh', display: 'flex', alignItems: 'center' }}>
-      <Container maxWidth="xs">
-        <Paper sx={{ p: 4, borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.05)' }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, textAlign: 'center',color:"#E53935" }}>
-            Create Account
-          </Typography>
+    <Box sx={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #f4f7fe 0%, #e0e7ff 100%)',
+      position: 'relative',
+      overflow: 'hidden',
+      py: 4
+    }}>
+      {/* Abstract Background Decoration */}
+      <Box sx={{ position: 'absolute', top: '5%', left: '2%', width: '250px', height: '250px', borderRadius: '50%', background: 'rgba(36, 209, 100, 0.05)', filter: 'blur(50px)' }} />
+      <Box sx={{ position: 'absolute', bottom: '5%', right: '2%', width: '350px', height: '350px', borderRadius: '50%', background: 'rgba(67, 24, 255, 0.08)', filter: 'blur(60px)' }} />
 
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 4, textAlign: 'center', color:"#E53935" }}>
-            Join DayCatch and enjoy fresh seafood
-          </Typography>
-
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label="Full Name"
-              name="name"
-              margin="normal"
-              required
-              variant="outlined"
-              value={formData.name}
-              onChange={handleChange}
-              sx={{ mb: 2 }}
-            />
-
-            <TextField
-              fullWidth
-              label="Email Address"
-              name="email"
-              type="email"
-              margin="normal"
-              required
-              variant="outlined"
-              value={formData.email}
-              onChange={handleChange}
-              sx={{ mb: 2 }}
-            />
-
-            <TextField
-              fullWidth
-              label="Password"
-              name="password"
-              type="password"
-              margin="normal"
-              required
-              variant="outlined"
-              value={formData.password}
-              onChange={handleChange}
-              sx={{ mb: 2 }}
-            />
-
-            <TextField
-              fullWidth
-              select
-              label="Select Role"
-              name="roleName"
-              margin="normal"
-              required
-              variant="outlined"
-              value={formData.roleName}
-              onChange={handleChange}
-              sx={{ mb: 2 }}
-            >
-              <MenuItem value="Super Admin">Super Admin</MenuItem>
-              <MenuItem value="Manager">Manager</MenuItem>
-              <MenuItem value="Staff">Staff</MenuItem>
-            </TextField>
-
-            <FormControlLabel
-              control={
-                <Checkbox
-                  required
-                  sx={{
-                    color: "#B71C1C",
-                    '&.Mui-checked': {
-                      color: "#B71C1C",
-                    },
-                  }}
-                />
-              }
-              label={
-                <Typography variant="body2">
-                  I agree to the Terms and Conditions
-                </Typography>
-              }
-              sx={{ mb: 3 }}
-            />
-
-            <Button
-              fullWidth
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={loading}
-              sx={{
-                py: 1.5,
-                fontWeight: 700,
-                borderRadius: 2,
-                mb: 2,
-                bgcolor: "#E53935",
-                '&:hover': {
-                  bgcolor: "#8E0000"
-                }
-              }}
-            >
-              Sign Up
-            </Button>
+      <Container maxWidth={false} sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Paper 
+          elevation={0}
+          sx={{ 
+            p: { xs: 3, md: 4 }, 
+            borderRadius: '24px', 
+            boxShadow: '0 20px 50px rgba(0,0,0,0.06)',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(15px)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            textAlign: 'center',
+            width: '100%',
+            maxWidth: '420px'
+          }}
+        >
+          {/* Header */}
+          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+            <img src={logo} alt="DayCatch" style={{ height: '40px' }} />
+            <Box sx={{ textAlign: 'left' }}>
+              <Typography variant="h6" sx={{ fontWeight: 900, color: '#1b2559', lineHeight: 1.1 }}>
+                Enrollment
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#a3aed0', fontWeight: 600 }}>
+                Platform Ecosystem
+              </Typography>
+            </Box>
           </Box>
 
-          <Divider sx={{ my: 3 }}>OR</Divider>
+          <Box component="form" onSubmit={handleSubmit}>
+            <Stack spacing={1.5}>
+              <TextField
+                fullWidth
+                size="small"
+                label="FULL NAME"
+                name="name"
+                required
+                value={formData.name}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Person sx={{ color: '#a3aed0', fontSize: '18px' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ 
+                  "& .MuiOutlinedInput-root": { borderRadius: '12px', backgroundColor: '#fff', "& fieldset": { borderColor: '#e0e5f2' } },
+                  "& .MuiInputLabel-root": { fontSize: '12px', fontWeight: 700, transform: 'translate(40px, 10px) scale(1)' },
+                  "& .MuiInputLabel-shrink": { transform: 'translate(14px, -6px) scale(0.85)' }
+                }}
+              />
 
-          <Typography variant="body2" sx={{ textAlign: 'center' }}>
-            Already have an account?{' '}
-            <MuiLink component={Link} to="/login" sx={{ fontWeight: 700, color: "#E53935" }}>
-              Login
+              <TextField
+                fullWidth
+                size="small"
+                label="WORK EMAIL"
+                name="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Email sx={{ color: '#a3aed0', fontSize: '18px' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ 
+                  "& .MuiOutlinedInput-root": { borderRadius: '12px', backgroundColor: '#fff', "& fieldset": { borderColor: '#e0e5f2' } },
+                  "& .MuiInputLabel-root": { fontSize: '12px', fontWeight: 700, transform: 'translate(40px, 10px) scale(1)' },
+                  "& .MuiInputLabel-shrink": { transform: 'translate(14px, -6px) scale(0.85)' }
+                }}
+              />
+
+              <TextField
+                fullWidth
+                size="small"
+                label="SECURE PASSWORD"
+                name="password"
+                type="password"
+                required
+                value={formData.password}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock sx={{ color: '#a3aed0', fontSize: '18px' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ 
+                  "& .MuiOutlinedInput-root": { borderRadius: '12px', backgroundColor: '#fff', "& fieldset": { borderColor: '#e0e5f2' } },
+                  "& .MuiInputLabel-root": { fontSize: '12px', fontWeight: 700, transform: 'translate(40px, 10px) scale(1)' },
+                  "& .MuiInputLabel-shrink": { transform: 'translate(14px, -6px) scale(0.85)' }
+                }}
+              />
+
+              <TextField
+                fullWidth
+                size="small"
+                select
+                label="ADMINISTRATIVE ROLE"
+                name="roleName"
+                required
+                value={formData.roleName}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <AssignmentInd sx={{ color: '#a3aed0', mr: 1, fontSize: '18px' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ 
+                  "& .MuiOutlinedInput-root": { borderRadius: '12px', backgroundColor: '#fff', "& fieldset": { borderColor: '#e0e5f2' } },
+                  "& .MuiInputLabel-root": { fontSize: '12px', fontWeight: 700, transform: 'translate(40px, 10px) scale(1)' },
+                  "& .MuiInputLabel-shrink": { transform: 'translate(14px, -6px) scale(0.85)' }
+                }}
+              >
+                <MenuItem value="Super Admin" sx={{ py: 1, fontWeight: 700, fontSize: '13px' }}>Super Admin</MenuItem>
+                <MenuItem value="Manager" sx={{ py: 1, fontWeight: 700, fontSize: '13px' }}>Manager</MenuItem>
+                <MenuItem value="Staff" sx={{ py: 1, fontWeight: 700, fontSize: '13px' }}>Staff</MenuItem>
+              </TextField>
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    required
+                    size="small"
+                    sx={{
+                      py: 0.5,
+                      color: "#4318ff",
+                      '&.Mui-checked': { color: "#4318ff" },
+                    }}
+                  />
+                }
+                label={
+                  <Typography variant="caption" fontWeight="600" color="#a3aed0" sx={{ lineHeight: 1 }}>
+                    I acknowledge administrative responsibility.
+                  </Typography>
+                }
+                sx={{ mb: 0.5, textAlign: 'left', ml: 0 }}
+              />
+
+              <Button
+                fullWidth
+                type="submit"
+                variant="contained"
+                disabled={loading}
+                sx={{
+                  py: 1.5,
+                  fontWeight: 900,
+                  borderRadius: '12px',
+                  backgroundColor: '#4318ff',
+                  boxShadow: '0 4px 14px rgba(67, 24, 255, 0.3)',
+                  textTransform: 'none',
+                  fontSize: '15px',
+                  '&:hover': {
+                    backgroundColor: '#3311cc',
+                    boxShadow: '0 6px 20px rgba(67, 24, 255, 0.4)',
+                  }
+                }}
+              >
+                {loading ? 'Processing...' : 'Complete Enrollment'}
+              </Button>
+            </Stack>
+          </Box>
+
+          <Box sx={{ my: 1.5, display: 'flex', alignItems: 'center' }}>
+            <Divider sx={{ flex: 1, borderColor: '#e0e5f2' }} />
+            <Typography variant="caption" sx={{ px: 1.5, color: '#a3aed0', fontWeight: 800, fontSize: '10px' }}>SECURE ACCESS</Typography>
+            <Divider sx={{ flex: 1, borderColor: '#e0e5f2' }} />
+          </Box>
+
+          <Typography variant="body2" sx={{ color: '#a3aed0', fontWeight: 600 }}>
+            Already manage an account?{' '}
+            <MuiLink
+              component={Link}
+              to="/login"
+              sx={{ fontWeight: 800, color: '#4318ff', textDecoration: 'none' }}
+            >
+              Back to Login
             </MuiLink>
           </Typography>
         </Paper>

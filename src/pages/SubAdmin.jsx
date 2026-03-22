@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -15,11 +15,19 @@ import {
   IconButton,
   Tooltip,
   Avatar,
+  Divider,
+  LinearProgress,
+  Chip,
+  Fade
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import SearchIcon from "@mui/icons-material/Search";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import EmailIcon from "@mui/icons-material/Email";
 import { useNavigate } from "react-router-dom";
 import { genericApi } from "../api/genericApi";
 
@@ -27,161 +35,229 @@ const SubAdmin = () => {
   const navigate = useNavigate();
   const [admins, setAdmins] = useState([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchAdmins();
-  }, []);
+  const fetchAdmins = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
 
-  const fetchAdmins = async () => {
     try {
       const response = await genericApi.getAll("sub-admin");
       const results = response.data.results || response.data || [];
       
       const formattedData = results.map((user, index) => ({
         id: user._id || index,
-        name: user["Name"] || user.name || "Unknown",
-        email: user["Email"] || user["Email ID"] || user.email || "N/A",
+        name: user["Name"] || user.name || "Unknown Fleet Officer",
+        email: user["Email"] || user["Email ID"] || user.email || "protocol@daycatch.com",
         phone: user["Mobile Number"] || user.phone || "N/A",
-        role: user["role Name"] || user.roleName || user.role || "Admin",
+        role: user["role Name"] || user.roleName || user.role || "Officer",
         status: user.Status || user.status || "Active",
-        image: user.Image || user.image || user.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user["Name"] || "Admin")}&background=random`
+        image: user.Image || user.image || user.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user["Name"] || "Admin")}&background=4318ff&color=fff`
       }));
-
 
       setAdmins(formattedData);
     } catch (error) {
       console.error("Error fetching sub-admins:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchAdmins();
+  }, [fetchAdmins]);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to remove this sub-admin?")) {
+    if (window.confirm("Are you sure you want to decommission this administrative node?")) {
       try {
         await genericApi.remove("sub-admin", id);
-        setAdmins(prev => prev.filter(admin => admin.id !== id));
+        fetchAdmins();
       } catch (err) {
         console.error(err);
-        alert("Failed to delete sub-admin.");
       }
     }
   };
 
-  const filteredAdmins = admins.filter((admin) =>
-    admin.name.toLowerCase().includes(search.toLowerCase()) ||
-    admin.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredAdmins = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return admins;
+    return admins.filter((admin) =>
+      admin.name.toLowerCase().includes(q) ||
+      admin.email.toLowerCase().includes(q)
+    );
+  }, [admins, search]);
+
+  const stats = useMemo(() => [
+    { label: "Admin Nodes", value: admins.length, icon: <AdminPanelSettingsIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Node Visibility", value: "Verified", icon: <ManageAccountsIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+  ], [admins]);
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
+      {/* Premium Header Container */}
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
-            <Typography variant="h4" fontWeight="700" color="#2b3674">
-                Hi, Day Catch Super Admin Panel.
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Administrative Matrix
             </Typography>
-            <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-                Manage sub-admins and assign them specific roles.
+            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+                Manage high-velocity sub-admin nodes and audit authorized access levels.
             </Typography>
         </Box>
-        <Button 
-            variant="contained" 
-            startIcon={<AddIcon />}
-            onClick={() => navigate("/sub-admin/add")}
-            sx={{ 
-                backgroundColor: "#4318ff", 
-                "&:hover": { backgroundColor: "#3311cc" },
-                borderRadius: "12px",
-                textTransform: "none",
-                px: 3,
-                fontWeight: "700"
-            }}
-        >
-            Add Sub-Admin
-        </Button>
+        <Stack direction="row" spacing={3} alignItems="center">
+            {stats.map((stat) => (
+                <Stack key={stat.label} direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ color: stat.color, display: "flex" }}>{stat.icon}</Box>
+                    <Box>
+                        <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase", display: "block", lineHeight: 1 }}>{stat.label}</Typography>
+                        <Typography variant="subtitle2" fontWeight="800" color="#1b2559">{stat.value}</Typography>
+                    </Box>
+                </Stack>
+            ))}
+            <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, alignSelf: "center" }} />
+            <Button 
+                variant="contained" 
+                startIcon={<AddIcon />}
+                onClick={() => navigate("/sub-admin/add")}
+                sx={{ 
+                    backgroundColor: "#4318ff", 
+                    borderRadius: "14px",
+                    textTransform: "none",
+                    px: 3,
+                    py: 1.2,
+                    fontWeight: "800",
+                    boxShadow: "0 10px 25px rgba(67, 24, 255, 0.2)",
+                    "&:hover": { backgroundColor: "#3310cc" }
+                }}
+            >
+                Initialize Node
+            </Button>
+        </Stack>
       </Box>
 
-      {/* Summary Card */}
-      <Paper sx={{ p: 3, mb: 4, borderRadius: "16px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: 2, borderLeft: "6px solid #4318ff", width: "fit-content" }}>
-          <Avatar sx={{ bgcolor: "#e0e7ff", color: "#4318ff" }}>
-              <ManageAccountsIcon />
-          </Avatar>
-          <Box>
-              <Typography variant="caption" color="textSecondary" fontWeight="600">SUB-ADMINS</Typography>
-              <Typography variant="h5" fontWeight="800" color="#1b2559">{admins.length}</Typography>
+      {/* Full Width Ledger Hub */}
+      <Paper sx={{ borderRadius: "28px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", backgroundColor: "#fff", position: "relative" }}>
+          {(loading || refreshing) && (
+              <LinearProgress sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, bgcolor: "#f4f7fe", "& .MuiLinearProgress-bar": { bgcolor: "#4318ff" } }} />
+          )}
+          
+          <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Administrative Console</Typography>
+              <Stack direction="row" spacing={2} alignItems="center">
+                  <TextField
+                      size="small"
+                      placeholder="Search Node Identity..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      InputProps={{
+                          startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} />
+                      }}
+                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#fff", width: "320px" } }}
+                  />
+                  <Tooltip title="Synchronize Repository">
+                      <IconButton onClick={() => fetchAdmins(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
+                          <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
+                      </IconButton>
+                  </Tooltip>
+              </Stack>
           </Box>
-      </Paper>
 
-      <Paper sx={{ borderRadius: "20px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-        
-        <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
-          <Typography variant="h6" fontWeight="700" color="#1b2559">Admin List</Typography>
-          <TextField
-            size="small"
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" }, width: "300px" }}
-          />
-        </Box>
-
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", width: "80px" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>IMAGE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>NAME</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>EMAIL</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredAdmins.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                    No sub-admins found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredAdmins.map((admin, index) => (
-                  <TableRow key={admin.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>{index + 1}</TableCell>
-                    <TableCell>
-                        <Avatar src={admin.image} sx={{ width: 45, height: 45, borderRadius: "12px" }} />
-                    </TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>
-                        {admin.name}
-                    </TableCell>
-                    <TableCell sx={{ color: "#475467" }}>
-                        {admin.email}
-                    </TableCell>
-                    <TableCell align="right" sx={{ pr: 3 }}>
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title="Edit Admin">
-                            <IconButton 
-                                onClick={() => navigate(`/sub-admin/edit/${admin.id}`)}
-                                sx={{ backgroundColor: "#24d164", color: "#ffffff", borderRadius: "10px", "&:hover": { backgroundColor: "#1eb856" } }}
-                            >
-                                <EditIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete Admin">
-                            <IconButton 
-                                onClick={() => handleDelete(admin.id)}
-                                sx={{ backgroundColor: "#ff4d49", color: "#ffffff", borderRadius: "10px", "&:hover": { backgroundColor: "#e04340" } }}
-                            >
-                                <DeleteIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+          <TableContainer sx={{ 
+              maxHeight: "calc(100vh - 280px)",
+              msOverflowStyle: "none",
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" }
+          }}>
+              <Table stickyHeader>
+                  <TableHead>
+                      <TableRow>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Administrative Identity</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Access Tier (Role)</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Node Status</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Deployment Actions</TableCell>
+                      </TableRow>
+                  </TableHead>
+                  <TableBody>
+                      {filteredAdmins.length === 0 && !loading ? (
+                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>Zero administrative nodes detected in active matrix.</TableCell></TableRow>
+                      ) : (
+                          filteredAdmins.map((admin, index) => (
+                              <TableRow key={admin.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
+                                  <TableCell sx={{ color: "#1b2559", fontWeight: "800", pl: 4 }}>#{index + 1}</TableCell>
+                                  <TableCell>
+                                      <Stack direction="row" spacing={1.5} alignItems="center">
+                                          <Avatar src={admin.image} sx={{ width: 44, height: 44, borderRadius: "12px", border: "2px solid #f4f7fe" }} />
+                                          <Box>
+                                              <Typography variant="body2" fontWeight="800" color="#1b2559">{admin.name}</Typography>
+                                              <Typography variant="caption" color="#a3aed0" fontWeight="700" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                                  <EmailIcon sx={{ fontSize: 10 }} /> {admin.email}
+                                              </Typography>
+                                          </Box>
+                                      </Stack>
+                                  </TableCell>
+                                  <TableCell>
+                                      <Chip 
+                                          label={admin.role.toUpperCase()} 
+                                          size="small" 
+                                          sx={{ fontWeight: "900", bgcolor: "rgba(67, 24, 255, 0.05)", color: "#4318ff", borderRadius: "10px", fontSize: "10px", border: "1px solid rgba(67, 24, 255, 0.1)" }} 
+                                      />
+                                  </TableCell>
+                                  <TableCell>
+                                      <Chip 
+                                          label={admin.status.toUpperCase()} 
+                                          size="small" 
+                                          sx={{ 
+                                              fontWeight: "900", 
+                                              bgcolor: admin.status === "Active" ? "rgba(0, 210, 106, 0.1)" : "rgba(163, 174, 208, 0.1)", 
+                                              color: admin.status === "Active" ? "#00d26a" : "#a3aed0", 
+                                              borderRadius: "8px",
+                                              fontSize: "10px",
+                                              border: `1px solid ${admin.status === "Active" ? "rgba(0, 210, 106, 0.2)" : "rgba(163, 174, 208, 0.2)"}`
+                                          }} 
+                                      />
+                                  </TableCell>
+                                  <TableCell align="right" sx={{ pr: 3 }}>
+                                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                      <Tooltip title="Modify Access">
+                                          <IconButton 
+                                              onClick={() => navigate(`/sub-admin/edit/${admin.id}`)}
+                                              sx={{ backgroundColor: "#00d26a", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(0, 210, 106, 0.2)", "&:hover": { backgroundColor: "#00b85c" } }}
+                                          >
+                                              <EditIcon sx={{ fontSize: 18 }} />
+                                          </IconButton>
+                                      </Tooltip>
+                                      <Tooltip title="Decommission Node">
+                                          <IconButton 
+                                              onClick={() => handleDelete(admin.id)}
+                                              sx={{ backgroundColor: "#ff4d49", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(255, 77, 73, 0.2)", "&:hover": { backgroundColor: "#d32f2f" } }}
+                                          >
+                                              <DeleteIcon sx={{ fontSize: 18 }} />
+                                          </IconButton>
+                                      </Tooltip>
+                                    </Stack>
+                                  </TableCell>
+                              </TableRow>
+                          ))
+                      )}
+                  </TableBody>
+              </Table>
+          </TableContainer>
       </Paper>
+      <style>
+          {`
+          @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+          }
+          .spin-animation {
+              animation: spin 1s linear infinite;
+          }
+          `}
+      </style>
     </Box>
   );
 };

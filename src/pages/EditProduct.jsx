@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -11,11 +11,15 @@ import {
   Select,
   FormControl,
   IconButton,
+  Tooltip,
+  Divider,
+  CircularProgress
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 import { useNavigate, useParams } from "react-router-dom";
-import { useCallback } from "react";
 import { getParentCategories, getSubCategories } from "../api/categoryApi";
 import { getProduct, updateProduct } from "../api/productApi";
 
@@ -25,6 +29,7 @@ const EditProduct = () => {
   const [parentCats, setParentCats] = useState([]);
   const [subCats, setSubCats] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   
   const [formData, setFormData] = useState({
     productID: "",
@@ -59,6 +64,7 @@ const EditProduct = () => {
   }, []);
 
   const fetchProductData = useCallback(async () => {
+    setFetching(true);
     try {
       const response = await getProduct(id);
       const p = response.data.data || response.data;
@@ -78,6 +84,8 @@ const EditProduct = () => {
       });
     } catch (error) {
       console.error("Error fetching product:", error);
+    } finally {
+      setFetching(false);
     }
   }, [id]);
 
@@ -95,13 +103,13 @@ const EditProduct = () => {
       };
       reader.readAsDataURL(file);
     } else if (file) {
-      alert("Image must be less than 1000 KB");
+      alert("Persistence Error: Payload exceeds 1000 KB limitation.");
     }
   };
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.category) {
-      alert("Please fill name and category.");
+      alert("Validation Error: Product narrative and categorical mapping required.");
       return;
     }
     setLoading(true);
@@ -121,132 +129,212 @@ const EditProduct = () => {
         description: formData.description,
       };
       await updateProduct(id, payload);
-      alert("Product updated successfully!");
+      alert("Operational Sync: SKU specifications updated in central catalog.");
       navigate("/products");
     } catch (error) {
-      console.error("Error updating product:", error.response?.data || error.message);
-      const detail = error.response?.data?.message || error.response?.data?.error?.message || error.message;
-      alert(`Failed to update product: ${detail}`);
+      console.error("Persistence Error:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  if (fetching) {
+      return (
+          <Box sx={{ p: 4, display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+              <CircularProgress sx={{ color: "#4318ff" }} />
+          </Box>
+      );
+  }
+
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
-      <Box sx={{ mb: 4, display: "flex", alignItems: "center", gap: 2 }}>
-        <IconButton onClick={() => navigate("/products")} sx={{ backgroundColor: "#fff", borderRadius: "10px" }}>
-          <ArrowBackIcon />
-        </IconButton>
+      
+      {/* Premium Header */}
+      <Box sx={{ mb: 4, display: "flex", alignItems: "center", gap: 3 }}>
+        <Tooltip title="Back to Catalog">
+            <IconButton onClick={() => navigate("/products")} sx={{ backgroundColor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", borderRadius: "14px", p: 1.5 }}>
+                <ArrowBackIcon sx={{ color: "#4318ff" }} />
+            </IconButton>
+        </Tooltip>
         <Box>
-          <Typography variant="h4" fontWeight="700" color="#2b3674">Edit Product</Typography>
-          <Typography variant="body1" color="textSecondary">Modify product details and interlinked categories.</Typography>
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Modify Inventory SKU
+            </Typography>
+            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+                Updating specifications and categorical mapping for identifying core inventory assets.
+            </Typography>
         </Box>
       </Box>
 
-      <Paper sx={{ p: 4, borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-        <Grid container spacing={3}>
-           <Grid item xs={12} md={6}>
-            <Stack spacing={2}>
+      <Paper sx={{ p: 5, borderRadius: "28px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", bgcolor: "#fff" }}>
+        <Grid container spacing={5}>
+          
+          {/* Functional Column 1 */}
+          <Grid item xs={12} md={6}>
+            <Stack spacing={4}>
               <Box>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Product Name</Typography>
-                <TextField fullWidth size="small" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} />
+                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>PRODUCT NARRATIVE (NAME)</Typography>
+                <TextField 
+                    fullWidth 
+                    value={formData.name} 
+                    onChange={e => setFormData({...formData, name: e.target.value})} 
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }} 
+                />
               </Box>
-              <Box>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Category (Parent)</Typography>
-                <FormControl fullWidth size="small">
-                  <Select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} sx={{ borderRadius: "10px" }}>
-                    {parentCats.map(name => <MenuItem key={name} value={name}>{name}</MenuItem>)}
-                  </Select>
-                </FormControl>
-              </Box>
-              <Box>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Type / Sub-Category</Typography>
-                <FormControl fullWidth size="small">
-                  <Select 
-                    displayEmpty
-                    value={formData.type} 
-                    onChange={e => setFormData({...formData, type: e.target.value})}
-                    sx={{ borderRadius: "10px" }}
-                  >
-                    <MenuItem value="">Select Type / Sub-Category</MenuItem>
-                    <MenuItem value="Regular">Regular</MenuItem>
-                    <MenuItem value="In Season">In Season</MenuItem>
-                    {subCats
-                      .filter(s => !formData.category || (s.parent && s.parent.toLowerCase().trim() === formData.category.toLowerCase().trim()))
-                      .map(s => (
-                        <MenuItem key={s.name} value={s.name}>{s.name}</MenuItem>
-                      ))
-                    }
-                  </Select>
-                </FormControl>
-              </Box>
-              <Box>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Price</Typography>
-                <TextField fullWidth size="small" type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} />
-              </Box>
+
+              <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Box>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>ROOT HIERARCHY</Typography>
+                        <Select 
+                            fullWidth 
+                            value={formData.category} 
+                            onChange={e => setFormData({...formData, category: e.target.value})}
+                            displayEmpty
+                            sx={{ borderRadius: "16px", backgroundColor: "#f4f7fe", "& .MuiOutlinedInput-notchedOutline": { border: "none" } }}
+                        >
+                            {parentCats.map(name => <MenuItem key={name} value={name}><Typography variant="body2" fontWeight="700">{name}</Typography></MenuItem>)}
+                        </Select>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Box>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>SUBORDINATE TYPE</Typography>
+                        <Select 
+                            fullWidth
+                            displayEmpty
+                            value={formData.type} 
+                            onChange={e => setFormData({...formData, type: e.target.value})}
+                            sx={{ borderRadius: "16px", backgroundColor: "#f4f7fe", "& .MuiOutlinedInput-notchedOutline": { border: "none" } }}
+                        >
+                            <MenuItem value=""><Typography variant="body2" color="#a3aed0">General</Typography></MenuItem>
+                            <MenuItem value="Regular"><Typography variant="body2" fontWeight="700">Regular Stock</Typography></MenuItem>
+                            <MenuItem value="In Season"><Typography variant="body2" fontWeight="700">Seasonal Tier</Typography></MenuItem>
+                            {subCats
+                                .filter(s => !formData.category || (s.parent && s.parent.toLowerCase().trim() === formData.category.toLowerCase().trim()))
+                                .map(s => (
+                                    <MenuItem key={s.name} value={s.name}><Typography variant="body2" fontWeight="700">{s.name}</Typography></MenuItem>
+                                ))
+                            }
+                        </Select>
+                    </Box>
+                  </Grid>
+              </Grid>
+
+              <Stack direction="row" spacing={3}>
+                 <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>VALUATION (PRICE)</Typography>
+                    <TextField 
+                        fullWidth 
+                        type="number" 
+                        value={formData.price} 
+                        onChange={e => setFormData({...formData, price: e.target.value})} 
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }} 
+                    />
+                 </Box>
+                 <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>AVAILABILITY (QTY)</Typography>
+                    <TextField 
+                        fullWidth 
+                        type="number" 
+                        value={formData.quantity} 
+                        onChange={e => setFormData({...formData, quantity: e.target.value})} 
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }} 
+                    />
+                 </Box>
+              </Stack>
             </Stack>
           </Grid>
-
+          
+          {/* Functional Column 2 */}
           <Grid item xs={12} md={6}>
-             <Stack spacing={2}>
+             <Stack spacing={4}>
               <Box>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Product ID</Typography>
-                <TextField fullWidth size="small" disabled value={formData.productID} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} />
+                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>DOMINAL IDENTIFIER (SKU ID)</Typography>
+                <TextField 
+                    fullWidth 
+                    disabled
+                    value={formData.productID} 
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }} 
+                />
               </Box>
+
               <Box>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Product Image</Typography>
+                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>VISUAL ASSET (IMAGE)</Typography>
                 <Box component="label" sx={{ 
-                  display: "flex", alignItems: "center", gap: 1, p: 1, border: "1px dashed #d1d9e8", borderRadius: "10px", cursor: "pointer"
+                  display: "flex", alignItems: "center", gap: 2, p: 2, border: "2px dashed #e0e5f2", borderRadius: "18px", cursor: "pointer", transition: "0.2s",
+                  "&:hover": { backgroundColor: "#f4f7fe", borderColor: "#4318ff" }
                 }}>
                   <input type="file" hidden accept="image/*" onChange={handleImageChange} />
-                  <Typography variant="body2" color="textSecondary" sx={{ flex: 1, overflow: "hidden" }}>
-                    {formData.imagePreview ? "Change product image..." : "Choose product image..."}
+                  <CloudUploadIcon sx={{ color: "#a3aed0" }} />
+                  <Typography variant="body2" color="#1b2559" fontWeight="700" sx={{ flex: 1, overflow: "hidden" }}>
+                    {formData.imagePreview ? "Asset staged for replacement" : "Select replacement asset"}
                   </Typography>
-                  <Button variant="contained" component="span" size="small" sx={{ borderRadius: "8px", textTransform: "none" }}>Browse</Button>
                 </Box>
                 {formData.imagePreview && (
-                    <Box sx={{ mt: 1 }}>
-                        <img src={formData.imagePreview} alt="Preview" style={{ width: 100, height: 100, borderRadius: 10, objectFit: "cover" }} />
+                    <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
+                        <img src={formData.imagePreview} alt="Preview" style={{ width: "100%", maxHeight: 180, borderRadius: 20, objectFit: "contain", border: "4px solid #f4f7fe" }} />
                     </Box>
                 )}
               </Box>
-              <Box>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>MRP</Typography>
-                <TextField fullWidth size="small" type="number" value={formData.mrp} onChange={e => setFormData({...formData, mrp: e.target.value})} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} />
-              </Box>
-              <Box>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Unit</Typography>
-                <TextField fullWidth size="small" value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} />
-              </Box>
+
+              <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Box>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>MARKET VALUATION (MRP)</Typography>
+                        <TextField 
+                            fullWidth 
+                            type="number" 
+                            value={formData.mrp} 
+                            onChange={e => setFormData({...formData, mrp: e.target.value})} 
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "166px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }} 
+                        />
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Box>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>MEASUREMENT (UNIT)</Typography>
+                        <TextField 
+                            fullWidth 
+                            value={formData.unit} 
+                            onChange={e => setFormData({...formData, unit: e.target.value})} 
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }} 
+                        />
+                    </Box>
+                  </Grid>
+              </Grid>
             </Stack>
           </Grid>
 
           <Grid item xs={12}>
               <Box>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Description</Typography>
-                <TextField fullWidth multiline rows={4} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} />
+                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>SPECIFICATIONS / PERSISTENT DESCRIPTION</Typography>
+                <TextField 
+                    fullWidth 
+                    multiline 
+                    rows={4} 
+                    value={formData.description} 
+                    onChange={e => setFormData({...formData, description: e.target.value})} 
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "20px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }} 
+                />
               </Box>
           </Grid>
 
           <Grid item xs={12}>
-            <Button 
+              <Divider sx={{ mb: 4, opacity: 0.1 }} />
+              <Button 
                 variant="contained" 
                 size="large"
-                startIcon={<SaveIcon />}
+                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                 onClick={handleSubmit}
                 disabled={loading}
                 sx={{ 
-                    backgroundColor: "#00d26a", 
-                    "&:hover": { backgroundColor: "#00b85c" },
-                    borderRadius: "12px", 
-                    px: 6, py: 1.5, 
-                    fontWeight: "700",
-                    textTransform: "none"
+                    backgroundColor: "#24d164", "&:hover": { backgroundColor: "#1bab52" }, borderRadius: "18px", px: 8, py: 2, 
+                    fontWeight: "800", textTransform: "none", fontSize: "1.1rem", boxShadow: "0 10px 20px rgba(36, 209, 100, 0.2)"
                 }}
-            >
-              {loading ? "Updating..." : "Update Product"}
-            </Button>
+              >
+                {loading ? "Persisting Specifications..." : "Commit Update"}
+              </Button>
           </Grid>
         </Grid>
       </Paper>

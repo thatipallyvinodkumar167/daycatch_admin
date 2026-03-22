@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -13,8 +13,15 @@ import {
   Button,
   Stack,
   IconButton,
+  Tooltip,
+  CircularProgress,
+  Chip
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import SearchIcon from "@mui/icons-material/Search";
+import AddIcon from "@mui/icons-material/Add";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import { useNavigate } from "react-router-dom";
 import { genericApi } from "../api/genericApi";
 
@@ -22,29 +29,34 @@ const DeliveryBoyCallbackRequests = () => {
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // API Call (using JSONPlaceholder as fakeapi)
-  useEffect(() => {
-    fetchRequests();
-  }, []);
-
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await genericApi.getAll("deliveryboycallbackrequests");
-      const results = response.data.results || response.data || [];
+      const results = response.results || response.data?.results || response.data || [];
       
       const formattedData = results.map((item, index) => ({
         id: item._id || index,
-        deliveryBoyName: item.deliveryBoyName || item.name || "Unknown",
-        deliveryBoyPhone: item.deliveryBoyPhone || item.phone || "N/A",
-        addedBy: item.addedBy || "Admin",
+        deliveryBoyName: item.deliveryBoyName || item["Delivery Boy Name"] || item.name || "Unknown Rider",
+        deliveryBoyPhone: item.deliveryBoyPhone || item["Delivery Boy Phone"] || item.phone || "N/A",
+        addedBy: item.addedBy || "Fleet HQ",
+        status: item.status || "On Queue",
+        date: item.createdAt || item.date || item.Date || null
       }));
 
       setRequests(formattedData);
     } catch (error) {
       console.error("Error fetching delivery boy callback requests:", error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
 
   const filteredRequests = React.useMemo(() => {
     return requests.filter((item) =>
@@ -54,14 +66,13 @@ const DeliveryBoyCallbackRequests = () => {
   }, [requests, search]);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this delivery boy callback request?")) {
+    if (window.confirm("Mark this rider callback as RESOLVED and move to archives?")) {
       try {
         await genericApi.remove("deliveryboycallbackrequests", id);
         setRequests(prev => prev.filter(item => item.id !== id));
-        alert("Delivery boy callback request deleted successfully!");
       } catch (error) {
-        console.error("Error deleting callback request:", error);
-        alert("Failed to delete request.");
+        console.error("Error deleting callback:", error);
+        alert("Action rejected. Check network connectivity.");
       }
     }
   };
@@ -69,135 +80,147 @@ const DeliveryBoyCallbackRequests = () => {
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
-      {/* Page Heading */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="700" color="#2b3674">
-          Hi, Day Catch Super Admin Panel.
-        </Typography>
-        <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-          Here is your admin panel.
-        </Typography>
+      {/* Premium Header */}
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box>
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Fleet Dispatch Support
+            </Typography>
+            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+                Logistical callback and emergency assistance requests from the delivery fleet.
+            </Typography>
+        </Box>
+        <Stack direction="row" spacing={2}>
+            <Tooltip title="Instant Refresh">
+                <IconButton 
+                    onClick={fetchRequests} 
+                    disabled={loading}
+                    sx={{ bgcolor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", p: 1.5 }}
+                >
+                    {loading ? <CircularProgress size={20} /> : <RefreshIcon sx={{ color: "#4318ff" }} />}
+                </IconButton>
+            </Tooltip>
+            <Button 
+                variant="contained" 
+                startIcon={<AddIcon />}
+                onClick={() => navigate("/delivery-boy-callback-request/add")}
+                sx={{ 
+                    backgroundColor: "#4318ff", 
+                    "&:hover": { backgroundColor: "#3311cc" },
+                    borderRadius: "14px",
+                    textTransform: "none",
+                    px: 4,
+                    fontWeight: "800",
+                    boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
+                }}
+            >
+                Create Assistance Ticket
+            </Button>
+        </Stack>
       </Box>
 
-      <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+      <Paper sx={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", backgroundColor: "#fff" }}>
         
-        {/* Card Header */}
-        <Box 
-          sx={{ 
-            p: 3, 
-            display: "flex", 
-            justifyContent: "space-between", 
-            alignItems: "center",
-            borderBottom: "1px solid #f1f1f1"
-          }}
-        >
-          <Typography variant="h6" fontWeight="600" color="#1b2559">
-            Delivery Boy Callback Requests
-          </Typography>
-          <Button 
-            variant="contained" 
-            onClick={() => navigate("/delivery-boy-callback-request/add")}
-            sx={{ 
-              backgroundColor: "#2d60ff", 
-              "&:hover": { backgroundColor: "#2046cc" },
-              borderRadius: "8px",
-              textTransform: "none",
-              px: 3
-            }}
-          >
-            Add
-          </Button>
+        {/* Search Toolbar */}
+        <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
+            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Field Assistance Pipeline</Typography>
+            <TextField
+                size="small"
+                placeholder="Search rider or mobile..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                InputProps={{
+                    startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} />
+                }}
+                sx={{ 
+                    "& .MuiOutlinedInput-root": { 
+                        borderRadius: "12px", 
+                        backgroundColor: "#fff",
+                        width: "320px"
+                    } 
+                }}
+            />
         </Box>
 
-        {/* Toolbar (Search) */}
-        <Stack
-          direction="row"
-          justifyContent="flex-end"
-          alignItems="center"
-          spacing={1}
-          sx={{ p: 3 }}
-        >
-          <Typography variant="body2" sx={{ mr: 1 }}>Search:</Typography>
-          <TextField
-            size="small"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ 
-              "& .MuiOutlinedInput-root": { borderRadius: "8px" },
-              width: "250px"
-            }}
-          />
-        </Stack>
-
-        {/* Table */}
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Delivery Boy Name</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Delivery Boy Phone</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Added By</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2", pr: 4 }}>Actions</TableCell>
+              <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>ID</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Rider Identity</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Direct Contact</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Reporter</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Operations</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredRequests.length === 0 ? (
+              {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    No data found
+                  <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                    <CircularProgress sx={{ color: "#4318ff" }} />
+                  </TableCell>
+                </TableRow>
+              ) : filteredRequests.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                    <Typography color="#a3aed0" fontWeight="600">No active fleet assistance tickets reported.</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredRequests.map((item, index) => (
                   <TableRow 
                     key={item.id} 
-                    sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}
+                    sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}
                   >
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "500", py: 2 }}>
-                      {index + 1}
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "700", pl: 4 }}>
+                      #{index + 1}
                     </TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>
-                      {item.id}
-                    </TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "800" }}>
                       {item.deliveryBoyName}
                     </TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>
+                    <TableCell sx={{ color: "#4318ff", fontWeight: "700" }}>
                       {item.deliveryBoyPhone}
                     </TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>
-                      {item.addedBy}
+                    <TableCell>
+                        <Chip 
+                            label={item.addedBy} 
+                            size="small"
+                            sx={{ 
+                                bgcolor: "#f4f7fe",
+                                color: "#4318ff",
+                                fontWeight: "800",
+                                borderRadius: "8px"
+                            }}
+                        />
                     </TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <IconButton 
-                          onClick={() => navigate(`/delivery-boy-callback-request/edit/${item.id}`)}
-                          sx={{ 
-                            backgroundColor: "#24d164", 
-                            color: "white",
-                            borderRadius: "6px",
-                            "&:hover": { backgroundColor: "#1fa951" },
-                            p: 0.5
-                          }}
+                            onClick={() => navigate(`/delivery-boy-callback-request/edit/${item.id}`)}
+                            sx={{ 
+                                backgroundColor: "#f4f7fe", 
+                                color: "#4318ff",
+                                borderRadius: "10px",
+                                "&:hover": { backgroundColor: "#e0e5f2" },
+                                p: 1
+                            }}
                         >
-                          <EditIcon fontSize="small" />
+                            <EditIcon fontSize="small" />
                         </IconButton>
                         <Button 
-                          variant="contained" 
-                          size="small"
-                          onClick={() => handleDelete(item.id)}
-                          sx={{ 
-                            backgroundColor: "#ff4d49", 
-                            color: "white",
-                            borderRadius: "6px",
-                            textTransform: "none",
-                            "&:hover": { backgroundColor: "#e03e3a" },
-                            boxShadow: "none"
-                          }}
+                            variant="outlined" 
+                            size="small"
+                            onClick={() => handleDelete(item.id)}
+                            sx={{ 
+                                borderColor: "#ff4d49", 
+                                color: "#ff4d49",
+                                borderRadius: "10px",
+                                textTransform: "none",
+                                fontWeight: "800",
+                                "&:hover": { borderColor: "#e03e3a", bgcolor: "#fff5f5" },
+                            }}
                         >
-                          Close
+                            Resolve
                         </Button>
                       </Stack>
                     </TableCell>
@@ -207,7 +230,6 @@ const DeliveryBoyCallbackRequests = () => {
             </TableBody>
           </Table>
         </TableContainer>
-
       </Paper>
     </Box>
   );

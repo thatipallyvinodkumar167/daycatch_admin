@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -16,12 +16,18 @@ import {
   IconButton,
   Tooltip,
   LinearProgress,
+  CircularProgress,
+  Divider
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import PersonIcon from "@mui/icons-material/Person";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import SearchIcon from "@mui/icons-material/Search";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
+import GroupsIcon from "@mui/icons-material/Groups";
 import { getAllUsers } from "../api/usersApi";
 import { getAllOrders } from "../api/ordersApi";
 
@@ -29,13 +35,12 @@ const UsersData = () => {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  const fetchUsers = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
 
-  const fetchUsers = async () => {
-    setLoading(true);
     try {
       const [userRes, orderRes] = await Promise.all([
         getAllUsers({ limit: 500 }),
@@ -45,7 +50,6 @@ const UsersData = () => {
       const results = userRes.data?.results || userRes.data?.data || [];
       const orderList = orderRes.data?.results || orderRes.data?.data || [];
 
-      // Create a map of order counts by user name or phone
       const orderCountMap = orderList.reduce((acc, order) => {
         const userKey = order["User"] || order["User Phone"];
         if (userKey) {
@@ -88,11 +92,16 @@ const UsersData = () => {
       setUsers([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
+    if (window.confirm("Permanently de-register this user from the system?")) {
       setUsers(prev => prev.filter(user => user.id !== id));
     }
   };
@@ -107,214 +116,174 @@ const UsersData = () => {
     );
   };
 
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(search.toLowerCase().trim()) ||
-    user.email.toLowerCase().includes(search.toLowerCase().trim())
-  );
+  const filteredUsers = useMemo(() => {
+    const query = search.toLowerCase().trim();
+    if (!query) return users;
+    return users.filter((user) =>
+      user.name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query) ||
+      user.phone.toLowerCase().includes(query)
+    );
+  }, [users, search]);
+
+  const stats = useMemo(() => [
+    { label: "Total Members", value: users.length, icon: <GroupsIcon sx={{ fontSize: 20 }} />, color: "#4318ff" },
+    { label: "Verified", value: users.filter(u => u.isVerified).length, icon: <VerifiedUserIcon sx={{ fontSize: 20 }} />, color: "#00d26a" },
+    { label: "Restricted", value: users.filter(u => u.status === "Blocked").length, icon: <BlockOutlinedIcon sx={{ fontSize: 20 }} />, color: "#ff4d49" },
+  ], [users]);
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="700" color="#2b3674">
-          Hi, Day Catch Super Admin Panel.
-        </Typography>
-        <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-          Comprehensive view of all registered users and their status.
-        </Typography>
+      {/* Premium Header */}
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box>
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Consumer Management Board
+            </Typography>
+            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+                Auditing user identities, verification statuses, and transactional histories.
+            </Typography>
+        </Box>
+        <Stack direction="row" spacing={3} alignItems="center">
+            {stats.map((stat) => (
+                <Stack key={stat.label} direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ color: stat.color, display: "flex" }}>{stat.icon}</Box>
+                    <Box>
+                        <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase", display: "block", lineHeight: 1 }}>{stat.label}</Typography>
+                        <Typography variant="subtitle2" fontWeight="800" color="#1b2559">{stat.value}</Typography>
+                    </Box>
+                </Stack>
+            ))}
+            <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, alignSelf: "center" }} />
+            <Tooltip title="Synchronize Registry">
+                <IconButton 
+                    onClick={() => fetchUsers(true)} 
+                    disabled={refreshing || loading}
+                    sx={{ bgcolor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", p: 1.5 }}
+                >
+                    {refreshing ? <CircularProgress size={20} /> : <RefreshIcon sx={{ color: "#4318ff" }} />}
+                </IconButton>
+            </Tooltip>
+        </Stack>
       </Box>
 
-      {/* Stats Section */}
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ mb: 4 }}>
-        {[
-          { label: "Total Users", value: users.length, color: "#2d60ff", bg: "#e0e7ff" },
-          { label: "Verified Users", value: users.filter(u => u.isVerified).length, color: "#24d164", bg: "#e6f9ed" },
-          { label: "Blocked Users", value: users.filter(u => u.status === "Blocked").length, color: "#ff4d49", bg: "#fff1f0" },
-        ].map((stat) => (
-          <Paper key={stat.label} sx={{ flex: 1, p: 3, borderRadius: "16px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <Box sx={{ p: 1.5, borderRadius: "12px", backgroundColor: stat.bg }}>
-                <PersonIcon sx={{ color: stat.color }} />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="textSecondary" fontWeight="600">{stat.label}</Typography>
-                <Typography variant="h5" fontWeight="800" color="#1b2559">{stat.value}</Typography>
-              </Box>
-            </Stack>
-          </Paper>
-        ))}
-      </Stack>
+      {/* Full Width Table Hub */}
+      <Paper sx={{ borderRadius: "28px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", backgroundColor: "#fff", position: "relative" }}>
+          {loading && (
+              <LinearProgress sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, backgroundColor: "#f4f7fe", "& .MuiLinearProgress-bar": { backgroundColor: "#4318ff" } }} />
+          )}
+          
+          {/* Search Toolbar */}
+          <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Consumer Directory</Typography>
+              <TextField
+                  size="small"
+                  placeholder="Search Identity..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  InputProps={{
+                      startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} />
+                  }}
+                  sx={{ 
+                      "& .MuiOutlinedInput-root": { 
+                          borderRadius: "14px", 
+                          backgroundColor: "#fff",
+                          width: "320px"
+                      } 
+                  }}
+              />
+          </Box>
 
-      <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", position: "relative" }}>
-        {loading && (
-          <LinearProgress 
-            sx={{ 
-              position: "absolute", 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              backgroundColor: "#fff1f0",
-              "& .MuiLinearProgress-bar": { backgroundColor: "#E53935" }
-            }} 
-          />
-        )}
-        
-        <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
-          <Typography variant="h6" fontWeight="600" color="#1b2559">User Directory</Typography>
-          <TextField
-            size="small"
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" }, width: "300px" }}
-          />
-        </Box>
-
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>USER NAME</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>USER PHONE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>LOCATION</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>ORDERS</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>WALLET</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>REG. DATE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>IS VERIFIED</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "12px", pr: 4 }}>ACTIONS</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
-                    No Users Found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUsers.map((user, index) => (
-                  <TableRow key={user.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                    {/* # */}
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{index + 1}</TableCell>
-
-                    {/* User Name */}
-                    <TableCell>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} />
-                        <Box>
-                          <Typography variant="body2" fontWeight="700" color="#1b2559" noWrap sx={{ maxWidth: 130 }}>
-                            {user.name}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary" noWrap sx={{ maxWidth: 130, display: "block" }}>
-                            {user.email}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-
-                    {/* User Phone */}
-                    <TableCell sx={{ color: "#475467", fontWeight: "500" }}>{user.phone}</TableCell>
-
-                    {/* Location */}
-                    <TableCell sx={{ color: "#475467", fontWeight: "500" }}>{user.location}</TableCell>
-
-                    {/* Total Orders */}
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="700" color="#E53935">
-                        {user.totalOrders}
-                      </Typography>
-                    </TableCell>
-
-                    {/* Wallet Balance */}
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="700" color="#2ED480">
-                        {user.walletBalance}
-                      </Typography>
-                    </TableCell>
-
-                    {/* Registration Date */}
-                    <TableCell sx={{ color: "#475467", fontSize: "13px" }}>{user.regDate}</TableCell>
-
-                    {/* Is Verified */}
-                    <TableCell>
-                      {user.isVerified ? (
-                        <Chip label="Verified" size="small" sx={{ backgroundColor: "#e6f9ed", color: "#24d164", fontWeight: "700" }} />
+          <TableContainer sx={{ 
+              maxHeight: "calc(100vh - 280px)",
+              msOverflowStyle: "none",
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" }
+          }}>
+              <Table stickyHeader>
+                  <TableHead>
+                      <TableRow>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Identity Profile</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Communication</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Activity Metrics</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Verification</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Status</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Ops</TableCell>
+                      </TableRow>
+                  </TableHead>
+                  <TableBody>
+                      {filteredUsers.length === 0 ? (
+                          <TableRow>
+                              <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                                  <Typography color="#a3aed0" fontWeight="600">No active consumers identified in the registry.</Typography>
+                              </TableCell>
+                          </TableRow>
                       ) : (
-                        <Chip label="Unverified" size="small" sx={{ backgroundColor: "#fff1f0", color: "#ff4d49", fontWeight: "700" }} />
+                          filteredUsers.map((user, index) => (
+                              <TableRow key={user.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
+                                  <TableCell sx={{ color: "#1b2559", fontWeight: "800", pl: 4 }}>#{index + 1}</TableCell>
+                                  <TableCell>
+                                      <Stack direction="row" spacing={1.5} alignItems="center">
+                                          <Avatar src={user.avatar} sx={{ width: 44, height: 44, borderRadius: "14px", border: "2px solid #f4f7fe" }} />
+                                          <Box>
+                                              <Typography variant="body2" fontWeight="800" color="#1b2559" noWrap sx={{ maxWidth: 140 }}>{user.name}</Typography>
+                                              <Typography variant="caption" color="#a3aed0" fontWeight="700">Joined {user.regDate}</Typography>
+                                          </Box>
+                                      </Stack>
+                                  </TableCell>
+                                  <TableCell>
+                                      <Typography variant="body2" color="#1b2559" fontWeight="800">{user.phone}</Typography>
+                                      <Typography variant="caption" color="#a3aed0" fontWeight="700">{user.email}</Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                      <Typography variant="body2" fontWeight="900" color="#1b2559">{user.totalOrders} <Typography component="span" variant="caption" color="#a3aed0">Orders</Typography></Typography>
+                                      <Typography variant="caption" color="#00d26a" fontWeight="800">{user.walletBalance}</Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                      <Chip 
+                                          label={user.isVerified ? "Verified" : "Unverified"} 
+                                          size="small" 
+                                          sx={{ backgroundColor: user.isVerified ? "rgba(0, 210, 106, 0.08)" : "rgba(255, 77, 73, 0.08)", color: user.isVerified ? "#00d26a" : "#ff4d49", fontWeight: "800", borderRadius: "8px" }} 
+                                      />
+                                  </TableCell>
+                                  <TableCell>
+                                      <Chip
+                                          label={user.status}
+                                          size="small"
+                                          onClick={() => handleToggleStatus(user.id)}
+                                          sx={{ 
+                                              backgroundColor: user.status === "Active" ? "rgba(67, 24, 255, 0.08)" : "rgba(255, 77, 73, 0.08)", 
+                                              color: user.status === "Active" ? "#4318ff" : "#ff4d49", 
+                                              fontWeight: "800",
+                                              borderRadius: "8px",
+                                              cursor: "pointer",
+                                              "&:hover": { opacity: 0.8 }
+                                          }}
+                                      />
+                                  </TableCell>
+                                  <TableCell align="right" sx={{ pr: 3 }}>
+                                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                                          <Tooltip title="Examine Identity">
+                                              <IconButton size="small" sx={{ color: "#4318ff", bgcolor: "#f4f7fe", borderRadius: "10px", "&:hover": { bgcolor: "#e0e5f2" } }}>
+                                                  <VisibilityIcon fontSize="small" />
+                                              </IconButton>
+                                          </Tooltip>
+                                          <IconButton size="small" onClick={() => handleToggleStatus(user.id)} sx={{ color: user.status === "Active" ? "#ff4d49" : "#00d26a", bgcolor: user.status === "Active" ? "rgba(255, 77, 73, 0.05)" : "rgba(0, 210, 106, 0.05)", borderRadius: "10px" }}>
+                                              {user.status === "Active" ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
+                                          </IconButton>
+                                          <IconButton size="small" onClick={() => handleDelete(user.id)} sx={{ color: "#ff4d49", bgcolor: "rgba(255, 77, 73, 0.05)", borderRadius: "10px" }}>
+                                              <DeleteIcon fontSize="small" />
+                                          </IconButton>
+                                      </Stack>
+                                  </TableCell>
+                              </TableRow>
+                          ))
                       )}
-                    </TableCell>
-
-                    {/* Active / Block status */}
-                    <TableCell>
-                      <Chip
-                        label={user.status}
-                        size="small"
-                        onClick={() => handleToggleStatus(user.id)}
-                        sx={{ 
-                          backgroundColor: user.status === "Active" ? "#e6f9ed" : "#fff1f0", 
-                          color: user.status === "Active" ? "#24d164" : "#ff4d49", 
-                          fontWeight: "700",
-                          cursor: "pointer",
-                          "&:hover": { opacity: 0.85 }
-                        }}
-                      />
-                    </TableCell>
-
-                    {/* Details */}
-                    <TableCell>
-                      <Tooltip title="View Details">
-                        <IconButton size="small" sx={{ 
-                            backgroundColor: "#2d60ff", 
-                            color: "#fff", 
-                            borderRadius: "10px",
-                            "&:hover": { backgroundColor: "#2046cc" }
-                        }}>
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-
-                    {/* Actions */}
-                    <TableCell align="right" sx={{ pr: 3 }}>
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title={user.status === "Active" ? "Block User" : "Unblock User"}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleToggleStatus(user.id)}
-                            sx={{
-                              backgroundColor: user.status === "Active" ? "#ff4d49" : "#00d26a",
-                              color: "#fff",
-                              borderRadius: "10px",
-                              "&:hover": { backgroundColor: user.status === "Active" ? "#e03e3e" : "#00b85c" }
-                            }}
-                          >
-                            {user.status === "Active" ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete User">
-                          <IconButton 
-                            size="small" 
-                            onClick={() => handleDelete(user.id)}
-                            sx={{ 
-                                backgroundColor: "#ff4d49", 
-                                color: "#fff", 
-                                borderRadius: "10px",
-                                "&:hover": { backgroundColor: "#e03e3e" }
-                            }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  </TableBody>
+              </Table>
+          </TableContainer>
       </Paper>
     </Box>
   );

@@ -24,6 +24,8 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   addCity,
   deleteCity,
@@ -43,11 +45,13 @@ const modalStyle = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 400,
-  bgcolor: "background.paper",
-  borderRadius: "16px",
-  boxShadow: 24,
+  width: 480,
+  bgcolor: "#fff",
+  borderRadius: "24px",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
   p: 4,
+  outline: "none",
+  border: "1px solid #e0e5f2"
 };
 
 const initialFormState = { cityName: "" };
@@ -60,6 +64,7 @@ const Cities = () => {
   const [editingCity, setEditingCity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -71,10 +76,9 @@ const Cities = () => {
   }, []);
 
   const fetchCities = useCallback(
-    async ({ showLoader = true } = {}) => {
-      if (showLoader) {
-        setLoading(true);
-      }
+    async (isRefresh = false) => {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
 
       try {
         const response = await getAllCities();
@@ -83,13 +87,12 @@ const Cities = () => {
       } catch (error) {
         setCities([]);
         showSnackbar(
-          getErrorMessage(error, "Unable to load cities right now."),
+          getErrorMessage(error, "Unable to synchronize regional data."),
           "error"
         );
       } finally {
-        if (showLoader) {
-          setLoading(false);
-        }
+        setLoading(false);
+        setRefreshing(false);
       }
     },
     [showSnackbar]
@@ -119,12 +122,11 @@ const Cities = () => {
 
   const handleSubmit = async () => {
     if (!formData.cityName.trim()) {
-      showSnackbar("City name is required.", "error");
+      showSnackbar("City identifier narrative is required.", "error");
       return;
     }
 
     setSubmitting(true);
-
     try {
       const payloads = buildCityPayloads(formData.cityName);
 
@@ -133,223 +135,175 @@ const Cities = () => {
           (payload) => updateCity(editingCity.backendId, payload),
           payloads
         );
-        showSnackbar("City updated successfully.");
+        showSnackbar("City footprint updated successfully.");
       } else {
         await runRequestWithPayloads((payload) => addCity(payload), payloads);
-        showSnackbar("City added successfully.");
+        showSnackbar("New city domain registered.");
       }
 
       resetModalState();
-      await fetchCities({ showLoader: false });
+      await fetchCities(true);
     } catch (error) {
-      showSnackbar(
-        getErrorMessage(
-          error,
-          editingCity ? "Unable to update the city." : "Unable to add the city."
-        ),
-        "error"
-      );
+      showSnackbar(getErrorMessage(error, "Operational Sync Error."), "error");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (city) => {
-    if (!window.confirm(`Delete "${city.name}" from the city list?`)) {
+    if (!window.confirm(`Permanently remove "${city.name}" from the regional logic?`)) {
       return;
     }
 
     try {
       await deleteCity(city.backendId);
-      showSnackbar("City deleted successfully.");
-      await fetchCities({ showLoader: false });
+      showSnackbar("City domain de-registered.");
+      await fetchCities(true);
     } catch (error) {
-      showSnackbar(
-        getErrorMessage(error, "Unable to delete the city."),
-        "error"
-      );
+      showSnackbar(getErrorMessage(error, "Removal Failed."), "error");
     }
   };
 
   const filteredCities = cities.filter((city) => {
     const query = search.trim().toLowerCase();
-
-    if (!query) {
-      return true;
-    }
-
+    if (!query) return true;
     return (
       city.name.toLowerCase().includes(query) ||
-      city.code.toLowerCase().includes(query) ||
-      city.status.toLowerCase().includes(query)
+      city.code.toLowerCase().includes(query)
     );
   });
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
-      <Box
-        sx={{
-          mb: 4,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      
+      {/* Premium Header */}
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
-          <Typography variant="h4" fontWeight="700" color="#2b3674">
-            Hi, Day Catch Super Admin Panel.
-          </Typography>
-          <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-            Manage the cities where your services are available.
-          </Typography>
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Regional Hubs
+            </Typography>
+            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+                Manage the metropolitan horizons where Daycatch logistical services are operational.
+            </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAdd}
-          sx={{
-            backgroundColor: "#2d60ff",
-            "&:hover": { backgroundColor: "#2046cc" },
-            borderRadius: "10px",
-            textTransform: "none",
-            fontWeight: "600",
-            px: 3,
-          }}
-        >
-          Add City
-        </Button>
+        <Stack direction="row" spacing={2}>
+            <Tooltip title="Force Sync">
+                <IconButton 
+                    onClick={() => fetchCities(true)} 
+                    disabled={refreshing || loading}
+                    sx={{ bgcolor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", p: 1.5 }}
+                >
+                    {refreshing ? <CircularProgress size={20} /> : <RefreshIcon sx={{ color: "#4318ff" }} />}
+                </IconButton>
+            </Tooltip>
+            <Button 
+                variant="contained" 
+                startIcon={<AddIcon />}
+                onClick={handleOpenAdd}
+                sx={{ 
+                    backgroundColor: "#4318ff", 
+                    "&:hover": { backgroundColor: "#3311cc" },
+                    borderRadius: "14px",
+                    textTransform: "none",
+                    px: 4,
+                    fontWeight: "800",
+                    boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
+                }}
+            >
+                Register City
+            </Button>
+        </Stack>
       </Box>
 
-      <Paper
-        sx={{
-          p: 3,
-          mb: 4,
-          borderRadius: "16px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-          borderLeft: "6px solid #2d60ff",
-          width: "fit-content",
-          minWidth: 200,
-        }}
-      >
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <Box sx={{ p: 1.5, borderRadius: "12px", backgroundColor: "#e0e7ff" }}>
-            <LocationCityIcon sx={{ color: "#2d60ff" }} />
+      {/* Analytics Card */}
+      <Paper sx={{ p: 3, mb: 4, borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", width: "fit-content", minWidth: 280, bgcolor: "#fff" }}>
+        <Stack direction="row" alignItems="center" spacing={3}>
+          <Box sx={{ p: 2, borderRadius: "16px", backgroundColor: "#f4f7fe" }}>
+            <LocationCityIcon sx={{ color: "#4318ff", fontSize: 32 }} />
           </Box>
           <Box>
-            <Typography variant="caption" color="textSecondary" fontWeight="600">
-              TOTAL CITIES
+            <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase" }}>
+              Operational Domain
             </Typography>
-            <Typography variant="h5" fontWeight="800" color="#1b2559">
-              {cities.length}
+            <Typography variant="h4" fontWeight="800" color="#1b2559">
+              {cities.length} Cities
             </Typography>
           </Box>
         </Stack>
       </Paper>
 
-      <Paper
-        sx={{
-          borderRadius: "15px",
-          overflow: "hidden",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-        }}
-      >
-        <Box
-          sx={{
-            p: 3,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderBottom: "1px solid #f1f1f1",
-          }}
-        >
-          <Typography variant="h6" fontWeight="600" color="#1b2559">
-            City Directory
-          </Typography>
-          <TextField
-            size="small"
-            placeholder="Search by city name or ID..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" }, width: "300px" }}
-          />
+      {/* Directory Paper */}
+      <Paper sx={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", backgroundColor: "#fff" }}>
+        
+        {/* Search Toolbar */}
+        <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
+            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Regional Directory</Typography>
+            <TextField
+                size="small"
+                placeholder="Search metropolitan footprint..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                InputProps={{
+                    startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} />
+                }}
+                sx={{ 
+                    "& .MuiOutlinedInput-root": { 
+                        borderRadius: "12px", 
+                        backgroundColor: "#fff",
+                        width: "360px"
+                    } 
+                }}
+            />
         </Box>
 
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CITY ID</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CITY NAME</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>
-                  ACTIONS
-                </TableCell>
+              <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>#</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>City Logic ID</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Metropolitan Name</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Operations</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                    <Stack alignItems="center" spacing={1}>
-                      <CircularProgress size={28} />
-                      <Typography variant="body2" color="textSecondary">
-                        Loading cities...
-                      </Typography>
-                    </Stack>
+                  <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
+                    <CircularProgress sx={{ color: "#4318ff" }} />
                   </TableCell>
                 </TableRow>
               ) : filteredCities.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                    {search.trim() ? "No matching cities found." : "No cities available yet."}
+                  <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
+                    <Typography color="#a3aed0" fontWeight="600">No operational cities found in the central ledger.</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredCities.map((city, index) => (
-                  <TableRow key={city.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{index + 1}</TableCell>
-                    <TableCell sx={{ color: "#2d60ff", fontWeight: "700" }}>{city.code}</TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>{city.name}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={city.status}
-                        size="small"
-                        sx={{
-                          backgroundColor:
-                            city.status.toLowerCase() === "active" ? "#e6f9ed" : "#fff4e5",
-                          color:
-                            city.status.toLowerCase() === "active" ? "#24d164" : "#b54708",
-                          fontWeight: "700",
-                        }}
-                      />
-                    </TableCell>
+                  <TableRow 
+                    key={city.id} 
+                    sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}
+                  >
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "700", pl: 4 }}>#{index + 1}</TableCell>
+                    <TableCell sx={{ color: "#4318ff", fontWeight: "800", fontSize: "14px" }}>{city.code}</TableCell>
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "800", fontSize: "15px" }}>{city.name}</TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title="Edit">
+                        <Tooltip title="Modify Footprint">
                           <IconButton
                             size="small"
                             onClick={() => handleOpenEdit(city)}
-                            sx={{
-                              backgroundColor: "#00d26a",
-                              color: "#fff",
-                              borderRadius: "10px",
-                              "&:hover": { backgroundColor: "#00b85c" },
-                            }}
+                            sx={{ backgroundColor: "#f4f7fe", color: "#4318ff", borderRadius: "10px", "&:hover": { backgroundColor: "#e0e5f2" }, p: 1 }}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete">
+                        <Tooltip title="De-register Domain">
                           <IconButton
                             size="small"
                             onClick={() => handleDelete(city)}
-                            sx={{
-                              backgroundColor: "#ff4d49",
-                              color: "#fff",
-                              borderRadius: "10px",
-                              "&:hover": { backgroundColor: "#e03e3e" },
-                            }}
+                            sx={{ backgroundColor: "#fff5f5", color: "#ff4d49", borderRadius: "10px", "&:hover": { backgroundColor: "#ffebeb" }, p: 1 }}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -364,40 +318,55 @@ const Cities = () => {
         </TableContainer>
       </Paper>
 
+      {/* Premium Modal */}
       <Modal open={open} onClose={() => !submitting && resetModalState()}>
         <Box sx={modalStyle}>
-          <Typography variant="h6" fontWeight="700" sx={{ mb: 2 }}>
-            {editingCity ? "Edit City" : "Add New City"}
+          <Typography variant="h5" fontWeight="800" sx={{ mb: 1 }} color="#1b2559">
+            {editingCity ? "Update Hub" : "Register Hub"}
           </Typography>
-          <TextField
-            fullWidth
-            label="City Name"
-            value={formData.cityName}
-            onChange={(event) =>
-              setFormData((currentValue) => ({
-                ...currentValue,
-                cityName: event.target.value,
-              }))
-            }
-            sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-            disabled={submitting}
-          />
+          <Typography variant="body2" color="#a3aed0" fontWeight="600" sx={{ mb: 4 }}>
+            Establishing a metropolitan domain for logistical mapping.
+          </Typography>
+
+          <Box sx={{ mb: 5 }}>
+            <Typography variant="body2" fontWeight="800" color="#2b3674" sx={{ mb: 1, ml: 0.5 }}>METROPOLITAN NAME</Typography>
+            <TextField
+              fullWidth
+              placeholder="e.g. Hyderabad, Mumbai..."
+              value={formData.cityName}
+              onChange={(e) => setFormData({ cityName: e.target.value })}
+              sx={{ 
+                "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#f4f7fe", border: "none" },
+                "& .MuiOutlinedInput-notchedOutline": { border: "none" }
+              }}
+              disabled={submitting}
+            />
+          </Box>
+
           <Stack direction="row" spacing={2} justifyContent="flex-end">
-            <Button onClick={resetModalState} sx={{ textTransform: "none" }} disabled={submitting}>
-              Cancel
+            <Button
+              onClick={resetModalState}
+              sx={{ textTransform: "none", color: "#a3aed0", fontWeight: "800" }}
+              disabled={submitting}
+            >
+              Discard
             </Button>
             <Button
               variant="contained"
               onClick={handleSubmit}
               disabled={submitting}
               sx={{
-                backgroundColor: "#2d60ff",
-                borderRadius: "10px",
+                backgroundColor: "#4318ff",
+                "&:hover": { backgroundColor: "#3311cc" },
+                borderRadius: "14px",
                 textTransform: "none",
-                px: 3,
+                px: 4,
+                py: 1.5,
+                fontWeight: "800",
+                boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
               }}
             >
-              {submitting ? "Saving..." : editingCity ? "Update City" : "Add City"}
+              {submitting ? "Synchronizing..." : editingCity ? "Confirm Update" : "Activate Hub"}
             </Button>
           </Stack>
         </Box>
@@ -405,18 +374,14 @@ const Cities = () => {
 
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3500}
-        onClose={() =>
-          setSnackbar((currentValue) => ({ ...currentValue, open: false }))
-        }
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
         <Alert
           severity={snackbar.severity}
-          onClose={() =>
-            setSnackbar((currentValue) => ({ ...currentValue, open: false }))
-          }
-          sx={{ borderRadius: "10px" }}
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          sx={{ borderRadius: "14px", fontWeight: "600", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
         >
           {snackbar.message}
         </Alert>

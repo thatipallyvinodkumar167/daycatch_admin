@@ -10,190 +10,246 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Chip,
   Stack,
-  InputAdornment,
-  MenuItem,
+  Button,
+  Avatar,
+  AvatarGroup,
+  Tooltip,
+  IconButton,
+  Collapse,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
+import HistoryIcon from "@mui/icons-material/History";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { genericApi } from "../api/genericApi";
+import OrderDetailsDialog from "../components/OrderDetailsDialog";
 
 const DayWiseOrders = () => {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("All");
-  const [fromDate, setFromDate] = useState(new Date().toISOString().split("T")[0]);
-  const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [openDetails, setOpenDetails] = useState(false);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await genericApi.getAll("day wise orders");
-        const results = response.data.results || response.data || [];
-        
-        const formattedData = results.map((order, index) => {
-          const rawPrice = order["Cart price"] || order.cartPrice;
-          const displayPrice = typeof rawPrice === "object" ? (rawPrice.value || rawPrice.amount || 0) : (rawPrice || 0);
-
-          const rawPayment = order["Payment Type"] || order.payment;
-          const displayPayment = typeof rawPayment === "object" ? (rawPayment.mode || rawPayment.type || JSON.stringify(rawPayment)) : (rawPayment || "COD");
-
-          return {
-            id: order._id || index + 1,
-            cartId: order["Cart ID"] || `ORD-DAY-${index}`,
-            cartPrice: `₹${displayPrice}`,
-            userName: order["User"] || order.user || "Unknown",
-            userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
-            deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toISOString().split("T")[0] : "N/A",
-            deliveryBoy: order["Boy Name"] || order.deliveryBoy || "N/A",
-            cartProducts: Array.isArray(order["Products"]) ? `${order["Products"].length} items` : "N/A",
-            payment: displayPayment,
-            status: order["Status"] || "Pending",
-            store: order["Store Name"] || order.store || "N/A",
-          };
-        });
-
-        setOrders(formattedData);
-      } catch (error) {
-        console.error("Error fetching day wise orders:", error);
-      }
-    };
     fetchOrders();
-  }, [fromDate, toDate, paymentMethod]);
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await genericApi.getAll("day wise orders");
+      const results = response.data.results || response.data || [];
+      
+      const formattedData = results.map((order, index) => ({
+        id: order._id || index + 1,
+        cartId: order["Cart ID"] || order.cartId || order._id,
+        cartPrice: parseFloat(order["Cart price"] || order.cartPrice || 0),
+        userName: order["User"] || order.user || "N/A",
+        userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toISOString().split('T')[0] : "N/A",
+        status: order["Status"] || order.status || "Completed",
+        address: order.Address || order.address || order.Details?.address || "N/A",
+        timeSlot: order["Time Slot"] || order.timeSlot || "N/A",
+        products: (order.Products || order.products || []).map(p => ({
+          name: p.product_name || p.name || "Product",
+          img: p.image || p.img || ""
+        })),
+        products_expanded: (order.Products || order.products || []).map(p => ({
+            name: p.product_name || p.name || "Product",
+            qty: p.qty || 0,
+            tax: p.tax || "0 %",
+            price: p.price || 0,
+            total: p.total || 0,
+            img: p.image || p.img || ""
+        }))
+      }));
+
+      setOrders(formattedData);
+    } catch (error) {
+      console.error("Error fetching day wise orders:", error);
+    }
+  };
+
+  const toggleExpand = (id) => setExpandedOrderId(expandedOrderId === id ? null : id);
+
+  const handleOpenDetails = (order) => {
+    setSelectedOrder(order);
+    setOpenDetails(true);
+  };
 
   const filteredOrders = orders.filter((order) => {
-    const matchesSearch = order.cartId.toLowerCase().includes(search.toLowerCase()) ||
-                         order.userName.toLowerCase().includes(search.toLowerCase());
-    const matchesPayment = paymentMethod === "All" || order.payment === paymentMethod;
-    return matchesSearch && matchesPayment;
+    const cid = (order.cartId || "").toString().toLowerCase();
+    const uname = (order.userName || "").toString().toLowerCase();
+    const s = search.toLowerCase().trim();
+    return cid.includes(s) || uname.includes(s);
   });
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
-      <Box sx={{ mb: 4, display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 3 }}>
-        <Box>
-            <Typography variant="h4" fontWeight="700" color="#2b3674">
-                Hi, Day Catch Super Admin Panel.
-            </Typography>
-            <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-                View and track orders for specific date ranges and payment methods.
-            </Typography>
-        </Box>
-        
-        <Paper sx={{ p: 2, borderRadius: "16px", border: "1px solid #e0e5f2", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
-            <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
-                <Box>
-                    <Typography variant="caption" fontWeight="700" color="#a3aed0" sx={{ mb: 0.5, display: "block", ml: 1 }}>PAYMENT METHOD</Typography>
-                    <TextField
-                        select
-                        size="small"
-                        value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        sx={{ minWidth: "180px", "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                    >
-                        <MenuItem value="All">Select payment method</MenuItem>
-                        <MenuItem value="COD">COD</MenuItem>
-                        <MenuItem value="Online">Online</MenuItem>
-                    </TextField>
-                </Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight="700" color="#2b3674">
+          Hi, Day Catch Super Admin Panel.{" "}
+          <Box component="span" sx={{ fontSize: "16px", fontWeight: "400", color: "#a3aed0" }}>
+            Chronological log of platform deliveries by date.
+          </Box>
+        </Typography>
+      </Box>
 
-                <Box>
-                    <Typography variant="caption" fontWeight="700" color="#a3aed0" sx={{ mb: 0.5, display: "block", ml: 1 }}>FROM DATE</Typography>
-                    <TextField
-                        type="date"
-                        size="small"
-                        value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                    />
+      {/* Stats Summary Section */}
+      <Stack direction="row" spacing={3} sx={{ mb: 4 }}>
+        <Paper sx={{ flex: 1, p: 3, borderRadius: "16px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+            <Stack direction="row" alignItems="center" spacing={2}>
+                <Box sx={{ p: 1.5, borderRadius: "12px", backgroundColor: "#f4f7fe" }}>
+                    <HistoryIcon sx={{ color: "#4318ff" }} />
                 </Box>
-
                 <Box>
-                    <Typography variant="caption" fontWeight="700" color="#a3aed0" sx={{ mb: 0.5, display: "block", ml: 1 }}>TO DATE</Typography>
-                    <TextField
-                        type="date"
-                        size="small"
-                        value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                    />
+                    <Typography variant="caption" color="textSecondary" fontWeight="600">DAILY LOG COUNT</Typography>
+                    <Typography variant="h3" fontWeight="800" color="#1b2559">{orders.length}</Typography>
                 </Box>
             </Stack>
         </Paper>
-      </Box>
+      </Stack>
 
       <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
         
         <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
-          <Typography variant="h6" fontWeight="600" color="#1b2559">Daily Order Log</Typography>
-          <TextField
-            size="small"
-            placeholder="Search Order ID or User..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "#a3aed0" }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" }, width: "320px" }}
-          />
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Typography variant="h6" fontWeight="700" color="#1b2559">Day-Wise Delivery Activity</Typography>
+          </Stack>
+
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="body2" color="#a3aed0" fontWeight="600">Search:</Typography>
+            <TextField
+              size="small"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" }, width: "200px" }}
+            />
+            <Button variant="outlined" sx={{ borderRadius: "8px", textTransform: "none", color: "#475467", borderColor: "#e0e5f2", fontWeight: "600" }}>Print</Button>
+            <Button variant="outlined" sx={{ borderRadius: "8px", textTransform: "none", color: "#475467", borderColor: "#e0e5f2", fontWeight: "600" }}>CSV</Button>
+          </Stack>
         </Box>
 
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Cart ID</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Cart price</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>User</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Delivery Date</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Delivery Boy</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Cart Products</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Payment</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>Order Status</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>Store</TableCell>
+                <TableCell width={80} sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
+                <TableCell width={140} sx={{ fontWeight: "700", color: "#a3aed0" }}>CART ID</TableCell>
+                <TableCell width={120} sx={{ fontWeight: "700", color: "#a3aed0" }}>CART PRICE</TableCell>
+                <TableCell width={200} sx={{ fontWeight: "700", color: "#a3aed0" }}>USER</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>DELIVERY DATE</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CART PRODUCTS</TableCell>
+                <TableCell align="center" sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
+                <TableCell align="center" sx={{ fontWeight: "700", color: "#a3aed0" }}>DETAILS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                    No Orders found for this date
-                  </TableCell>
+                  <TableCell colSpan={8} align="center" sx={{ py: 6 }}>No orders logged for this period.</TableCell>
                 </TableRow>
               ) : (
                 filteredOrders.map((order, index) => (
-                    <TableRow key={order.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{index + 1}</TableCell>
-                      <TableCell sx={{ color: "#2d60ff", fontWeight: "700" }}>{order.cartId}</TableCell>
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>{order.cartPrice}</TableCell>
+                  <React.Fragment key={order.id}>
+                    <TableRow sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
+                      <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>
+                        <IconButton size="small" onClick={() => toggleExpand(order.id)} sx={{ color: "#a3aed0" }}>
+                          {expandedOrderId === order.id ? <RemoveCircleOutlineIcon fontSize="inherit" /> : <AddCircleOutlineIcon fontSize="inherit" />}
+                        </IconButton>
+                        <span style={{ marginLeft: "8px" }}>{index + 1}</span>
+                      </TableCell>
+                      <TableCell sx={{ color: "#4318ff", fontWeight: "700" }}>{order.cartId || "N/A"}</TableCell>
+                      <TableCell sx={{ color: "#1b2559", fontWeight: "800" }}>₹{order.cartPrice.toLocaleString()}</TableCell>
                       <TableCell>
-                        <Typography variant="body2" fontWeight="700" color="#1b2559">{order.userName}</Typography>
-                        <Typography variant="caption" color="textSecondary">{order.userPhone}</Typography>
+                        <Box>
+                          <Typography variant="body2" fontWeight="700" color="#1b2559">{order.userName}</Typography>
+                          <Typography variant="caption" color="textSecondary">{order.userPhone}</Typography>
+                        </Box>
                       </TableCell>
                       <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.deliveryDate}</TableCell>
-                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.deliveryBoy}</TableCell>
-                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.cartProducts}</TableCell>
-                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.payment}</TableCell>
                       <TableCell>
-                        <Typography variant="body2" fontWeight="700" color={order.status === "Completed" ? "#24d164" : "#ffb800"}>
-                          {order.status}
-                        </Typography>
+                        <AvatarGroup max={3} sx={{ justifyContent: "flex-start", "& .MuiAvatar-root": { width: 34, height: 34, borderRadius: "8px" } }}>
+                          {order.products.map((p, i) => (
+                            <Tooltip key={i} title={p.name}>
+                              <Avatar src={p.img} alt={p.name} />
+                            </Tooltip>
+                          ))}
+                        </AvatarGroup>
                       </TableCell>
-                      <TableCell align="right" sx={{ pr: 4, fontWeight: "700", color: "#1b2559" }}>
-                        {order.store}
+                      <TableCell align="center">
+                        <Chip
+                          label={order.status || "Logged"}
+                          size="small"
+                          sx={{ backgroundColor: "#f4f7fe", color: "#4318ff", fontWeight: "800", fontSize: "10px", textTransform: "uppercase" }}
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Button 
+                          variant="contained" 
+                          onClick={() => handleOpenDetails(order)}
+                          sx={{ backgroundColor: "#4318ff", borderRadius: "8px", textTransform: "none", fontWeight: "700" }}
+                        >
+                          Details
+                        </Button>
                       </TableCell>
                     </TableRow>
+
+                    <TableRow>
+                      <TableCell colSpan={8} sx={{ py: 0, border: "none" }}>
+                        <Collapse in={expandedOrderId === order.id} timeout="auto" unmountOnExit>
+                          <Box sx={{
+                            py: 3, px: 4,
+                            display: "flex", alignItems: "center", gap: 4,
+                            backgroundColor: "#f4f7fe",
+                            borderBottom: "1px solid #e0e5f2",
+                            borderLeft: "6px solid #4318ff",
+                          }}>
+                            <Typography variant="caption" fontWeight="900" color="#4318ff" sx={{ textTransform: "uppercase", letterSpacing: 2 }}>Workflow Management</Typography>
+                            <Stack direction="row" spacing={2}>
+                              <Tooltip title="View Order Fulfillment Details">
+                                <Button
+                                  variant="contained"
+                                  startIcon={<VisibilityIcon sx={{ fontSize: "16px !important" }} />}
+                                  onClick={() => handleOpenDetails(order)}
+                                  sx={{ backgroundColor: "#1b2559", color: "#fff", borderRadius: "10px", px: 2, textTransform: "none", fontWeight: "700", boxShadow: "0 4px 12px rgba(27,37,89,0.2)", "&:hover": { backgroundColor: "#111a40" } }}
+                                >
+                                  Inspect
+                                </Button>
+                              </Tooltip>
+
+                              <Tooltip title="Export Daily Fulfillment Receipt">
+                                <Button
+                                  variant="contained"
+                                  startIcon={<FileDownloadIcon sx={{ fontSize: "16px !important" }} />}
+                                  sx={{ backgroundColor: "#2d60ff", color: "#fff", borderRadius: "10px", px: 2, textTransform: "none", fontWeight: "700", boxShadow: "0 4px 12px rgba(45,96,255,0.2)", "&:hover": { backgroundColor: "#1e4de6" } }}
+                                >
+                                  Export
+                                </Button>
+                              </Tooltip>
+                            </Stack>
+                          </Box>
+                        </Collapse>
+                      </TableCell>
+                    </TableRow>
+                  </React.Fragment>
                 ))
               )}
             </TableBody>
           </Table>
         </TableContainer>
       </Paper>
+
+      <OrderDetailsDialog 
+        open={openDetails} 
+        onClose={() => setOpenDetails(false)} 
+        order={selectedOrder} 
+      />
+
     </Box>
   );
 };

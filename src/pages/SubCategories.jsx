@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -18,10 +18,15 @@ import {
   Select,
   Avatar,
   LinearProgress,
+  Tooltip,
+  Chip,
+  Grid
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from "@mui/icons-material/Search";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { getSubCategories, addSubCategory, deleteSubCategory, getParentCategories, updateSubCategory } from "../api/categoryApi";
 
 const SubCategories = () => {
@@ -44,7 +49,7 @@ const SubCategories = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 1000 * 1024) {
-        alert("Image size should be less then 1000 KB");
+        alert("Persistence Error: Payload exceeds 1000 KB limitation.");
         return;
       }
       setSelectedImage(file);
@@ -111,27 +116,18 @@ const SubCategories = () => {
       
       if (isEditing) {
         await updateSubCategory(editId, payload);
-        alert("Sub-category updated!");
       } else {
         await addSubCategory(payload);
-        alert("Sub-category added!");
       }
 
-      setFormData({
-        name: "",
-        categoryID: "",
-        selectedParent: "",
-        description: "",
-      });
+      setFormData({ name: "", categoryID: "", selectedParent: "", description: "" });
       setSelectedImage(null);
       setImagePreview(null);
       setIsEditing(false);
       setEditId(null);
       fetchSubCategories();
     } catch (error) {
-      console.error("Error saving sub-category:", error.response?.data || error.message);
-      const detail = error.response?.data?.message || error.response?.data?.error?.message || error.message;
-      alert(`Failed to save sub-category: ${detail}`);
+      console.error("Persistence Error:", error);
     }
   };
 
@@ -149,270 +145,222 @@ const SubCategories = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Delete this sub-category?")) {
+    if (window.confirm("Permanently de-register this subordinate category domain?")) {
       try {
         await deleteSubCategory(id);
         fetchSubCategories();
       } catch (error) {
-        console.error("Error deleting sub-category:", error);
-        alert("Failed to delete sub-category.");
+        console.error("Deletion Failed:", error);
       }
     }
   };
 
-  const filtered = subCategories.filter(item =>
-    item.name.toLowerCase().includes(search.toLowerCase().trim()) ||
-    item.parentCategory.toLowerCase().includes(search.toLowerCase().trim())
-  );
+  const filtered = useMemo(() => {
+    const query = search.toLowerCase().trim();
+    if (!query) return subCategories;
+    return subCategories.filter(item =>
+      item.name.toLowerCase().includes(query) ||
+      item.parentCategory.toLowerCase().includes(query)
+    );
+  }, [subCategories, search]);
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      
+      {/* Premium Header Container */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="700" color="#2b3674">
-          Hi, Day Catch Super Admin Panel.
+        <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+            Subordinate Taxonomy
         </Typography>
-        <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-          Manage sub-categories under each parent category.
+        <Typography variant="body2" color="#a3aed0" fontWeight="600">
+            Mapping child-level categorical domains to root hierarchies for synchronized cataloging.
         </Typography>
       </Box>
 
-      <Stack direction={{ xs: "column", md: "row" }} spacing={4} alignItems="flex-start">
-        {/* Add Form */}
-        <Paper sx={{ p: 4, borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", minWidth: "320px" }}>
-          <Typography variant="h6" fontWeight="700" color="#1b2559" sx={{ mb: 3 }}>
-            {isEditing ? "Edit Sub-Category" : "Add Sub-Category"}
-          </Typography>
-          <Stack spacing={2.5}>
-            <Box>
-              <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Parent Category</Typography>
-              <FormControl fullWidth size="small">
-                <Select
-                  displayEmpty
-                  value={formData.selectedParent}
-                  onChange={(e) => setFormData({...formData, selectedParent: e.target.value})}
-                  sx={{ borderRadius: "10px" }}
-                >
-                  <MenuItem value="">Select Parent Category</MenuItem>
-                  {parentCats.map((cat, idx) => (
-                    <MenuItem key={`${cat.id || cat.name}-${idx}`} value={cat.name}>
-                      {cat.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-            <Box>
-              <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Cat Id</Typography>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="e.g. SCAT-001"
-                value={formData.categoryID}
-                onChange={(e) => setFormData({...formData, categoryID: e.target.value})}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-              />
-            </Box>
-            <Box>
-              <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Title</Typography>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="e.g. Fresh Chicken"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-              />
-            </Box>
-            <Box>
-              <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 0.5 }}>
-                Image (It Should Be Less Then 1000 KB)
-              </Typography>
-              <Box 
-                component="label" 
-                sx={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: 1, 
-                  p: 1.5, 
-                  border: "1px dashed #d1d9e8", 
-                  borderRadius: "10px", 
-                  cursor: "pointer",
-                  "&:hover": { backgroundColor: "#f8faff" }
-                }}
-              >
-                <input type="file" hidden accept="image/*" onChange={handleImageChange} />
-                <Typography variant="body2" color="textSecondary" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
-                  {selectedImage ? selectedImage.name : "No file chosen"}
+      <Grid container spacing={4} sx={{ mt: 2 }} component={Stack} direction={{ xs: "column", md: "row" }} alignItems="flex-start">
+        
+        {/* Creation Module */}
+        <Grid item xs={12} md={4} sx={{ width: "100%", maxWidth: { md: 400 } }}>
+            <Paper sx={{ p: 4, borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", bgcolor: "#fff" }}>
+                <Typography variant="h6" fontWeight="800" color="#1b2559" sx={{ mb: 3 }}>
+                    {isEditing ? "Modify Child Domain" : "Register Child Domain"}
                 </Typography>
-                <Button 
-                  component="span" 
-                  size="small" 
-                  variant="contained" 
-                  sx={{ 
-                    ml: "auto", 
-                    textTransform: "none", 
-                    borderRadius: "8px", 
-                    backgroundColor: "#2d60ff",
-                    fontSize: "0.75rem"
-                  }}
-                >
-                  Choose file
-                </Button>
-              </Box>
-            </Box>
-            <Box>
-              <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Description</Typography>
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                placeholder="Brief description..."
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-              />
-            </Box>
-            <Button
-              variant="contained"
-              fullWidth
-              startIcon={isEditing ? <EditIcon /> : <AddIcon />}
-              onClick={handleAdd}
-              sx={{
-                backgroundColor: "#2d60ff",
-                "&:hover": { backgroundColor: "#2046cc" },
-                borderRadius: "10px",
-                py: 1.5,
-                textTransform: "none",
-                fontWeight: "700",
-                mb: isEditing ? 1.5 : 0
-              }}
-            >
-              {isEditing ? "Update Sub-Category" : "Save Sub-Category"}
-            </Button>
+                
+                <Stack spacing={3}>
+                    <Box>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>PARENT DOMAIN</Typography>
+                        <Select
+                            fullWidth
+                            value={formData.selectedParent}
+                            onChange={(e) => setFormData({...formData, selectedParent: e.target.value})}
+                            displayEmpty
+                            sx={{ borderRadius: "14px", backgroundColor: "#f4f7fe", "& .MuiOutlinedInput-notchedOutline": { border: "none" } }}
+                        >
+                            <MenuItem value="" disabled><Typography variant="body2" color="#a3aed0">Select Root Hierarchy</Typography></MenuItem>
+                            {parentCats.map((cat, idx) => (
+                                <MenuItem key={`${cat.id || cat.name}-${idx}`} value={cat.name}>
+                                    <Typography variant="body2" fontWeight="700">{cat.name}</Typography>
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </Box>
 
-            {isEditing && (
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={() => {
-                  setIsEditing(false);
-                  setEditId(null);
-                  setSelectedImage(null);
-                  setImagePreview(null);
-                  setFormData({
-                    name: "",
-                    categoryID: "",
-                    selectedParent: "",
-                    description: "",
-                  });
-                }}
-                sx={{
-                  borderRadius: "10px",
-                  py: 1.5,
-                  textTransform: "none",
-                  fontWeight: "700",
-                  color: "#2d60ff",
-                  borderColor: "#2d60ff"
-                }}
-              >
-                Cancel Edit
-              </Button>
-            )}
-          </Stack>
-        </Paper>
+                    <Box>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>SUB-DOMAIN IDENTIFIER (CAT ID)</Typography>
+                        <TextField
+                            fullWidth
+                            placeholder="e.g. SCAT-001"
+                            value={formData.categoryID}
+                            onChange={(e) => setFormData({...formData, categoryID: e.target.value})}
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }}
+                        />
+                    </Box>
 
-        {/* List */}
-        <Paper sx={{ flex: 1, borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", position: "relative" }}>
-          {loading && (
-            <LinearProgress 
-              sx={{ 
-                position: "absolute", 
-                top: 0, 
-                left: 0, 
-                right: 0, 
-                backgroundColor: "#fff1f0",
-                "& .MuiLinearProgress-bar": { backgroundColor: "#E53935" }
-              }} 
-            />
-          )}
-          <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
-            <Typography variant="h6" fontWeight="600" color="#1b2559">Sub-Categories List</Typography>
-            <TextField
-              size="small"
-              placeholder="Search..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" }, width: "240px" }}
-            />
-          </Box>
-          <TableContainer sx={{ 
-            maxHeight: "calc(100vh - 400px)", 
-            "&::-webkit-scrollbar": { display: "none" },
-            msOverflowStyle: "none",
-            scrollbarWidth: "none",
-          }}>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: "700", color: "#a3aed0", bgcolor: "#fafbfc" }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: "700", color: "#a3aed0", bgcolor: "#fafbfc" }}>Title</TableCell>
-                  <TableCell sx={{ fontWeight: "700", color: "#a3aed0", bgcolor: "#fafbfc" }}>Parent Category</TableCell>
-                  <TableCell sx={{ fontWeight: "700", color: "#a3aed0", bgcolor: "#fafbfc" }}>Category Image</TableCell>
-                  <TableCell sx={{ fontWeight: "700", color: "#a3aed0", bgcolor: "#fafbfc" }}>Cat Id</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", bgcolor: "#fafbfc", pr: 4 }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4 }}>No sub-categories found</TableCell></TableRow>
-                ) : (
-                  filtered.map((item, index) => (
-                    <TableRow key={item.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{index + 1}</TableCell>
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>{item.name}</TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ backgroundColor: "#f0f4ff", color: "#2d60ff", px: 1.5, py: 0.5, borderRadius: "6px", display: "inline-block", fontWeight: "600" }}>
-                          {item.parentCategory}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Avatar src={item.image} variant="rounded" sx={{ width: 40, height: 40, borderRadius: "10px" }} />
-                      </TableCell>
-                      <TableCell sx={{ color: "#2d60ff", fontWeight: "700" }}>{item.categoryID}</TableCell>
-                      <TableCell align="right" sx={{ pr: 4 }}>
-                        <Stack direction="row" spacing={2} justifyContent="flex-end">
-                          <IconButton 
-                            onClick={() => handleEdit(item)}
+                    <Box>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>CATEGORY LABEL (SUB-TITLE)</Typography>
+                        <TextField
+                            fullWidth
+                            placeholder="e.g. Deep Sea Salmon"
+                            value={formData.name}
+                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }}
+                        />
+                    </Box>
+
+                    <Box>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>DESCRIPTION</Typography>
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            placeholder="Specify granular domain constraints..."
+                            value={formData.description}
+                            onChange={(e) => setFormData({...formData, description: e.target.value})}
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }}
+                        />
+                    </Box>
+
+                    <Box>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>VISUAL ASSET</Typography>
+                        <Box 
+                            component="label" 
                             sx={{ 
-                                backgroundColor: "#00d26a", 
-                                color: "#fff", 
-                                borderRadius: "10px", 
-                                width: "40px",
-                                height: "40px",
-                                "&:hover": { backgroundColor: "#00b85c" } 
-                            }}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton onClick={() => handleDelete(item.id)} sx={{ 
-                              backgroundColor: "#ff4d49", 
-                              color: "#fff", 
-                              borderRadius: "10px", 
-                              width: "40px",
-                              height: "40px",
-                              "&:hover": { backgroundColor: "#e03e3e" } 
-                            }}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                                display: "flex", alignItems: "center", gap: 2, p: 2, border: "2px dashed #e0e5f2", borderRadius: "16px", cursor: "pointer", transition: "0.2s",
+                                "&:hover": { backgroundColor: "#f4f7fe", borderColor: "#4318ff" }
+                            }}
+                        >
+                            <input type="file" hidden accept="image/*" onChange={handleImageChange} />
+                            <CloudUploadIcon sx={{ color: "#a3aed0" }} />
+                            <Typography variant="body2" color="#1b2559" fontWeight="700" sx={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {selectedImage ? selectedImage.name : "Select Asset"}
+                            </Typography>
+                        </Box>
+                    </Box>
+
+                    <Button
+                        variant="contained"
+                        fullWidth
+                        onClick={handleAdd}
+                        sx={{
+                            backgroundColor: "#4318ff", "&:hover": { backgroundColor: "#3311cc" }, borderRadius: "16px", py: 2, textTransform: "none", fontWeight: "800",
+                            boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
+                        }}
+                    >
+                        {isEditing ? "Update Sub-Domain" : "Activate Sub-Domain"}
+                    </Button>
+
+                    {isEditing && (
+                        <Button 
+                            variant="text" 
+                            fullWidth 
+                            onClick={() => {
+                                setIsEditing(false);
+                                setFormData({ name: "", categoryID: "", selectedParent: "", description: "" });
+                                setImagePreview(null);
+                            }}
+                            sx={{ color: "#a3aed0", fontWeight: "800", textTransform: "none" }}
+                        >
+                            Discard Modifications
+                        </Button>
+                    )}
+                </Stack>
+            </Paper>
+        </Grid>
+
+        {/* Directory Module */}
+        <Grid item xs={12} md={8} sx={{ flex: 1, width: "100%" }}>
+            <Paper sx={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", backgroundColor: "#fff", position: "relative" }}>
+                {loading && (
+                    <LinearProgress sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, backgroundColor: "#f4f7fe", "& .MuiLinearProgress-bar": { backgroundColor: "#4318ff" } }} />
                 )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
-      </Stack>
+                
+                <Box sx={{ p: 4, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc", borderBottom: "1px solid #e0e5f2" }}>
+                    <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Subordinate Registry</Typography>
+                    <TextField
+                        size="small"
+                        placeholder="Search sub-domains..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        InputProps={{ startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} /> }}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", backgroundColor: "#fff", width: "280px" } }}
+                    />
+                </Box>
+
+                <TableContainer sx={{ maxHeight: "calc(100vh - 400px)", "&::-webkit-scrollbar": { display: "none" } }}>
+                    <Table stickyHeader>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
+                                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Asset</TableCell>
+                                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Subtitle</TableCell>
+                                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Root Hierarchy</TableCell>
+                                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Cat ID</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4, bgcolor: "#f4f7fe" }}>Operations</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {filtered.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                        <Typography color="#a3aed0" fontWeight="600">No subordinate domains identified in current scope.</Typography>
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filtered.map((item, index) => (
+                                    <TableRow key={item.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
+                                        <TableCell sx={{ color: "#1b2559", fontWeight: "800", pl: 4 }}>#{index + 1}</TableCell>
+                                        <TableCell>
+                                            <Avatar src={item.image} variant="rounded" sx={{ width: 44, height: 44, borderRadius: "12px", border: "2px solid #f4f7fe" }} />
+                                        </TableCell>
+                                        <TableCell sx={{ color: "#1b2559", fontWeight: "800", fontSize: "15px" }}>{item.name}</TableCell>
+                                        <TableCell>
+                                            <Chip label={item.parentCategory} size="small" sx={{ bgcolor: "#f4f7fe", color: "#4318ff", fontWeight: "800", borderRadius: "8px" }} />
+                                        </TableCell>
+                                        <TableCell sx={{ color: "#4318ff", fontWeight: "800" }}>{item.categoryID}</TableCell>
+                                        <TableCell align="right" sx={{ pr: 3 }}>
+                                            <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                                <Tooltip title="Modify Domain">
+                                                    <IconButton onClick={() => handleEdit(item)} sx={{ backgroundColor: "#f4f7fe", color: "#4318ff", borderRadius: "10px", "&:hover": { backgroundColor: "#e0e5f2" } }}>
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="De-register Domain">
+                                                    <IconButton onClick={() => handleDelete(item.id)} sx={{ backgroundColor: "#fff5f5", color: "#ff4d49", borderRadius: "10px", "&:hover": { backgroundColor: "#ffebeb" } }}>
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Stack>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Paper>
+        </Grid>
+
+      </Grid>
     </Box>
   );
 };

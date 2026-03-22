@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -15,10 +15,15 @@ import {
   IconButton,
   Chip,
   Avatar,
+  Tooltip,
+  CircularProgress
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import SearchIcon from "@mui/icons-material/Search";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 import { useNavigate } from "react-router-dom";
 import * as productApi from "../api/productApi";
 
@@ -26,54 +31,58 @@ const AdminProducts = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // API Call (using JSONPlaceholder as fakeapi)
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  const fetchProducts = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
 
-  const fetchProducts = async () => {
     try {
       const response = await productApi.getAllProducts();
-      
       const productList = response.data.data || [];
       
-      // Map backend data to our product columns
-      const formattedData = productList.map((item, index) => {
-        return {
-          id: item._id || item.id,
-          productID: item["Product Id"] || item.id || "N/A",
-          name: item["Product Name"] || item.name || "Unnamed Product",
-          category: item["Category"] || item.category || "N/A",
-          type: item["Type"] || item.type || "N/A",
-          image: item["Product Image"] || item.image || `https://picsum.photos/seed/${item._id}/100`,
-          hide: item.hide || false
-        };
-      });
+      const formattedData = productList.map((item, index) => ({
+        id: item._id || item.id,
+        productID: item["Product Id"] || item.id || "N/A",
+        name: item["Product Name"] || item.name || "Unnamed Product",
+        category: item["Category"] || item.category || "N/A",
+        type: item["Type"] || item.type || "N/A",
+        image: item["Product Image"] || item.image || `https://picsum.photos/seed/${item._id}/100`,
+        hide: item.hide || false
+      }));
 
       setProducts(formattedData);
     } catch (error) {
       console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
-  const filteredProducts = React.useMemo(() => {
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const filteredProducts = useMemo(() => {
+    const query = search.toLowerCase().trim();
+    if (!query) return products;
     return products.filter((item) =>
-      item.name.toLowerCase().includes(search.toLowerCase().trim()) ||
-      item.category.toLowerCase().includes(search.toLowerCase().trim()) ||
-      item.productID.toLowerCase().includes(search.toLowerCase().trim())
+      item.name.toLowerCase().includes(query) ||
+      item.category.toLowerCase().includes(query) ||
+      item.productID.toLowerCase().includes(query)
     );
   }, [products, search]);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
+    if (window.confirm("Permanently de-list this product from the central catalog?")) {
       try {
         await productApi.deleteProduct(id);
         setProducts(prev => prev.filter(item => item.id !== id));
-        alert("Product deleted successfully!");
       } catch (error) {
         console.error("Error deleting product:", error);
-        alert("Failed to delete product.");
+        alert("Persistence Sync Error: Deletion rejected.");
       }
     }
   };
@@ -81,151 +90,176 @@ const AdminProducts = () => {
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
-      {/* Page Heading */}
+      {/* Premium Header Container */}
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
-          <Typography variant="h4" fontWeight="700" color="#2b3674">
-            Hi, Day Catch Super Admin Panel.
-          </Typography>
-          <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-            Manage the central product catalog.
-          </Typography>
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Product Core Repository
+            </Typography>
+            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+                Centralized master catalog for all verified inventory across the Daycatch ecosystem.
+            </Typography>
         </Box>
-        <Button 
-          variant="contained" 
-          startIcon={<AddIcon />}
-          onClick={() => navigate("/products/add")}
-          sx={{ 
-            backgroundColor: "#2d60ff", 
-            "&:hover": { backgroundColor: "#2046cc" },
-            borderRadius: "10px",
-            textTransform: "none",
-            px: 3,
-            py: 1.2,
-            fontWeight: "700",
-            boxShadow: "0 4px 12px rgba(45, 96, 255, 0.3)"
-          }}
-        >
-          Add New Product
-        </Button>
+        <Stack direction="row" spacing={2}>
+            <Tooltip title="Synchronize Catalog">
+                <IconButton 
+                    onClick={() => fetchProducts(true)} 
+                    disabled={refreshing || loading}
+                    sx={{ bgcolor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", p: 1.5 }}
+                >
+                    {refreshing ? <CircularProgress size={20} /> : <RefreshIcon sx={{ color: "#4318ff" }} />}
+                </IconButton>
+            </Tooltip>
+            <Button 
+                variant="contained" 
+                startIcon={<AddIcon />}
+                onClick={() => navigate("/products/add")}
+                sx={{ 
+                    backgroundColor: "#4318ff", 
+                    "&:hover": { backgroundColor: "#3311cc" },
+                    borderRadius: "14px",
+                    textTransform: "none",
+                    px: 4,
+                    fontWeight: "800",
+                    boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
+                }}
+            >
+                Add Inventory
+            </Button>
+        </Stack>
       </Box>
 
-      <Paper sx={{ borderRadius: "20px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+      {/* Stats Analytics Card */}
+      <Paper sx={{ p: 3, mb: 4, borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", width: "fit-content", minWidth: 280, bgcolor: "#fff" }}>
+        <Stack direction="row" alignItems="center" spacing={3}>
+          <Box sx={{ p: 2, borderRadius: "16px", backgroundColor: "#f4f7fe" }}>
+            <Inventory2Icon sx={{ color: "#4318ff", fontSize: 32 }} />
+          </Box>
+          <Box>
+            <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase" }}>
+              Total SKU Count
+            </Typography>
+            <Typography variant="h4" fontWeight="800" color="#1b2559">
+              {products.length} Items
+            </Typography>
+          </Box>
+        </Stack>
+      </Paper>
+
+      {/* Directory Paper */}
+      <Paper sx={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", backgroundColor: "#fff" }}>
         
-        {/* Card Header & Search */}
-        <Box 
-          sx={{ 
-            p: 3, 
-            display: "flex", 
-            justifyContent: "space-between", 
-            alignItems: "center",
-            borderBottom: "1px solid #f1f1f1"
-          }}
-        >
-          <Typography variant="h6" fontWeight="700" color="#1b2559">
-            Admin Products List
-          </Typography>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="body2" sx={{ fontWeight: "600", color: "#1b2559" }}>Search:</Typography>
+        {/* Search Toolbar */}
+        <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
+            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">SKU Master Sheet</Typography>
             <TextField
-              size="small"
-              placeholder="Search by name, ID or category..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              sx={{ 
-                "& .MuiOutlinedInput-root": { borderRadius: "10px" },
-                width: "300px",
-                backgroundColor: "#fff"
-              }}
+                size="small"
+                placeholder="Search by SKU, Name or Category..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                InputProps={{
+                    startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} />
+                }}
+                sx={{ 
+                    "& .MuiOutlinedInput-root": { 
+                        borderRadius: "12px", 
+                        backgroundColor: "#fff",
+                        width: "360px"
+                    } 
+                }}
             />
-          </Stack>
         </Box>
 
-        {/* Table */}
         <TableContainer sx={{ 
-          maxHeight: "calc(100vh - 350px)",
+          maxHeight: "calc(100vh - 400px)",
           msOverflowStyle: "none",
           scrollbarWidth: "none",
           "&::-webkit-scrollbar": { display: "none" }
         }}>
           <Table stickyHeader>
             <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>Product Name</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>Product id</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>category</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>type</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>image</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc" }}>hide</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", backgroundColor: "#fafbfc", pr: 4 }}>actions</TableCell>
+              <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Visual</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Product Name</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>SKU ID</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Category</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Visibility</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4, bgcolor: "#f4f7fe" }}>Operations</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredProducts.length === 0 ? (
+              {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                    No products found
+                  <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                    <CircularProgress sx={{ color: "#4318ff" }} />
+                  </TableCell>
+                </TableRow>
+              ) : filteredProducts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                    <Typography color="#a3aed0" fontWeight="600">No SKUs identified in the central repository.</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredProducts.map((item, index) => (
                   <TableRow 
                     key={item.id} 
-                    sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}
+                    sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}
                   >
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{index + 1}</TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "700", maxWidth: "180px" }}>{item.name}</TableCell>
-                    <TableCell sx={{ color: "#2d60ff", fontWeight: "700" }}>{item.productID}</TableCell>
-                    <TableCell sx={{ color: "#475467" }}>{item.category}</TableCell>
-                    <TableCell sx={{ color: "#475467" }}>{item.type}</TableCell>
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "700", pl: 4 }}>
+                      #{index + 1}
+                    </TableCell>
                     <TableCell>
                         <Avatar 
                             src={item.image} 
                             variant="rounded" 
-                            sx={{ width: 45, height: 45, borderRadius: "10px", border: "1px solid #f1f1f1" }} 
+                            sx={{ width: 48, height: 48, borderRadius: "12px", border: "2px solid #f4f7fe" }} 
+                        />
+                    </TableCell>
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "800", fontSize: "15px" }}>
+                      {item.name}
+                    </TableCell>
+                    <TableCell sx={{ color: "#4318ff", fontWeight: "800" }}>
+                      {item.productID}
+                    </TableCell>
+                    <TableCell>
+                        <Chip 
+                            label={item.category} 
+                            size="small"
+                            sx={{ bgcolor: "#f4f7fe", color: "#1b2559", fontWeight: "700", borderRadius: "8px" }}
                         />
                     </TableCell>
                     <TableCell>
                         <Chip 
-                            label={item.hide ? "Hidden" : "Visible"} 
-                            size="small" 
+                            label={item.hide ? "Archived" : "Live"} 
+                            size="small"
                             sx={{ 
-                                backgroundColor: item.hide ? "#fff1f0" : "#e6f9ed", 
+                                bgcolor: item.hide ? "#fff5f5" : "#f0fff4",
                                 color: item.hide ? "#ff4d49" : "#24d164",
-                                fontWeight: "700",
+                                fontWeight: "800",
                                 borderRadius: "8px"
-                            }} 
+                            }}
                         />
                     </TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
-                      <Stack direction="row" spacing={2} justifyContent="flex-end">
-                        <IconButton 
-                          onClick={() => navigate(`/products/edit/${item.id}`)}
-                          sx={{ 
-                            backgroundColor: "#00d26a", 
-                            color: "#fff",
-                            borderRadius: "10px",
-                            width: "40px",
-                            height: "40px",
-                            "&:hover": { backgroundColor: "#00b85c" }
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton 
-                          onClick={() => handleDelete(item.id)}
-                          sx={{ 
-                            backgroundColor: "#ff4d49", 
-                            color: "#fff",
-                            borderRadius: "10px",
-                            width: "40px",
-                            height: "40px",
-                            "&:hover": { backgroundColor: "#d13c38" }
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <Tooltip title="Edit Specifications">
+                            <IconButton 
+                                onClick={() => navigate(`/products/edit/${item.id}`)}
+                                sx={{ backgroundColor: "#f4f7fe", color: "#4318ff", borderRadius: "12px", "&:hover": { backgroundColor: "#e0e5f2" }, p: 1 }}
+                            >
+                                <EditIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Expunge SKU">
+                            <IconButton 
+                                onClick={() => handleDelete(item.id)}
+                                sx={{ backgroundColor: "#fff5f5", color: "#ff4d49", borderRadius: "12px", "&:hover": { backgroundColor: "#ffebeb" }, p: 1 }}
+                            >
+                                <DeleteIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
                       </Stack>
                     </TableCell>
                   </TableRow>
@@ -234,7 +268,6 @@ const AdminProducts = () => {
             </TableBody>
           </Table>
         </TableContainer>
-
       </Paper>
     </Box>
   );

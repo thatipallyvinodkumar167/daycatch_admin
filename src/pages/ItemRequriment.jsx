@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -14,6 +14,11 @@ import {
   Stack,
   IconButton,
   InputAdornment,
+  Tooltip,
+  Divider,
+  LinearProgress,
+  Fade,
+  Avatar
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
@@ -21,6 +26,8 @@ import InventoryIcon from "@mui/icons-material/Inventory";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EventNoteIcon from "@mui/icons-material/EventNote";
 import AssessmentIcon from "@mui/icons-material/Assessment";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { useNavigate } from "react-router-dom";
 import { genericApi } from "../api/genericApi";
 
@@ -29,246 +36,263 @@ const ItemRequirement = () => {
   const [view, setView] = useState("list"); // 'list' or 'detail'
   const [requirements, setRequirements] = useState([]);
   const [search, setSearch] = useState("");
-  // eslint-disable-next-line no-unused-vars
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  // eslint-disable-next-line no-unused-vars
   const [detailItems, setDetailItems] = useState([]);
 
-  useEffect(() => {
-    fetchRequirements();
-  }, []);
+  const fetchRequirements = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
 
-  const fetchRequirements = async () => {
     try {
       const response = await genericApi.getAll("item_requirement");
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item, index) => ({
         id: item._id || index + 1,
-        storeName: item["Store Name"] || item.storeName || "Unknown Store",
-        city: item["City"] || item.city || "N/A",
+        storeName: item["Store Name"] || item.storeName || "Unknown Partner Hub",
+        city: item["City"] || item.city || "Operational Area",
         mobile: item["Mobile"] || item.mobile || "N/A",
         email: item["Email"] || item.email || "N/A",
       }));
       setRequirements(formattedData);
     } catch (error) {
       console.error("Error fetching requirements:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
+  useEffect(() => {
+    fetchRequirements();
+  }, [fetchRequirements]);
 
-  const filteredRequirements = requirements.filter((item) =>
-    item.storeName.toLowerCase().includes(search.toLowerCase()) ||
-    item.city.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredRequirements = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return requirements;
+    return requirements.filter((item) =>
+      item.storeName.toLowerCase().includes(q) ||
+      item.city.toLowerCase().includes(q)
+    );
+  }, [requirements, search]);
 
-  const StatsCard = ({ title, value, icon }) => (
-    <Paper sx={{ 
-        p: 2.5, 
-        borderRadius: "20px", 
-        boxShadow: "0 10px 30px rgba(0,0,0,0.02)", 
-        borderLeft: "6px solid #2d60ff",
-        display: "flex",
-        alignItems: "center",
-        gap: 2.5,
-        width: "fit-content",
-        minWidth: "240px",
-        backgroundColor: "white"
-    }}>
-        <Box sx={{ p: 1.8, borderRadius: "14px", bgcolor: "#e9edf7", display: "flex", justifyContent: "center", alignItems: "center" }}>
-            {icon}
-        </Box>
-        <Box>
-            <Typography variant="body2" fontWeight="700" color="#a3aed0" sx={{ mb: 0.2, fontSize: "0.75rem", textTransform: "uppercase" }}>{title}</Typography>
-            <Typography variant="h4" fontWeight="800" color="#1b2559">{value}</Typography>
-        </Box>
-    </Paper>
-  );
+  const stats = useMemo(() => [
+    { label: "Active Hubs", value: requirements.length, icon: <StorefrontIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Audit Date", value: "Daily Sync", icon: <EventNoteIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+  ], [requirements]);
 
   const renderListView = () => (
-    <>
-      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <Box>
-            <Typography variant="h4" fontWeight="800" color="#2b3674">Hi, Day Catch Super Admin Panel.</Typography>
-            <Typography variant="h6" color="#707eae" fontWeight="500">Analyze inventory requirements based on incoming orders for each store.</Typography>
-        </Box>
-        <Stack direction="row" spacing={2}>
-            <Button 
-                variant="outlined" 
-                startIcon={<AssessmentIcon />}
-                onClick={() => navigate("/sales-report")}
-                sx={{ 
-                    borderRadius: "12px",
-                    textTransform: "none",
-                    px: 3,
-                    py: 1.5,
-                    fontWeight: "700",
-                    color: "#2d60ff",
-                    borderColor: "#2d60ff",
-                    "&:hover": { borderColor: "#2046cc", backgroundColor: "#f0f4ff" }
-                }}
-            >
-                Item Sale Report
-            </Button>
-            <Button 
-                variant="contained" 
-                startIcon={<FileDownloadIcon />}
-                sx={{ 
-                    backgroundColor: "#2d60ff", 
-                    borderRadius: "12px",
-                    textTransform: "none",
-                    px: 3,
-                    py: 1.5,
-                    fontWeight: "700",
-                    boxShadow: "0 4px 12px rgba(45, 96, 255, 0.2)",
-                    "&:hover": { backgroundColor: "#2046cc" }
-                }}
-            >
-                Download Summary
-            </Button>
-        </Stack>
-      </Box>
-
-      <Box sx={{ mb: 6 }}>
-        <StatsCard title="Active Stores" value={requirements.length} icon={<InventoryIcon sx={{ color: "#2d60ff" }} />} />
-      </Box>
-
-      <Paper sx={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "none" }}>
-        <Box sx={{ p: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="h5" fontWeight="700" color="#1b2559">Item Requirement Overview</Typography>
-          <TextField
-              size="small"
-              placeholder="Search stores..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                    <InputAdornment position="start">
-                        <SearchIcon sx={{ color: "#a3aed0" }} />
-                    </InputAdornment>
-                ),
-              }}
-              sx={{ 
-                width: "350px",
-                "& .MuiOutlinedInput-root": { 
-                    borderRadius: "15px", 
-                    backgroundColor: "#f4f7fe",
-                    "& fieldset": { border: "none" }
-                }
-              }}
-          />
+    <Fade in={true}>
+      <Box>
+        {/* Premium Header Container */}
+        <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Box>
+              <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                  Procurement Hub Matrix
+              </Typography>
+              <Typography variant="body2" color="#a3aed0" fontWeight="600">
+                  Analyze and audit inventory requirements based on active order velocity across merchant nodes.
+              </Typography>
+          </Box>
+          <Stack direction="row" spacing={3} alignItems="center">
+              {stats.map((stat) => (
+                  <Stack key={stat.label} direction="row" spacing={1} alignItems="center">
+                      <Box sx={{ color: stat.color, display: "flex" }}>{stat.icon}</Box>
+                      <Box>
+                          <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase", display: "block", lineHeight: 1 }}>{stat.label}</Typography>
+                          <Typography variant="subtitle2" fontWeight="800" color="#1b2559">{stat.value}</Typography>
+                      </Box>
+                  </Stack>
+              ))}
+              <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, alignSelf: "center" }} />
+              <Button 
+                  variant="contained" 
+                  startIcon={<FileDownloadIcon />}
+                  sx={{ 
+                      backgroundColor: "#4318ff", 
+                      borderRadius: "14px",
+                      textTransform: "none",
+                      px: 3,
+                      py: 1.2,
+                      fontWeight: "800",
+                      boxShadow: "0 10px 25px rgba(67, 24, 255, 0.2)",
+                      "&:hover": { backgroundColor: "#3310cc" }
+                  }}
+              >
+                  Export Data
+              </Button>
+          </Stack>
         </Box>
 
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>STORE NAME</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>CITY</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>MOBILE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>EMAIL</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>ITEM SALE</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredRequirements.length === 0 ? (
-                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 6 }}>No stores found</TableCell></TableRow>
-              ) : (
-                filteredRequirements.map((item, index) => (
-                  <TableRow key={item.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>{index + 1}</TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "800" }}>{item.storeName}</TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>{item.city}</TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{item.mobile}</TableCell>
-                    <TableCell sx={{ color: "#a3aed0" }}>{item.email}</TableCell>
-                    <TableCell>
-                      <Button 
-                        size="small" 
-                        variant="text" 
-                        onClick={() => navigate("/sales-report")}
-                        sx={{ color: "#2d60ff", fontWeight: "700", textTransform: "none" }}
-                      >
-                        Item Sale report
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
-    </>
+        {/* Full Width Matrix Container */}
+        <Paper sx={{ borderRadius: "28px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", backgroundColor: "#fff", position: "relative" }}>
+            {loading && (
+                <LinearProgress sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, backgroundColor: "#f4f7fe", "& .MuiLinearProgress-bar": { backgroundColor: "#4318ff" } }} />
+            )}
+            
+            <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
+                <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Merchant Requirement Ledger</Typography>
+                <Stack direction="row" spacing={2} alignItems="center">
+                    <TextField
+                        size="small"
+                        placeholder="Search Partner Hub..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        InputProps={{
+                            startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} />
+                        }}
+                        sx={{ 
+                            "& .MuiOutlinedInput-root": { 
+                                borderRadius: "14px", 
+                                backgroundColor: "#fff",
+                                width: "320px"
+                            } 
+                        }}
+                    />
+                    <Tooltip title="Synchronize Data">
+                        <IconButton onClick={() => fetchRequirements(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
+                            <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
+                        </IconButton>
+                    </Tooltip>
+                </Stack>
+            </Box>
+
+            <TableContainer sx={{ 
+                maxHeight: "calc(100vh - 280px)",
+                msOverflowStyle: "none",
+                scrollbarWidth: "none",
+                "&::-webkit-scrollbar": { display: "none" }
+            }}>
+                <Table stickyHeader>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Partner Hub Identity</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Hub Location</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Contact Manifest</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Secure Email</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Analysis Protocols</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {filteredRequirements.length === 0 && !loading ? (
+                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "600" }}>Zero hub requirements detected for current interval.</TableCell></TableRow>
+                        ) : (
+                            filteredRequirements.map((item, index) => (
+                                <TableRow key={item.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
+                                    <TableCell sx={{ color: "#1b2559", fontWeight: "800", pl: 4 }}>#{index + 1}</TableCell>
+                                    <TableCell>
+                                        <Stack direction="row" spacing={1.5} alignItems="center">
+                                            <Avatar sx={{ bgcolor: "rgba(67, 24, 255, 0.05)", color: "#4318ff", borderRadius: "12px", width: 40, height: 40, fontWeight: "800" }}>{item.storeName.charAt(0)}</Avatar>
+                                            <Typography variant="body2" fontWeight="800" color="#1b2559">{item.storeName}</Typography>
+                                        </Stack>
+                                    </TableCell>
+                                    <TableCell sx={{ color: "#4318ff", fontWeight: "800" }}>{item.city}</TableCell>
+                                    <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>{item.mobile}</TableCell>
+                                    <TableCell sx={{ color: "#a3aed0", fontWeight: "600" }}>{item.email}</TableCell>
+                                    <TableCell align="right" sx={{ pr: 3 }}>
+                                        <Button 
+                                            size="small" 
+                                            variant="text" 
+                                            startIcon={<AssessmentIcon sx={{ fontSize: 16 }} />}
+                                            onClick={() => navigate("/sales-report")}
+                                            sx={{ color: "#4318ff", fontWeight: "800", textTransform: "none", py: 1, px: 2, borderRadius: "10px", "&:hover": { bgcolor: "rgba(67, 24, 255, 0.05)" } }}
+                                        >
+                                            View Sales Matrix
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </Paper>
+      </Box>
+    </Fade>
   );
 
   const renderDetailView = () => (
-    <>
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <IconButton onClick={() => setView("list")} sx={{ bgcolor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", "&:hover": { bgcolor: "#f1f1f1" } }}>
-              <ArrowBackIcon sx={{ color: "#2d60ff" }} />
-          </IconButton>
-          <Typography variant="h3" fontWeight="800" color="#1b2559" sx={{ fontSize: "2rem" }}>
-              Required Item List {selectedDate}
-          </Typography>
-      </Stack>
-
-      <Paper sx={{ p: 4, borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", mb: 4 }}>
-        <Stack direction="row" spacing={3} alignItems="flex-end" sx={{ mb: 4 }}>
-            <Box sx={{ minWidth: "220px" }}>
-                <Typography variant="body2" fontWeight="700" color="#1b2559" sx={{ mb: 1, textTransform: "uppercase", fontSize: "0.75rem" }}>Select Date</Typography>
-                <TextField
-                    type="date"
-                    fullWidth
-                    size="small"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", backgroundColor: "#f4f7fe", "& fieldset": { borderColor: "#e9edf7" } } }}
-                />
-            </Box>
+    <Fade in={true}>
+      <Box>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
+            <IconButton onClick={() => setView("list")} sx={{ bgcolor: "#fff", boxShadow: "0 10px 20px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2" }}>
+                <ArrowBackIcon sx={{ color: "#4318ff" }} />
+            </IconButton>
             <Box>
-                <Typography variant="body1" color="#a3aed0" fontWeight="500">Viewing requirements for <b>{selectedStore?.storeName}</b></Typography>
+                <Typography variant="h4" fontWeight="800" color="#1b2559" sx={{ letterSpacing: "-1px" }}>
+                    Manifest Log: {selectedDate}
+                </Typography>
+                <Typography variant="body2" color="#a3aed0" fontWeight="600">Inventory requirements for partner: {selectedStore?.storeName}</Typography>
             </Box>
         </Stack>
 
-        <TableContainer sx={{ border: "1px solid #f1f1f1", borderRadius: "15px", overflow: "hidden" }}>
-            <Table>
-                <TableHead sx={{ backgroundColor: "#f4f7fe" }}>
-                    <TableRow>
-                        <TableCell sx={{ fontWeight: "700", color: "#a3aed0", width: 80, py: 2 }}>#</TableCell>
-                        <TableCell sx={{ fontWeight: "700", color: "#a3aed0", py: 2 }}>PRODUCT NAME</TableCell>
-                        <TableCell sx={{ fontWeight: "700", color: "#a3aed0", py: 2 }}>QUANTITY</TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {detailItems.length === 0 ? (
+        <Paper sx={{ p: 4, borderRadius: "28px", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", mb: 4, border: "1px solid #e0e5f2" }}>
+            <Stack direction="row" spacing={3} alignItems="flex-end" sx={{ mb: 4 }}>
+                <Box>
+                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Analysis Interval</Typography>
+                    <TextField
+                        type="date"
+                        size="small"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#fafbfc", "& fieldset": { borderColor: "#e0e5f2" } } }}
+                    />
+                </Box>
+            </Stack>
+
+            <TableContainer sx={{ borderRadius: "20px", border: "1px solid #f1f1f1", overflow: "hidden" }}>
+                <Table>
+                    <TableHead sx={{ bgcolor: "#f4f7fe" }}>
                         <TableRow>
-                            <TableCell colSpan={3} align="center" sx={{ py: 8 }}>
-                                <Box sx={{ opacity: 0.2, mb: 1 }}>
-                                    <EventNoteIcon sx={{ fontSize: 60 }} />
-                                </Box>
-                                <Typography variant="h6" fontWeight="600" color="#a3aed0">No data found</Typography>
-                            </TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", py: 2 }}>#</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", py: 2 }}>Procurement Asset</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", py: 2 }}>Quantity Payload</TableCell>
                         </TableRow>
-                    ) : (
-                        detailItems.map((item, index) => (
-                            <TableRow key={index} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                                <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>{index + 1}</TableCell>
-                                <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>{item.name}</TableCell>
-                                <TableCell sx={{ color: "#2d60ff", fontWeight: "800" }}>{item.quantity}</TableCell>
+                    </TableHead>
+                    <TableBody>
+                        {detailItems.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={3} align="center" sx={{ py: 10 }}>
+                                    <Box sx={{ opacity: 0.1, mb: 1 }}>
+                                        <EventNoteIcon sx={{ fontSize: 60, color: "#4318ff" }} />
+                                    </Box>
+                                    <Typography variant="subtitle1" fontWeight="800" color="#a3aed0">No manifest data found for this node.</Typography>
+                                </TableCell>
                             </TableRow>
-                        ))
-                    )}
-                </TableBody>
-            </Table>
-        </TableContainer>
-      </Paper>
-    </>
+                        ) : (
+                            detailItems.map((item, index) => (
+                                <TableRow key={index} sx={{ "&:hover": { backgroundColor: "#f9fbff" } }}>
+                                    <TableCell sx={{ color: "#1b2559", fontWeight: "800" }}>{index + 1}</TableCell>
+                                    <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>{item.name}</TableCell>
+                                    <TableCell sx={{ color: "#4318ff", fontWeight: "900" }}>{item.quantity}</TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </Paper>
+      </Box>
+    </Fade>
   );
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
         {view === "list" ? renderListView() : renderDetailView()}
+        <style>
+            {`
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            .spin-animation {
+                animation: spin 1s linear infinite;
+            }
+            `}
+        </style>
     </Box>
   );
 };

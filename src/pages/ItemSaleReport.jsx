@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -13,27 +13,35 @@ import {
   Button,
   Stack,
   InputAdornment,
+  Tooltip,
+  Divider,
+  LinearProgress,
+  IconButton
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AssessmentIcon from "@mui/icons-material/Assessment";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 import { genericApi } from "../api/genericApi";
 
 const ItemSaleReport = () => {
   const [sales, setSales] = useState([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchSalesReport();
-  }, []);
+  const fetchSalesReport = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
 
-  const fetchSalesReport = async () => {
     try {
       const response = await genericApi.getAll("item_sale_report");
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item, index) => ({
         id: item._id || index + 1,
-        productName: item["Product Name"] || item.productName || "Unknown Product",
+        productName: item["Product Name"] || item.productName || "Unknown Asset",
         variantSize: item["Variant Size"] || item.variantSize || item.Variant || "N/A",
         quantity: Number(item["Quantity"] || item.quantity || item.Stock || 0),
         totalWeight: item["Total Weight"] || item.totalWeight || "0",
@@ -41,112 +49,164 @@ const ItemSaleReport = () => {
       setSales(formattedData);
     } catch (error) {
       console.error("Error fetching sales report:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
-  const filteredSales = sales.filter((item) =>
-    item.productName.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    fetchSalesReport();
+  }, [fetchSalesReport]);
 
-  const StatsCard = ({ title, value, icon }) => (
-    <Paper sx={{ 
-        p: 2.5, 
-        borderRadius: "20px", 
-        boxShadow: "0 10px 30px rgba(0,0,0,0.02)", 
-        borderLeft: "6px solid #2d60ff",
-        display: "flex",
-        alignItems: "center",
-        gap: 2.5,
-        width: "fit-content",
-        minWidth: "240px",
-        backgroundColor: "white"
-    }}>
-        <Box sx={{ p: 1.8, borderRadius: "14px", bgcolor: "#e9edf7", display: "flex", justifyContent: "center", alignItems: "center" }}>
-            {icon}
-        </Box>
-        <Box>
-            <Typography variant="body2" fontWeight="700" color="#a3aed0" sx={{ mb: 0.2, fontSize: "0.75rem", textTransform: "uppercase" }}>{title}</Typography>
-            <Typography variant="h4" fontWeight="800" color="#1b2559">{value}</Typography>
-        </Box>
-    </Paper>
-  );
+  const filteredSales = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return sales;
+    return sales.filter((item) =>
+      item.productName.toLowerCase().includes(q)
+    );
+  }, [sales, search]);
+
+  const stats = useMemo(() => [
+    { label: "Total Sold Units", value: sales.reduce((acc, curr) => acc + curr.quantity, 0), icon: <AssessmentIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Growth Status", value: "Optimal", icon: <TrendingUpIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+  ], [sales]);
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
-      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      {/* Premium Header Container */}
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
-            <Typography variant="h4" fontWeight="800" color="#2b3674">Hi, Day Catch Super Admin Panel.</Typography>
-            <Typography variant="h6" color="#707eae" fontWeight="500">Track and analyze total item sales performance over the last 30 days.</Typography>
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Sales Velocity Report
+            </Typography>
+            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+                Tracking and analyzing total item sales performance over the active 30-day interval.
+            </Typography>
         </Box>
-        <Stack direction="row" spacing={2}>
-            <Button variant="contained" startIcon={<FileDownloadIcon />} sx={{ backgroundColor: "#2d60ff", borderRadius: "12px", textTransform: "none", px: 3, py: 1.5, fontWeight: "700", boxShadow: "0 4px 12px rgba(45, 96, 255, 0.2)", "&:hover": { backgroundColor: "#2046cc" } }}>
+        <Stack direction="row" spacing={3} alignItems="center">
+            {stats.map((stat) => (
+                <Stack key={stat.label} direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ color: stat.color, display: "flex" }}>{stat.icon}</Box>
+                    <Box>
+                        <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase", display: "block", lineHeight: 1 }}>{stat.label}</Typography>
+                        <Typography variant="subtitle2" fontWeight="800" color="#1b2559">{stat.value}</Typography>
+                    </Box>
+                </Stack>
+            ))}
+            <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, alignSelf: "center" }} />
+            <Button 
+                variant="contained" 
+                startIcon={<FileDownloadIcon />} 
+                sx={{ 
+                    backgroundColor: "#4318ff", 
+                    borderRadius: "14px", 
+                    textTransform: "none", 
+                    px: 3, 
+                    py: 1.2, 
+                    fontWeight: "800", 
+                    boxShadow: "0 10px 25px rgba(67, 24, 255, 0.2)", 
+                    "&:hover": { backgroundColor: "#3310cc" } 
+                }}
+            >
                 Export CSV
             </Button>
         </Stack>
       </Box>
 
-      <Box sx={{ mb: 6 }}>
-        <StatsCard title="Total Sold Items" value={sales.reduce((acc, curr) => acc + curr.quantity, 0)} icon={<AssessmentIcon sx={{ color: "#2d60ff" }} />} />
-      </Box>
+      {/* Full Width Ledger Hub */}
+      <Paper sx={{ borderRadius: "28px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", backgroundColor: "#fff", position: "relative" }}>
+          {loading && (
+              <LinearProgress sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, backgroundColor: "#f4f7fe", "& .MuiLinearProgress-bar": { backgroundColor: "#4318ff" } }} />
+          )}
+          
+          <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Asset Sales Matrix (Rolling 30 Days)</Typography>
+              <Stack direction="row" spacing={2} alignItems="center">
+                  <TextField
+                      size="small"
+                      placeholder="Search Procurement Asset..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      InputProps={{
+                          startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} />
+                      }}
+                      sx={{ 
+                          "& .MuiOutlinedInput-root": { 
+                              borderRadius: "14px", 
+                              backgroundColor: "#fff",
+                              width: "320px"
+                          } 
+                      }}
+                  />
+                  <Tooltip title="Synchronize Records">
+                      <IconButton onClick={() => fetchSalesReport(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
+                          <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
+                      </IconButton>
+                  </Tooltip>
+              </Stack>
+          </Box>
 
-      <Paper sx={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "none" }}>
-        <Box sx={{ p: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="h5" fontWeight="700" color="#1b2559">Total Item Sales Report (Last 30 Days)</Typography>
-          <TextField
-              size="small"
-              placeholder="Search products..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                    <InputAdornment position="start">
-                        <SearchIcon sx={{ color: "#a3aed0" }} />
-                    </InputAdornment>
-                ),
-              }}
-              sx={{ 
-                width: "350px",
-                "& .MuiOutlinedInput-root": { 
-                    borderRadius: "15px", 
-                    backgroundColor: "#f4f7fe",
-                    "& fieldset": { border: "none" }
-                }
-              }}
-          />
-        </Box>
-
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>PRODUCT NAME</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3 }}>VARIANT & QUANTITY</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", fontSize: "0.85rem", py: 3, pr: 4 }}>TOTAL WEIGHT</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredSales.length === 0 ? (
-                <TableRow><TableCell colSpan={4} align="center" sx={{ py: 6 }}>No sales data available</TableCell></TableRow>
-              ) : (
-                filteredSales.map((item, index) => (
-                  <TableRow key={item.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>{index + 1}</TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "800" }}>{item.productName}</TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>
-                        {item.variantSize} × <Typography component="span" fontWeight="800" color="#2d60ff">{item.quantity}</Typography>
-                    </TableCell>
-                    <TableCell align="right" sx={{ pr: 4, color: "#a3aed0", fontWeight: "600" }}>
-                        {item.totalWeight}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+          <TableContainer sx={{ 
+              maxHeight: "calc(100vh - 280px)",
+              msOverflowStyle: "none",
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" }
+          }}>
+              <Table stickyHeader>
+                  <TableHead>
+                      <TableRow>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Product Asset Identity</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Variant Mapping</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Dispatch Quantity</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Net Weight Protocol</TableCell>
+                      </TableRow>
+                  </TableHead>
+                  <TableBody>
+                      {filteredSales.length === 0 && !loading ? (
+                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "600" }}>Zero sales velocity detected for current interval.</TableCell></TableRow>
+                      ) : (
+                          filteredSales.map((item, index) => (
+                              <TableRow key={item.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
+                                  <TableCell sx={{ color: "#1b2559", fontWeight: "800", pl: 4 }}>#{index + 1}</TableCell>
+                                  <TableCell>
+                                      <Stack direction="row" spacing={1.5} alignItems="center">
+                                          <Box sx={{ p: 1, borderRadius: "10px", bgcolor: "rgba(67, 24, 255, 0.05)" }}>
+                                              <Inventory2Icon sx={{ color: "#4318ff", fontSize: 18 }} />
+                                          </Box>
+                                          <Typography variant="body2" fontWeight="800" color="#1b2559">{item.productName}</Typography>
+                                      </Stack>
+                                  </TableCell>
+                                  <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>{item.variantSize}</TableCell>
+                                  <TableCell>
+                                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                          <Typography variant="body2" fontWeight="900" color="#4318ff">{item.quantity}</Typography>
+                                          <Typography variant="caption" color="#a3aed0" fontWeight="800">UNITS</Typography>
+                                      </Box>
+                                  </TableCell>
+                                  <TableCell align="right" sx={{ pr: 3, color: "#a3aed0", fontWeight: "800" }}>
+                                      {item.totalWeight}
+                                  </TableCell>
+                              </TableRow>
+                          ))
+                      )}
+                  </TableBody>
+              </Table>
+          </TableContainer>
       </Paper>
+      <style>
+          {`
+          @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+          }
+          .spin-animation {
+              animation: spin 1s linear infinite;
+          }
+          `}
+      </style>
     </Box>
   );
 };

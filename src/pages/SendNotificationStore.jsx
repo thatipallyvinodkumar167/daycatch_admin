@@ -11,13 +11,20 @@ import {
   FormControl,
   Select,
   Snackbar,
-  Alert
+  Alert,
+  IconButton,
+  Tooltip,
+  Divider,
+  Fade,
+  Chip
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import ImageIcon from "@mui/icons-material/Image";
 import CloseIcon from "@mui/icons-material/Close";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import TerminalIcon from "@mui/icons-material/Terminal";
 import { genericApi } from "../api/genericApi";
 
 const SendNotificationStore = () => {
@@ -42,7 +49,7 @@ const SendNotificationStore = () => {
 
     const maxSize = 1000 * 1024; // 1000 KB
     if (file.size > maxSize) {
-      setSnackbar({ open: true, message: "Image size exceeds 1000 KB. Please choose a smaller file.", severity: "error" });
+      setSnackbar({ open: true, message: "Memorandum asset exceeds 1000 KB threshold.", severity: "error" });
       e.target.value = "";
       return;
     }
@@ -62,7 +69,7 @@ const SendNotificationStore = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.message) {
-      setSnackbar({ open: true, message: "Title and Message are required.", severity: "error" });
+      setSnackbar({ open: true, message: "Memorandum Headline and Content manifest are required.", severity: "error" });
       return;
     }
 
@@ -72,12 +79,12 @@ const SendNotificationStore = () => {
         ...formData,
         image: imageFile ? imageFile.name : null,
       });
-      setSnackbar({ open: true, message: "Notification sent to stores successfully!", severity: "success" });
+      setSnackbar({ open: true, message: "Internal Bulletin dispatched to partners successfully!", severity: "success" });
       setFormData({ selectStores: "all", title: "", message: "" });
       removeImage();
     } catch (error) {
       console.error("Error sending store notification:", error);
-      setSnackbar({ open: true, message: "Failed to send notification.", severity: "error" });
+      setSnackbar({ open: true, message: "Transmission failure identified.", severity: "error" });
     } finally {
       setIsSubmitting(false);
     }
@@ -86,136 +93,144 @@ const SendNotificationStore = () => {
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
-      {/* Page Heading */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="700" color="#2b3674">
-          Hi, Day Catch Super Admin Panel.
-        </Typography>
-        <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-          Send internal push notifications and alerts to store owners.
-        </Typography>
+      {/* Premium Header Container */}
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box>
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Merchant Bulletin HQ
+            </Typography>
+            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+                Compose internal memorandums and operational bulletins for the partner gateway.
+            </Typography>
+        </Box>
+        <Stack direction="row" spacing={2} alignItems="center">
+            <Box sx={{ px: 2, py: 1, borderRadius: "12px", bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
+                <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ display: "block", lineHeight: 1 }}>GATEWAY</Typography>
+                <Typography variant="subtitle2" fontWeight="800" color="#4318ff">B2B-SECURE</Typography>
+            </Box>
+        </Stack>
       </Box>
 
       <Grid container spacing={4}>
+        
+        {/* Left Column: Bulletin Composition Card (Dual Module Structure) */}
         <Grid item xs={12} md={7}>
-            <Paper sx={{ p: 4, borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-                <Typography variant="h6" fontWeight="700" color="#1b2559" sx={{ mb: 3 }}>
-                    Notification to Store
-                </Typography>
+            <Paper sx={{ p: 4, borderRadius: "28px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", bgcolor: "#fff" }}>
+                <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
+                    <Box sx={{ p: 1, borderRadius: "12px", bgcolor: "rgba(67, 24, 255, 0.05)" }}>
+                        <TerminalIcon sx={{ color: "#4318ff" }} />
+                    </Box>
+                    <Typography variant="h6" fontWeight="800" color="#1b2559">
+                        Draft Memorandum
+                    </Typography>
+                </Stack>
 
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={3}>
                         
-                        {/* Select Stores */}
+                        {/* Select Target Cluster */}
                         <Box>
-                            <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                                Select Stores
+                            <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
+                                Target Merchant Cluster
                             </Typography>
                             <FormControl fullWidth>
                                 <Select
                                     name="selectStores"
                                     value={formData.selectStores}
                                     onChange={handleChange}
-                                    sx={{ borderRadius: "10px" }}
+                                    sx={{ 
+                                        borderRadius: "16px", 
+                                        bgcolor: "#fafbfc",
+                                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e5f2" }
+                                    }}
                                 >
-                                    <MenuItem value="all">All Stores</MenuItem>
-                                    <MenuItem value="active">Active Stores Only</MenuItem>
-                                    <MenuItem value="pending">Pending Approval Stores</MenuItem>
+                                    <MenuItem value="all">Global Partner Fleet</MenuItem>
+                                    <MenuItem value="active">Active High-Velocity Stores</MenuItem>
+                                    <MenuItem value="pending">Awaiting Verification Hub</MenuItem>
                                 </Select>
                             </FormControl>
                         </Box>
 
                         {/* Title */}
                         <Box>
-                            <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                                Title
+                            <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
+                                Bulletin Headline
                             </Typography>
                             <TextField
                                 fullWidth
                                 name="title"
-                                placeholder="e.g. System Maintenance Update"
+                                placeholder="Enter memorandum subject..."
                                 value={formData.title}
                                 onChange={handleChange}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
                             />
                         </Box>
 
-                        {/* Message */}
+                        {/* Message Manifest */}
                         <Box>
-                            <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                                Message
+                            <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
+                                Detailed Memorandum Manifest
                             </Typography>
                             <TextField
                                 fullWidth
                                 multiline
-                                rows={4}
+                                rows={5}
                                 name="message"
-                                placeholder="Enter the detailed instruction or update for store owners..."
+                                placeholder="Formal bulletin content or policy update..."
                                 value={formData.message}
                                 onChange={handleChange}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
                             />
                         </Box>
 
-                        {/* Image Upload */}
+                        {/* Visual Documentation Protocol */}
                         <Box>
-                          <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                            Image{" "}
-                            <Typography component="span" variant="caption" color="textSecondary">
-                              (Max. Size 1000 KB)
-                            </Typography>
+                          <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
+                            Documentation Asset (Optional)
                           </Typography>
 
                           <Box
                             sx={{
-                              border: "2px dashed #d0d7f0",
-                              borderRadius: "12px",
-                              p: 2.5,
+                              border: "2px dashed #e0e5f2",
+                              borderRadius: "20px",
+                              p: 3,
                               display: "flex",
                               alignItems: "center",
-                              gap: 2,
-                              backgroundColor: "#f8f9ff",
+                              gap: 2.5,
+                              backgroundColor: "#fafbfc",
                               cursor: "pointer",
-                              "&:hover": { borderColor: "#2d60ff", backgroundColor: "#f0f4ff" },
-                              transition: "all 0.2s ease",
+                              "&:hover": { borderColor: "#4318ff", backgroundColor: "rgba(67, 24, 255, 0.02)" },
+                              transition: "0.2s",
                             }}
                             onClick={() => fileInputRef.current?.click()}
                           >
                             <Box
                               sx={{
                                 p: 1.5,
-                                borderRadius: "10px",
-                                backgroundColor: "#e0e7ff",
+                                borderRadius: "14px",
+                                backgroundColor: "rgba(67, 24, 255, 0.05)",
                                 display: "flex",
                                 alignItems: "center",
                               }}
                             >
-                              <ImageIcon sx={{ color: "#2d60ff", fontSize: "24px" }} />
+                              <PhotoCameraIcon sx={{ color: "#4318ff", fontSize: "21px" }} />
                             </Box>
                             <Box sx={{ flex: 1 }}>
-                              <Typography variant="body2" fontWeight="600" color="#1b2559">
-                                {imageFile ? imageFile.name : "No file chosen"}
+                              <Typography variant="body2" fontWeight="800" color="#1b2559">
+                                {imageFile ? imageFile.name : "Select Asset Node"}
                               </Typography>
-                              <Typography variant="caption" color="textSecondary">
+                              <Typography variant="caption" color="#a3aed0" fontWeight="600">
                                 {imageFile
                                   ? `${(imageFile.size / 1024).toFixed(1)} KB`
-                                  : "Click to choose file · PNG, JPG, WEBP"}
+                                  : "PNG, JPG • MAX 1MB BUFFER"}
                               </Typography>
                             </Box>
                             <Button
-                              variant="outlined"
+                              variant="text"
                               size="small"
-                              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                              sx={{
-                                borderRadius: "8px",
-                                textTransform: "none",
-                                borderColor: "#2d60ff",
-                                color: "#2d60ff",
-                                fontWeight: "600",
-                                whiteSpace: "nowrap",
-                              }}
+                              sx={{ borderRadius: "10px", fontWeight: "800", color: "#4318ff", textTransform: "none" }}
                             >
-                              Choose File
+                              Select
                             </Button>
                             <input
                               type="file"
@@ -226,117 +241,155 @@ const SendNotificationStore = () => {
                             />
                           </Box>
 
-                          {/* Image Preview */}
+                          {/* Image Preview Overlay */}
                           {imagePreview && (
-                            <Box sx={{ mt: 2, position: "relative", width: "fit-content" }}>
-                              <Box
-                                component="img"
-                                src={imagePreview}
-                                sx={{
-                                  height: 80,
-                                  borderRadius: "10px",
-                                  border: "1px solid #e0e5f2",
-                                  objectFit: "cover",
-                                }}
-                              />
-                              <Box
-                                onClick={removeImage}
-                                sx={{
-                                  position: "absolute",
-                                  top: -8,
-                                  right: -8,
-                                  backgroundColor: "white",
-                                  borderRadius: "50%",
-                                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                                  cursor: "pointer",
-                                  p: 0.5,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  "&:hover": { backgroundColor: "#fff1f0", color: "#ff4d4f" },
-                                }}
-                              >
-                                <CloseIcon sx={{ fontSize: "16px" }} />
+                            <Fade in={true}>
+                              <Box sx={{ mt: 2, position: "relative", width: "fit-content" }}>
+                                <Box
+                                  component="img"
+                                  src={imagePreview}
+                                  sx={{
+                                    height: 90,
+                                    borderRadius: "16px",
+                                    border: "2px solid #fff",
+                                    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+                                    objectFit: "cover",
+                                  }}
+                                />
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => { e.stopPropagation(); removeImage(); }}
+                                  sx={{
+                                    position: "absolute",
+                                    top: -8,
+                                    right: -8,
+                                    backgroundColor: "#ff4d49",
+                                    color: "#fff",
+                                    "&:hover": { backgroundColor: "#d32f2f" }
+                                  }}
+                                >
+                                  <CloseIcon sx={{ fontSize: "14px" }} />
+                                </IconButton>
                               </Box>
-                            </Box>
+                            </Fade>
                           )}
                         </Box>
 
+                        {/* Dispatch Inbound */}
                         <Button 
                             type="submit"
                             variant="contained" 
                             disabled={isSubmitting}
                             startIcon={<SendIcon />}
                             sx={{ 
-                                backgroundColor: "#2d60ff", 
-                                "&:hover": { backgroundColor: "#2046cc" },
-                                borderRadius: "10px",
-                                py: 1.5,
+                                backgroundColor: "#4318ff", 
+                                "&:hover": { backgroundColor: "#3310cc" },
+                                borderRadius: "18px",
+                                py: 2,
                                 textTransform: "none",
-                                fontWeight: "700",
+                                fontWeight: "800",
                                 fontSize: "16px",
-                                boxShadow: "0 4px 12px rgba(45, 96, 255, 0.3)"
+                                boxShadow: "0 10px 25px rgba(67, 24, 255, 0.25)"
                             }}
                         >
-                            {isSubmitting ? "Sending..." : "Notify Stores"}
+                            {isSubmitting ? "Initiating Transmission..." : "Notify Merchant Fleet"}
                         </Button>
                     </Stack>
                 </form>
             </Paper>
         </Grid>
 
+        {/* Right Column: Terminal Preview Panel */}
         <Grid item xs={12} md={5}>
-            <Paper sx={{ p: 4, borderRadius: "20px", backgroundColor: "#333", color: "#fff" }}>
-                <Typography variant="h6" fontWeight="700" sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}>
-                    <StorefrontIcon /> Store App Preview
+            <Box sx={{ position: "sticky", top: 20 }}>
+                <Typography variant="h6" fontWeight="800" color="#1b2559" sx={{ mb: 3, px: 1 }}>
+                    B2B Protocol Preview
                 </Typography>
                 
-                <Box sx={{ p: 3, backgroundColor: "#444", borderRadius: "15px", border: "1px solid #555" }}>
-                    {imagePreview && (
-                      <Box
-                        component="img"
-                        src={imagePreview}
-                        sx={{
-                          width: "100%",
-                          height: 120,
-                          objectFit: "cover",
-                          borderRadius: "10px",
-                          mb: 2
-                        }}
-                      />
-                    )}
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                        <CampaignIcon sx={{ color: "#2d60ff" }} />
-                        <Typography variant="caption" fontWeight="700">ADMIN UPDATE</Typography>
-                    </Stack>
-                    <Typography variant="body1" fontWeight="700" sx={{ mb: 1 }}>
-                        {formData.title || "Subject Title"}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", lineHeight: "1.6" }}>
-                        {formData.message || "The message content for the store manager will appear here..."}
-                    </Typography>
-                </Box>
+                <Paper sx={{ p: 4, borderRadius: "28px", backgroundColor: "#1b2559", color: "#fff", border: "1px solid #e0e5f2", overflow: "hidden", position: "relative" }}>
+                    <Box sx={{ position: "absolute", bottom: -50, right: -20, opacity: 0.05 }}>
+                        <StorefrontIcon sx={{ fontSize: "280px", color: "#fff" }} />
+                    </Box>
 
-                <Box sx={{ mt: 4 }}>
-                    <Typography variant="caption" color="rgba(255,255,255,0.5)">
-                        * This notification will be delivered to the primary contact of the store via their management dashboard and push notification.
-                    </Typography>
-                </Box>
-            </Paper>
+                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 4, position: "relative", zIndex: 1 }}>
+                        <Box sx={{ p: 1, borderRadius: "12px", bgcolor: "rgba(255, 255, 255, 0.1)" }}>
+                            <StorefrontIcon sx={{ color: "#fff" }} />
+                        </Box>
+                        <Box>
+                            <Typography variant="subtitle2" fontWeight="900" sx={{ color: "#fff" }}>MERCHANT INTERFACE</Typography>
+                            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)", fontWeight: "700" }}>PROTOCOL: INTERNAL-SEC-9</Typography>
+                        </Box>
+                    </Stack>
+                    
+                    <Box sx={{ 
+                        backgroundColor: "rgba(255,255,255,0.05)", 
+                        borderRadius: "22px", 
+                        p: 3, 
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        position: "relative",
+                        zIndex: 1
+                    }}>
+                        <Fade in={true}>
+                            <Box>
+                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+                                    <CampaignIcon sx={{ color: "#4318ff", fontSize: "20px" }} />
+                                    <Typography variant="caption" fontWeight="900" sx={{ color: "#4318ff", letterSpacing: "2px" }}>ADMIN BULLET-DISPATCH</Typography>
+                                </Stack>
+                                
+                                {imagePreview && (
+                                <Box
+                                    component="img"
+                                    src={imagePreview}
+                                    sx={{
+                                    width: "100%",
+                                    height: 140,
+                                    objectFit: "cover",
+                                    borderRadius: "14px",
+                                    mb: 2,
+                                    border: "1px solid rgba(255,255,255,0.1)"
+                                    }}
+                                />
+                                )}
+                                
+                                <Typography variant="h6" fontWeight="800" sx={{ mb: 1, lineHeight: 1.2 }}>
+                                    {formData.title || "Subject Memorandum"}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", lineHeight: "1.7", fontSize: "13px", fontWeight: "500" }}>
+                                    {formData.message || "Enter internal memorandum content to simulate the Merchant Interface experience..."}
+                                </Typography>
+                                
+                                <Divider sx={{ my: 3, opacity: 0.1, px: 2 }} />
+                                
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.3)", fontWeight: "700" }}>TARGET: {formData.selectStores.toUpperCase()}</Typography>
+                                    <Chip label="ACK REQUIRED" size="small" sx={{ height: 20, fontSize: "9px", fontWeight: "900", bgcolor: "rgba(67, 24, 255, 0.2)", color: "#fff", border: "1px solid #4318ff" }} />
+                                </Stack>
+                            </Box>
+                        </Fade>
+                    </Box>
+
+                    <Box sx={{ mt: 4, textAlign: "center", position: "relative", zIndex: 1 }}>
+                        <Typography variant="caption" color="rgba(255,255,255,0.4)" fontWeight="600">
+                            * Internal bulletins are cryptographically signed for partner verification.
+                        </Typography>
+                    </Box>
+                </Paper>
+            </Box>
         </Grid>
       </Grid>
       
+      {/* Alert System */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={6000}
+        autoHideDuration={4000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
         <Alert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
           variant="filled"
-          sx={{ width: "100%", borderRadius: "10px" }}
+          sx={{ width: "100%", borderRadius: "14px", fontWeight: "700", bgcolor: snackbar.severity === "success" ? "#00d26a" : "#ff4d49" }}
         >
           {snackbar.message}
         </Alert>

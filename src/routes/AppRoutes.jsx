@@ -30,6 +30,7 @@ import DayWiseOrders from "../pages/DayWiseOrders";
 import MissedOrders from "../pages/MissedOrders";
 
 import StoresList from "../pages/StoresList";
+import AddStore from "../pages/AddStore";
 import StoreEarningPaments from "../pages/StoreEarningPaments";
 import StoreApproval from "../pages/StoreApproval";
 import Cities from "../pages/Cties";
@@ -100,6 +101,7 @@ import AddDeliveryBoyCallbackRequest from "../pages/AddDeliveryBoyCallbackReques
 import EditDeliveryBoyCallbackRequest from "../pages/EditDeliveryBoyCallbackRequest";
 import SendNotificationUsers from "../pages/SendNotificationUsers";
 import ProfilePage from "../pages/Profile";
+import OrderDetails from "../pages/OrderDetails";
 
 
 
@@ -174,7 +176,10 @@ const AppRoutes = () => {
      <Route path="trending-search" element={<TrendingSearch />}/>
        <Route path="bulk-upload-products" element={<BulkUpload />}/>
 
-        
+        {/* Store Management */}
+        <Route path="stores" element={<StoresList />}/>
+        <Route path="stores/add" element={<AddStore />}/>
+
         {/*Payout  */}
         <Route path="payout-requests" element={<PayoutRequests />}/>
         <Route path="payout-requests/process/:id" element={<PayoutProcess />}/>
@@ -228,6 +233,7 @@ const AppRoutes = () => {
         {/* Order Management */}
 
         <Route path="all-orders" element={<AllOrders />} />
+        <Route path="all-orders/details/:id" element={<OrderDetails />} />
         <Route path="pending-orders" element={<PendingOrders />} />
         <Route path="cancelled-orders" element={<CancelledOrders />} />
         <Route path="ongoing-orders" element={<OngoingOrders />} />

@@ -1,24 +1,39 @@
-import { AppBar, Toolbar, IconButton, Button, Box, Menu, MenuItem, Avatar } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
+import { 
+  AppBar, 
+  Toolbar, 
+  IconButton, 
+  Button, 
+  Box, 
+  Menu, 
+  MenuItem, 
+  Avatar, 
+  Typography, 
+  alpha, 
+  useTheme,
+  Divider,
+  Stack
+} from "@mui/material";
+import {
+  Menu as MenuIcon,
+  NotificationsNone as NotificationsIcon,
+  SettingsOutlined as SettingsIcon,
+  LogoutOutlined as LogoutIcon,
+  AccountCircleOutlined as ProfileIcon,
+  KeyboardArrowDown as ExpandIcon
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import logo from "../assets/logo.png";
 
 function Topbar({ toggleSidebar }) {
-
   const navigate = useNavigate();
+  const theme = useTheme();
   const isAuth = localStorage.getItem("token");
-
   const [anchorEl, setAnchorEl] = useState(null);
+  const indigoPrimary = "#4318ff";
 
-  const handleProfileClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
+  const handleProfileClick = (event) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
@@ -28,79 +43,130 @@ function Topbar({ toggleSidebar }) {
     <AppBar
       position="fixed"
       sx={{
-        backgroundColor: "#f2f2f2",
-        color: "#000",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-        zIndex: (theme) => theme.zIndex.drawer + 1
+        backgroundColor: "rgba(255, 255, 255, 0.7)",
+        backdropFilter: "blur(20px)",
+        color: "#1b2559",
+        boxShadow: "none",
+        borderBottom: "1px solid",
+        borderColor: alpha("#e0e5f2", 0.5),
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-
-        {/* LEFT SIDE */}
+      <Toolbar sx={{ display: "flex", justifyContent: "space-between", px: { xs: 2, md: 4 }, minHeight: "70px" }}>
+        
+        {/* LOGO & COMMAND TOGGLE */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
-
-          <IconButton edge="start" onClick={toggleSidebar} sx={{ mr: 2 }}>
-            <MenuIcon />
+          <IconButton 
+            edge="start" 
+            onClick={toggleSidebar} 
+            sx={{ 
+                mr: 2, 
+                color: "#707eae",
+                "&:hover": { color: indigoPrimary, bgcolor: alpha(indigoPrimary, 0.05) } 
+            }}
+          >
+            <MenuIcon sx={{ fontSize: 24 }} />
           </IconButton>
-<Box
-  sx={{
-    display: "flex",
-    alignItems: "center",
-    backgroundColor: "#f2f2f2",
-    p: 0.5,
-    borderRadius: "4px",
-    height: "auto",
-    width: "auto"
-  }}
->
-  <img
-    src={logo}
-    alt="logo"
-    style={{
-      height: "30px",
-      width: "auto",
-      objectFit: "contain"
-    }}
-  />
-</Box>
-
+          
+          <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => navigate("/dashboard")}>
+            <Box sx={{ height: "30px", mr: 1.5, display: "flex", alignItems: "center" }}>
+                <img src={logo} alt="Day Catch" style={{ height: "100%", width: "auto" }} />
+            </Box>
+           
+          </Box>
         </Box>
 
-        {/* RIGHT SIDE */}
+        <Stack direction="row" spacing={1.5} alignItems="center">
 
-        {!isAuth ? (
-
-          <Button
-            variant="outlined"
-            onClick={() => navigate("/admin/login")}
+          <IconButton 
+            onClick={() => navigate("/settings")}
+            sx={{ color: "#707eae", bgcolor: alpha("#f4f7fe", 0.5), "&:hover": { bgcolor: alpha("#e0e5f2", 0.8), color: indigoPrimary } }}
           >
-            Login
-          </Button>
+            <SettingsIcon sx={{ fontSize: 22 }} />
+          </IconButton>
 
-        ) : (
+          <Divider orientation="vertical" flexItem sx={{ mx: 1, borderColor: "#e0e5f2", height: "24px", my: "auto" }} />
 
-          <>
-            <IconButton onClick={handleProfileClick}>
-              <Avatar sx={{ width: 32, height: 32 }} />
-            </IconButton>
-
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleClose}
+          {!isAuth ? (
+            <Button
+              variant="contained"
+              disableElevation
+              onClick={() => navigate("/admin/login")}
+              sx={{ 
+                bgcolor: indigoPrimary, 
+                borderRadius: "12px", 
+                fontWeight: 900, 
+                px: 3,
+                textTransform: "none",
+                "&:hover": { bgcolor: "#3311db" }
+              }}
             >
-              <MenuItem onClick={() => navigate("/profile")}>
-                Profile
-              </MenuItem>
+              Login
+            </Button>
+          ) : (
+            <Box 
+                onClick={handleProfileClick}
+                sx={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    p: 0.5, 
+                    pr: 1.5,
+                    borderRadius: "12px", 
+                    cursor: "pointer",
+                    transition: "0.2s",
+                    "&:hover": { bgcolor: alpha(indigoPrimary, 0.05) }
+                }}
+            >
+                <Avatar 
+                    sx={{ 
+                        width: 38, 
+                        height: 38, 
+                        bgcolor: indigoPrimary,
+                        fontWeight: 900,
+                        fontSize: "14px",
+                        boxShadow: `0 4px 12px ${alpha(indigoPrimary, 0.2)}`
+                    }}
+                >
+                    DC
+                </Avatar>
+                <Box sx={{ ml: 1.5, display: { xs: "none", md: "block" } }}>
+                    <Typography variant="caption" fontWeight="900" color="#1b2559" sx={{ display: "block", lineHeight: 1 }}>Administrator</Typography>
+                    <Typography variant="caption" fontWeight="700" color="#707eae" sx={{ fontSize: "10px" }}>Management Node</Typography>
+                </Box>
+                <ExpandIcon sx={{ ml: 1, fontSize: 18, color: "#707eae" }} />
+            </Box>
+          )}
 
-              <MenuItem onClick={handleLogout}>
-                Logout
-              </MenuItem>
-            </Menu>
-          </>
-
-        )}
-
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleClose}
+            disableScrollLock
+            PaperProps={{
+                sx: { 
+                    mt: 1.5, 
+                    borderRadius: "18px", 
+                    minWidth: "200px", 
+                    p: 1, 
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.08)",
+                    border: "1px solid #e0e5f2"
+                }
+            }}
+          >
+            <Box sx={{ px: 2, py: 1.5 }}>
+                <Typography variant="subtitle2" fontWeight="900" color="#1b2559">Day Catch Admin</Typography>
+                <Typography variant="caption" fontWeight="700" color="#707eae">admin@daycatch.in</Typography>
+            </Box>
+            <Divider sx={{ my: 1, borderColor: "#f4f7fe" }} />
+            <MenuItem onClick={() => { handleClose(); navigate("/profile"); }} sx={{ borderRadius: "10px", py: 1.2, fontWeight: 700, "&:hover": { bgcolor: alpha(indigoPrimary, 0.05), color: indigoPrimary } }}>
+                <ProfileIcon sx={{ mr: 1.5, fontSize: 18 }} /> Profile Sync
+            </MenuItem>
+            <MenuItem onClick={handleLogout} sx={{ borderRadius: "10px", py: 1.2, fontWeight: 700, color: "#ff4d49", "&:hover": { bgcolor: alpha("#ff4d49", 0.05) } }}>
+                <LogoutIcon sx={{ mr: 1.5, fontSize: 18 }} /> Logout
+            </MenuItem>
+          </Menu>
+        </Stack>
       </Toolbar>
     </AppBar>
   );

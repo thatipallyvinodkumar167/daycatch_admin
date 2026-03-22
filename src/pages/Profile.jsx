@@ -15,16 +15,25 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
+  alpha,
+  useTheme
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import SaveIcon from "@mui/icons-material/Save";
-import CancelIcon from "@mui/icons-material/Cancel";
-import LockResetIcon from "@mui/icons-material/LockReset";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import PersonIcon from "@mui/icons-material/Person";
-import EmailIcon from "@mui/icons-material/Email";
-import ShieldIcon from "@mui/icons-material/Shield";
+import {
+  Edit as EditIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+  LockReset as LockResetIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Shield as ShieldIcon,
+  ChevronRight as ChevronRightIcon,
+  Badge as BadgeIcon,
+  AdminPanelSettings as AdminPanelIcon,
+  VpnKey as VpnKeyIcon,
+  Logout as LogoutIcon
+} from "@mui/icons-material";
 import axios from "axios";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5001/api/v1";
@@ -36,569 +45,184 @@ const ProfilePage = () => {
   const [showOldPw, setShowOldPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
+  const indigoPrimary = "#4318ff";
 
   const [profile, setProfile] = useState({
     name: localStorage.getItem("user_name") || "Admin",
-    email: localStorage.getItem("user_email") || "",
+    email: localStorage.getItem("user_email") || "admin@daycatch.in",
     role: localStorage.getItem("user_role") || "Super Admin",
   });
 
   const [editForm, setEditForm] = useState({ ...profile });
+  const [pwForm, setPwForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
 
-  const [pwForm, setPwForm] = useState({
-    oldPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
-  // Avatar initials
   const getInitials = (name) => {
     if (!name) return "A";
     const parts = name.trim().split(" ");
-    return parts.length >= 2
-      ? parts[0][0].toUpperCase() + parts[1][0].toUpperCase()
-      : parts[0][0].toUpperCase();
+    return parts.length >= 2 ? parts[0][0].toUpperCase() + parts[1][0].toUpperCase() : parts[0][0].toUpperCase();
   };
 
-  const getRoleBadgeColor = (role) => {
-    if (role === "Super Admin") return { bg: "#fff0f0", color: "#E53935", border: "#ffcdd2" };
-    if (role === "Manager") return { bg: "#e8f5e9", color: "#2e7d32", border: "#c8e6c9" };
-    return { bg: "#e3f2fd", color: "#1565c0", border: "#bbdefb" };
-  };
-
-  const roleBadge = getRoleBadgeColor(profile.role);
-
-  const showSnack = (msg, severity = "success") =>
-    setSnack({ open: true, msg, severity });
+  const showSnack = (msg, severity = "success") => setSnack({ open: true, msg, severity });
 
   const handleSaveProfile = async () => {
     if (!editForm.name.trim()) return showSnack("Name cannot be empty.", "error");
     setLoading(true);
     try {
-      // Save to localStorage immediately (optimistic update)
       localStorage.setItem("user_name", editForm.name.trim());
       setProfile((prev) => ({ ...prev, name: editForm.name.trim() }));
       setEditing(false);
-      showSnack("Profile updated successfully!");
+      showSnack("Identity nodes updated successfully!");
     } catch (err) {
-      showSnack("Failed to update profile.", "error");
+      showSnack("Failed to update identity record.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleChangePassword = async () => {
-    if (!pwForm.oldPassword || !pwForm.newPassword || !pwForm.confirmPassword) {
-      return showSnack("All password fields are required.", "error");
-    }
-    if (pwForm.newPassword.length < 8) {
-      return showSnack("New password must be at least 8 characters.", "error");
-    }
-    if (pwForm.newPassword !== pwForm.confirmPassword) {
-      return showSnack("New passwords do not match.", "error");
-    }
+    if (!pwForm.oldPassword || !pwForm.newPassword || !pwForm.confirmPassword) return showSnack("Security fields required.", "error");
+    if (pwForm.newPassword.length < 8) return showSnack("Key must be at least 8 units.", "error");
+    if (pwForm.newPassword !== pwForm.confirmPassword) return showSnack("Key mismatch detected.", "error");
 
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.patch(
-        `${API_BASE}/auth/change-password`,
-        {
-          oldPassword: pwForm.oldPassword,
-          newPassword: pwForm.newPassword,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      showSnack("Password changed successfully!");
+      await axios.patch(`${API_BASE}/auth/change-password`, { oldPassword: pwForm.oldPassword, newPassword: pwForm.newPassword }, { headers: { Authorization: `Bearer ${token}` } });
+      showSnack("Security protocol updated!");
       setPwForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
       setChangingPassword(false);
     } catch (err) {
-      const msg = err.response?.data?.error || "Failed to change password. Check your old password.";
-      showSnack(msg, "error");
+      showSnack(err.response?.data?.error || "Failed to update security protocol.", "error");
     } finally {
       setLoading(false);
     }
   };
 
+  const SectionTitle = ({ children, subtitle }) => (
+    <Box sx={{ mb: 2 }}>
+      <Typography variant="subtitle2" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-0.5px" }}>{children}</Typography>
+      {subtitle && <Typography variant="caption" color="#a3aed0" fontWeight="700" sx={{ display: "block", fontSize: "10px" }}>{subtitle}</Typography>}
+      <Divider sx={{ mt: 1, borderColor: "#f1f4f9" }} />
+    </Box>
+  );
+
+  const StyledTextField = ({ label, value, onChange, type = "text", placeholder, disabled = false, endAdornment }) => (
+    <Box sx={{ mb: 2 }}>
+        <Typography variant="caption" fontWeight="900" color="#1b2559" sx={{ mb: 0.5, display: "block", textTransform: "uppercase", fontSize: "9px" }}>{label}</Typography>
+        <TextField fullWidth size="small" type={type} placeholder={placeholder} value={value} onChange={onChange} disabled={disabled}
+            InputProps={{ endAdornment, sx: { borderRadius: "10px", backgroundColor: disabled ? "#f4f7fe" : "#fcfdff", fontSize: "12px", fontWeight: "600" } }}
+            sx={{ "& .MuiOutlinedInput-root": { "& fieldset": { borderColor: "#e0e5f2" } } }} />
+    </Box>
+  );
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
-        p: { xs: 2, md: 4 },
-      }}
-    >
-      {/* Page Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={800} color="#1a1a2e">
-          My Profile
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Manage your personal information and account security
-        </Typography>
+    <Box sx={{ p: { xs: 2, md: 4 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box><Typography variant="h6" fontWeight="900" color="#1b2559">Identity Hub</Typography><Typography variant="caption" color="#a3aed0" fontWeight="800">Operational Profile Synchronizer</Typography></Box>
       </Box>
 
       <Grid container spacing={3}>
-        {/* LEFT COLUMN — Identity Card */}
-        <Grid item xs={12} md={4}>
-          <Paper
-            sx={{
-              borderRadius: "24px",
-              overflow: "hidden",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-              position: "sticky",
-              top: "80px",
-            }}
-          >
-            {/* Banner */}
-            <Box
-              sx={{
-                height: 120,
-                background: "linear-gradient(135deg, #E53935 0%, #b71c1c 100%)",
-                position: "relative",
-              }}
-            />
-
-            {/* Avatar */}
-            <Box sx={{ px: 3, pb: 3, mt: -6 }}>
-              <Avatar
-                sx={{
-                  width: 96,
-                  height: 96,
-                  fontSize: "2rem",
-                  fontWeight: 800,
-                  background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
-                  border: "4px solid #fff",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-                  mb: 2,
-                }}
-              >
+        {/* IDENTITY CARD */}
+        <Grid item xs={12} md={3.2}>
+          <Paper sx={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", position: "sticky", top: "80px", bgcolor: "#fff" }}>
+            <Box sx={{ height: 100, background: `linear-gradient(135deg, ${indigoPrimary} 0%, #3311db 100%)`, position: "relative" }} />
+            <Box sx={{ px: 3, pb: 4, mt: -6, textAlign: "center" }}>
+              <Avatar sx={{ width: 84, height: 84, fontSize: "1.8rem", fontWeight: 800, bgcolor: "#1b2559", border: "4px solid #fff", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", mb: 2, mx: "auto" }}>
                 {getInitials(profile.name)}
               </Avatar>
-
-              <Typography variant="h5" fontWeight={800} color="#1a1a2e">
-                {profile.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {profile.email}
-              </Typography>
-
-              <Chip
-                label={profile.role}
-                size="small"
-                sx={{
-                  backgroundColor: roleBadge.bg,
-                  color: roleBadge.color,
-                  border: `1px solid ${roleBadge.border}`,
-                  fontWeight: 700,
-                  fontSize: "0.75rem",
-                  px: 1,
-                }}
-              />
-
-              <Divider sx={{ my: 3 }} />
-
-              {/* Info rows */}
-              {[
-                { icon: <PersonIcon fontSize="small" />, label: "Full Name", value: profile.name },
-                { icon: <EmailIcon fontSize="small" />, label: "Email", value: profile.email },
-                { icon: <ShieldIcon fontSize="small" />, label: "Role", value: profile.role },
-              ].map((item) => (
-                <Box
-                  key={item.label}
-                  sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, mb: 2 }}
-                >
-                  <Box
-                    sx={{
-                      p: 1,
-                      borderRadius: "10px",
-                      backgroundColor: "#fff0f0",
-                      color: "#E53935",
-                      display: "flex",
-                      mt: 0.25,
-                    }}
-                  >
-                    {item.icon}
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                      {item.label}
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600} color="#1a1a2e">
-                      {item.value}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
+              <Typography variant="body1" fontWeight="900" color="#1b2559" sx={{ mb: 0.5 }}>{profile.name}</Typography>
+              <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ display: "block", mb: 2 }}>{profile.email}</Typography>
+              <Chip label={profile.role} size="small" sx={{ bgcolor: alpha(indigoPrimary, 0.1), color: indigoPrimary, fontWeight: "900", border: `1px solid ${alpha(indigoPrimary, 0.2)}`, fontSize: "9px" }} />
+              
+              <Divider sx={{ my: 3, borderColor: "#f1f4f9" }} />
+              
+              <Stack spacing={2}>
+                  {[
+                      { icon: <BadgeIcon fontSize="small" />, label: "Full Name", value: profile.name },
+                      { icon: <EmailIcon fontSize="small" />, label: "Email Node", value: profile.email },
+                      { icon: <AdminPanelIcon fontSize="small" />, label: "Role Authority", value: profile.role },
+                  ].map((item) => (
+                      <Box key={item.label} sx={{ display: "flex", alignItems: "center", gap: 1.5, textAlign: "left" }}>
+                          <Box sx={{ p: 1, borderRadius: "10px", bgcolor: "#f4f7fe", color: indigoPrimary, display: "flex" }}>{item.icon}</Box>
+                          <Box><Typography variant="caption" fontWeight="900" color="#1b2559" sx={{ display: "block", fontSize: "9px" }}>{item.label}</Typography><Typography variant="body2" fontWeight="700" color="#707eae" sx={{ fontSize: "11px" }}>{item.value}</Typography></Box>
+                      </Box>
+                  ))}
+              </Stack>
             </Box>
           </Paper>
         </Grid>
 
-        {/* RIGHT COLUMN — Edit Forms */}
-        <Grid item xs={12} md={8}>
+        {/* OPERATION NODES */}
+        <Grid item xs={12} md={8.8}>
           <Stack spacing={3}>
-            {/* === PERSONAL INFO === */}
-            <Paper sx={{ borderRadius: "20px", boxShadow: "0 8px 32px rgba(0,0,0,0.06)", overflow: "hidden" }}>
-              <Box
-                sx={{
-                  px: 3,
-                  py: 2.5,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  borderBottom: "1px solid #f1f1f1",
-                }}
-              >
-                <Box>
-                  <Typography variant="h6" fontWeight={700} color="#1a1a2e">
-                    Personal Information
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Update your name and public details
-                  </Typography>
-                </Box>
+            {/* PERSONAL PROTOCOL */}
+            <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", bgcolor: "#fff", boxShadow: "none" }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+                <SectionTitle subtitle="Manage core authentication markers.">Identity Markers</SectionTitle>
                 {!editing ? (
-                  <Button
-                    startIcon={<EditIcon />}
-                    variant="outlined"
-                    onClick={() => { setEditForm({ ...profile }); setEditing(true); }}
-                    sx={{
-                      borderColor: "#E53935",
-                      color: "#E53935",
-                      borderRadius: "10px",
-                      textTransform: "none",
-                      fontWeight: 600,
-                      "&:hover": { backgroundColor: "#fff0f0", borderColor: "#E53935" },
-                    }}
-                  >
-                    Edit Profile
-                  </Button>
+                  <Button variant="contained" startIcon={<EditIcon sx={{ fontSize: 16 }} />} onClick={() => { setEditForm({ ...profile }); setEditing(true); }} sx={{ bgcolor: indigoPrimary, borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px" }}>Edit Profile</Button>
                 ) : (
                   <Stack direction="row" spacing={1}>
-                    <Button
-                      startIcon={loading ? <CircularProgress size={14} /> : <SaveIcon />}
-                      variant="contained"
-                      onClick={handleSaveProfile}
-                      disabled={loading}
-                      sx={{
-                        backgroundColor: "#E53935",
-                        "&:hover": { backgroundColor: "#b71c1c" },
-                        borderRadius: "10px",
-                        textTransform: "none",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      startIcon={<CancelIcon />}
-                      variant="outlined"
-                      onClick={() => setEditing(false)}
-                      sx={{
-                        borderColor: "#ccc",
-                        color: "#666",
-                        borderRadius: "10px",
-                        textTransform: "none",
-                      }}
-                    >
-                      Cancel
-                    </Button>
+                    <Button variant="contained" startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <SaveIcon sx={{ fontSize: 16 }} />} onClick={handleSaveProfile} disabled={loading} sx={{ bgcolor: "#00d26a", borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px", "&:hover": { bgcolor: "#00b25a" } }}>Sync Changes</Button>
+                    <Button variant="outlined" startIcon={<CancelIcon sx={{ fontSize: 16 }} />} onClick={() => setEditing(false)} sx={{ borderColor: "#e0e5f2", color: "#707eae", borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px" }}>Cancel</Button>
                   </Stack>
                 )}
               </Box>
 
-              <Box sx={{ p: 3 }}>
-                <Grid container spacing={2.5}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" fontWeight={700} color="text.secondary">
-                      FULL NAME
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={editing ? editForm.name : profile.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      disabled={!editing}
-                      sx={{
-                        mt: 0.5,
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "10px",
-                          backgroundColor: editing ? "#fff" : "#fafafa",
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" fontWeight={700} color="text.secondary">
-                      EMAIL ADDRESS
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={profile.email}
-                      disabled
-                      sx={{
-                        mt: 0.5,
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "10px",
-                          backgroundColor: "#fafafa",
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" fontWeight={700} color="text.secondary">
-                      ROLE
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={profile.role}
-                      disabled
-                      sx={{
-                        mt: 0.5,
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "10px",
-                          backgroundColor: "#fafafa",
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" fontWeight={700} color="text.secondary">
-                      ACCOUNT TYPE
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value="Admin Panel"
-                      disabled
-                      sx={{
-                        mt: 0.5,
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "10px",
-                          backgroundColor: "#fafafa",
-                        },
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}><StyledTextField label="Full Identity Name" value={editing ? editForm.name : profile.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} disabled={!editing} /></Grid>
+                <Grid item xs={12} md={6}><StyledTextField label="Primary Email Node" value={profile.email} disabled /></Grid>
+                <Grid item xs={12} md={6}><StyledTextField label="Authority Role" value={profile.role} disabled /></Grid>
+                <Grid item xs={12} md={6}><StyledTextField label="Account Protocol" value="Management Console" disabled /></Grid>
+              </Grid>
             </Paper>
 
-            {/* === SECURITY — CHANGE PASSWORD === */}
-            <Paper sx={{ borderRadius: "20px", boxShadow: "0 8px 32px rgba(0,0,0,0.06)", overflow: "hidden" }}>
-              <Box
-                sx={{
-                  px: 3,
-                  py: 2.5,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  borderBottom: "1px solid #f1f1f1",
-                }}
-              >
-                <Box>
-                  <Typography variant="h6" fontWeight={700} color="#1a1a2e">
-                    Account Security
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Manage your password and login credentials
-                  </Typography>
-                </Box>
+            {/* SECURITY PROTOCOL */}
+            <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", bgcolor: "#fff", boxShadow: "none" }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+                <SectionTitle subtitle="Update encryption keys and credentials.">Security Keys</SectionTitle>
                 {!changingPassword ? (
-                  <Button
-                    startIcon={<LockResetIcon />}
-                    variant="outlined"
-                    onClick={() => setChangingPassword(true)}
-                    sx={{
-                      borderColor: "#7c3aed",
-                      color: "#7c3aed",
-                      borderRadius: "10px",
-                      textTransform: "none",
-                      fontWeight: 600,
-                      "&:hover": { backgroundColor: "#f3e8ff", borderColor: "#7c3aed" },
-                    }}
-                  >
-                    Change Password
-                  </Button>
+                  <Button variant="contained" startIcon={<LockResetIcon sx={{ fontSize: 16 }} />} onClick={() => setChangingPassword(true)} sx={{ bgcolor: "#111c44", borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px" }}>Update Key</Button>
                 ) : (
-                  <Button
-                    startIcon={<CancelIcon />}
-                    variant="outlined"
-                    onClick={() => { setChangingPassword(false); setPwForm({ oldPassword: "", newPassword: "", confirmPassword: "" }); }}
-                    sx={{ borderColor: "#ccc", color: "#666", borderRadius: "10px", textTransform: "none" }}
-                  >
-                    Cancel
-                  </Button>
+                  <Button variant="outlined" startIcon={<CancelIcon sx={{ fontSize: 16 }} />} onClick={() => { setChangingPassword(false); setPwForm({ oldPassword: "", newPassword: "", confirmPassword: "" }); }} sx={{ borderColor: "#e0e5f2", color: "#707eae", borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px" }}>Cancel Sync</Button>
                 )}
               </Box>
 
               {!changingPassword ? (
-                <Box sx={{ p: 3 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      p: 2.5,
-                      borderRadius: "12px",
-                      backgroundColor: "#f8f9fa",
-                      border: "1px solid #e9ecef",
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        p: 1.5,
-                        borderRadius: "12px",
-                        backgroundColor: "#f3e8ff",
-                        color: "#7c3aed",
-                        display: "flex",
-                      }}
-                    >
-                      <LockResetIcon />
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" fontWeight={700} color="#1a1a2e">
-                        Password Protected
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Your password is securely hashed and stored. Last changed recently.
-                      </Typography>
-                    </Box>
-                    <Chip
-                      label="Secure"
-                      size="small"
-                      sx={{ ml: "auto", backgroundColor: "#e8f5e9", color: "#2e7d32", fontWeight: 700 }}
-                    />
-                  </Box>
+                <Box sx={{ p: 3, borderRadius: "20px", bgcolor: "#f4f7fe", border: "1px solid #e0e5f2", display: "flex", alignItems: "center", gap: 3 }}>
+                    <Box sx={{ p: 1.8, borderRadius: "14px", bgcolor: "#fff", color: indigoPrimary, boxShadow: "0 4px 12px rgba(67, 24, 255, 0.1)" }}><VpnKeyIcon /></Box>
+                    <Box><Typography variant="body2" fontWeight="900" color="#1b2559">Protocol Secured</Typography><Typography variant="caption" fontWeight="800" color="#a3aed0">Credentials are encrypted and stored in the core management vault.</Typography></Box>
+                    <Chip label="ENCRYPTED" size="small" sx={{ ml: "auto", bgcolor: "#00d26a", color: "#fff", fontWeight: "900", fontSize: "10px" }} />
                 </Box>
               ) : (
-                <Box sx={{ p: 3 }}>
-                  <Alert severity="info" sx={{ mb: 3, borderRadius: "10px" }}>
-                    Use a strong password with at least 8 characters, including numbers and symbols.
-                  </Alert>
-                  <Grid container spacing={2.5}>
-                    {[
-                      { label: "CURRENT PASSWORD", key: "oldPassword", show: showOldPw, toggle: () => setShowOldPw((v) => !v) },
-                      { label: "NEW PASSWORD", key: "newPassword", show: showNewPw, toggle: () => setShowNewPw((v) => !v) },
-                      { label: "CONFIRM NEW PASSWORD", key: "confirmPassword", show: showNewPw, toggle: () => setShowNewPw((v) => !v) },
-                    ].map((field) => (
-                      <Grid item xs={12} sm={field.key === "oldPassword" ? 12 : 6} key={field.key}>
-                        <Typography variant="caption" fontWeight={700} color="text.secondary">
-                          {field.label}
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          type={field.show ? "text" : "password"}
-                          value={pwForm[field.key]}
-                          onChange={(e) => setPwForm({ ...pwForm, [field.key]: e.target.value })}
-                          sx={{
-                            mt: 0.5,
-                            "& .MuiOutlinedInput-root": { borderRadius: "10px" },
-                          }}
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton size="small" onClick={field.toggle}>
-                                  {field.show ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      </Grid>
-                    ))}
-                  </Grid>
-
-                  <Button
-                    variant="contained"
-                    onClick={handleChangePassword}
-                    disabled={loading}
-                    startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <LockResetIcon />}
-                    sx={{
-                      mt: 3,
-                      backgroundColor: "#7c3aed",
-                      "&:hover": { backgroundColor: "#6d28d9" },
-                      borderRadius: "10px",
-                      textTransform: "none",
-                      fontWeight: 700,
-                      py: 1.25,
-                      px: 3,
-                    }}
-                  >
-                    Update Password
-                  </Button>
+                <Box>
+                    <Alert icon={<ShieldIcon />} severity="info" sx={{ mb: 4, borderRadius: "14px", fontWeight: 900, fontSize: "12px", bgcolor: alpha(indigoPrimary, 0.05), color: indigoPrimary, border: `1px solid ${alpha(indigoPrimary, 0.1)}` }}>
+                        New security keys must contain at least 8 alphanumeric characters for verification.
+                    </Alert>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12}><StyledTextField label="Current Encryption Key" type={showOldPw ? "text" : "password"} value={pwForm.oldPassword} onChange={(e) => setPwForm({ ...pwForm, oldPassword: e.target.value })} endAdornment={<InputAdornment position="end"><IconButton onClick={() => setShowOldPw(!showOldPw)} size="small">{showOldPw ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}</IconButton></InputAdornment>} /></Grid>
+                        <Grid item xs={12} md={6}><StyledTextField label="New Primary Key" type={showNewPw ? "text" : "password"} value={pwForm.newPassword} onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })} endAdornment={<InputAdornment position="end"><IconButton onClick={() => setShowNewPw(!showNewPw)} size="small">{showNewPw ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}</IconButton></InputAdornment>} /></Grid>
+                        <Grid item xs={12} md={6}><StyledTextField label="Confirm New Key" type={showNewPw ? "text" : "password"} value={pwForm.confirmPassword} onChange={(e) => setPwForm({ ...pwForm, confirmPassword: e.target.value })} /></Grid>
+                    </Grid>
+                    <Button variant="contained" fullWidth onClick={handleChangePassword} disabled={loading} startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <LockResetIcon />} sx={{ mt: 3, bgcolor: indigoPrimary, borderRadius: "12px", fontWeight: 900, py: 1.5, fontSize: "13px" }}>Commit Security Sync</Button>
                 </Box>
               )}
             </Paper>
 
-            {/* === DANGER ZONE === */}
-            <Paper
-              sx={{
-                borderRadius: "20px",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.06)",
-                border: "1px solid #ffcdd2",
-                overflow: "hidden",
-              }}
-            >
-              <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid #ffcdd2", backgroundColor: "#fff8f8" }}>
-                <Typography variant="h6" fontWeight={700} color="#c62828">
-                  Session Management
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Manage your active sessions and logout options
-                </Typography>
-              </Box>
-              <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Box>
-                  <Typography variant="body2" fontWeight={600} color="#1a1a2e">
-                    Sign out of all devices
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    This will clear your session and log you out immediately.
-                  </Typography>
+            {/* SESSION CONTROL */}
+            <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", bgcolor: "#fff", boxShadow: "none" }}>
+                <SectionTitle subtitle="Manage active authentication threads.">Session Control</SectionTitle>
+                <Box sx={{ p: 3, borderRadius: "20px", border: "1px solid #ffe0e0", bgcolor: "#fff8f8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box><Typography variant="body2" fontWeight="900" color="#c62828">Global Session Termination</Typography><Typography variant="caption" fontWeight="800" color="#707eae">Instantly sever all active connection threads and purge session cache.</Typography></Box>
+                    <Button variant="contained" startIcon={<LogoutIcon />} onClick={() => { localStorage.clear(); window.location.href = "/login"; }} sx={{ bgcolor: "#c62828", borderRadius: "10px", fontWeight: 900, textTransform: "none", px: 4, "&:hover": { bgcolor: "#a51d1d" } }}>Logout</Button>
                 </Box>
-                <Button
-                  variant="contained"
-                  onClick={() => {
-                    localStorage.clear();
-                    window.location.href = "/login";
-                  }}
-                  sx={{
-                    backgroundColor: "#c62828",
-                    "&:hover": { backgroundColor: "#8e0000" },
-                    borderRadius: "10px",
-                    textTransform: "none",
-                    fontWeight: 700,
-                    whiteSpace: "nowrap",
-                    ml: 2,
-                  }}
-                >
-                  Logout
-                </Button>
-              </Box>
             </Paper>
           </Stack>
         </Grid>
       </Grid>
 
-      {/* Snackbar */}
-      <Snackbar
-        open={snack.open}
-        autoHideDuration={4000}
-        onClose={() => setSnack({ ...snack, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setSnack({ ...snack, open: false })}
-          severity={snack.severity}
-          sx={{ borderRadius: "12px", fontWeight: 600 }}
-        >
-          {snack.msg}
-        </Alert>
+      <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack({ ...snack, open: false })} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
+        <Alert severity={snack.severity} sx={{ borderRadius: "12px", fontWeight: 900, fontSize: "12px", boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}>{snack.msg}</Alert>
       </Snackbar>
     </Box>
   );

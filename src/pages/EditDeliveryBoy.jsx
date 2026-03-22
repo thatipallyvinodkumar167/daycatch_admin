@@ -14,10 +14,26 @@ import {
   Checkbox,
   ListItemText,
   OutlinedInput,
+  IconButton,
+  Tooltip,
+  InputAdornment,
+  Divider,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import { getAllDeliveryBoys, updateDeliveryBoy } from "../api/deliveryBoyApi";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import PersonIcon from "@mui/icons-material/Person";
+import PhoneIcon from "@mui/icons-material/Phone";
+import EmailIcon from "@mui/icons-material/Email";
+import LockIcon from "@mui/icons-material/Lock";
+import MapIcon from "@mui/icons-material/Map";
+import BadgeIcon from "@mui/icons-material/Badge";
+import HomeIcon from "@mui/icons-material/Home";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import PublicIcon from "@mui/icons-material/Public";
+import StarIcon from "@mui/icons-material/Star";
+import PaidIcon from "@mui/icons-material/Paid";
 import {
   DELIVERY_BOY_ID_TYPES,
   DELIVERY_BOY_STATUS,
@@ -32,6 +48,9 @@ const MenuProps = {
     style: {
       maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
       width: 250,
+      borderRadius: "16px",
+      marginTop: "8px",
+      boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
     },
   },
 };
@@ -59,49 +78,49 @@ const EditDeliveryBoy = () => {
   const [existingImageUrl, setExistingImageUrl] = useState("");
 
   const cities = [
-    { name: "Hyderabad", _id: "69b78e59c52e71920fa867ac" },
-    { name: "Kurnool", _id: "69b78e59c52e71920fa867ac" }
+    { name: "Hyderabad", _id: "city_hyd_001" },
+    { name: "Kurnool", _id: "city_kurn_002" }
   ];
 
   const storeList = [
-    { name: "Hyderabad Store", _id: "69b7ac7bad9d8224d7a970d7" },
-    { name: "Vijayawada Store", _id: "69b7ac7bad9d8224d7a970d7" }
+    { name: "Hyderabad Store", _id: "store_hyd_101" },
+    { name: "Vijayawada Store", _id: "store_vj_102" }
   ];
 
   useEffect(() => {
     const fetchBoy = async () => {
       try {
-        // Fetch all boys and find the one matching the ID
+        setLoading(true);
         const response = await getAllDeliveryBoys();
         const list = Array.isArray(response.data) ? response.data : (response.data.data || []);
         const found = list.find(b => String(b._id) === String(id) || String(b.id) === String(id));
 
         if (found) {
-          const detailsInfo = typeof found.Details === "object" ? found.Details : (typeof found.details === "object" ? found.details : {});
+          const details = typeof found.Details === "object" ? found.Details : (typeof found.details === "object" ? found.details : {});
           
-          let stList = detailsInfo.Store || detailsInfo.store || detailsInfo.stores || found["Store"] || found.store || found.stores || [];
+          let stList = details.Store || details.store || details.stores || found["Store"] || found.store || found.stores || [];
           if (!Array.isArray(stList)) stList = [stList];
 
           setFormData({
             name: found["Boy Name"] || found.boyName || found.name || "",
             phone: found["Boy Phone"] || found.boyMobile || found.phone || "",
-            email: found["Boy Email"] || detailsInfo.Email || detailsInfo.email || detailsInfo.boyEmail || found.email || "",
+            email: found["Boy Email"] || details.Email || details.email || details.boyEmail || found.email || "",
             password: found["Boy Password"] || found.boyPassword || found.password || "",
-            city: detailsInfo.City || detailsInfo.city || found["City"] || (typeof found.city === 'object' ? found.city?._id : found.city) || "",
-            idType: normalizeDeliveryBoyIdType(detailsInfo["ID Type"] || detailsInfo.idType || found["ID Type"] || found.idType || ""),
-            idNumber: detailsInfo["ID Number"] || detailsInfo.idNumber || found["ID Number"] || found.idNumber || "",
-            address: detailsInfo["Boy Address"] || detailsInfo.address || detailsInfo.boyAddress || found["Boy Address"] || found.address || found.boyAddress || "",
-            stores: stList.map(s => typeof s === 'object' ? s._id : s),
+            city: details.City || details.city || found["City"] || (typeof found.city === 'object' ? found.city?._id : found.city) || "",
+            idType: normalizeDeliveryBoyIdType(details["ID Type"] || details.idType || found["ID Type"] || found.idType || ""),
+            idNumber: details["ID Number"] || details.idNumber || found["ID Number"] || found.idNumber || "",
+            address: details["Boy Address"] || details.address || details.boyAddress || found["Boy Address"] || found.address || found.boyAddress || "",
+            stores: stList.map(s => typeof s === 'object' ? s._id : s).filter(s => s),
             status: normalizeDeliveryBoyStatus(found["Status"] || found.status),
-            earnings: found["Total Earnings"] || found.totalEarnings || 0,
+            earnings: found["Total Earnings"] || found.totalEarnings || found.earnings || 0,
             rating: found["Rating"] || found.rating || 5.0,
           });
-          const imgUrl = detailsInfo["ID Image"] || detailsInfo.idImage || found["ID Image"] || found.idImage || "";
+          const imgUrl = details["ID Image"] || details.idImage || found["ID Image"] || found.idImage || "";
           if (imgUrl) setExistingImageUrl(imgUrl);
         }
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching delivery boy:", error);
+      } finally {
         setLoading(false);
       }
     };
@@ -114,22 +133,20 @@ const EditDeliveryBoy = () => {
   };
 
   const handleStoreChange = (event) => {
-    const {
-      target: { value },
-    } = event;
+    const { value } = event;
     
-    if (value.includes("all")) {
+    if (value && value.includes("all")) {
         if (formData.stores.length === storeList.length) {
             setFormData({ ...formData, stores: [] });
         } else {
-            setFormData({ ...formData, stores: storeList.map((store) => store._id) });
+            setFormData({ ...formData, stores: storeList.map(s => s._id) });
         }
         return;
     }
 
     setFormData({
       ...formData,
-      stores: typeof value === 'string' ? value.split(',') : value,
+      stores: typeof value === 'string' ? value.split(',') : value
     });
   };
 
@@ -159,18 +176,12 @@ const EditDeliveryBoy = () => {
         "Rating": Number(formData.rating)
       };
 
-      const response = await updateDeliveryBoy(id, payload);
-
-      console.log("Update Delivery Boy Response:", response.data);
-      alert("Delivery Boy updated successfully!");
+      await updateDeliveryBoy(id, payload);
+      alert("Fleet Records Updated Successfully.");
       navigate("/delivery-boy-list");
     } catch (error) {
-      console.error("Error updating delivery boy:", error);
-      const serverMessage =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message;
-      alert(serverMessage || "Failed to update delivery boy.");
+      console.error("Update error:", error);
+      alert("Failed to sync updates with server.");
     } finally {
       setIsSubmitting(false);
     }
@@ -178,8 +189,8 @@ const EditDeliveryBoy = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
-        <CircularProgress />
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "80vh" }}>
+        <CircularProgress sx={{ color: "#4318ff" }} />
       </Box>
     );
   }
@@ -187,98 +198,101 @@ const EditDeliveryBoy = () => {
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
-      {/* Page Heading */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="700" color="#2b3674">
-          Hi, Day Catch Super Admin Panel.
-        </Typography>
-        <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-          Edit delivery boy details.
-        </Typography>
+      {/* Premium Header */}
+      <Box sx={{ mb: 4, display: "flex", alignItems: "center", gap: 2 }}>
+        <Tooltip title="Cancel and Return">
+          <IconButton 
+            onClick={() => navigate(-1)} 
+            sx={{ 
+              bgcolor: "#fff", 
+              color: "#4318ff",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              "&:hover": { bgcolor: "#4318ff", color: "#fff" }
+            }}
+          >
+            <ArrowBackIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Box>
+          <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>Modify Personnel</Typography>
+          <Typography variant="body2" color="#a3aed0" fontWeight="600">Updating system records for <span style={{ color: "#4318ff" }}>{formData.name}</span></Typography>
+        </Box>
       </Box>
 
-      <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+      <Paper sx={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2" }}>
         
-        {/* Card Header */}
-        <Box sx={{ p: 3, borderBottom: "1px solid #f1f1f1" }}>
-          <Typography variant="h6" fontWeight="600" color="#1b2559">
-            Edit Delivery Boy
-          </Typography>
-        </Box>
-
-        <Box sx={{ p: 4 }}>
+        <Box sx={{ p: 5 }}>
           <form onSubmit={handleSubmit}>
+            
+            {/* Section 1: Personal Background */}
+            <Typography variant="subtitle2" fontWeight="900" color="#4318ff" sx={{ mb: 3, letterSpacing: "1px", display: "flex", alignItems: "center", gap: 1 }}>
+                <PersonIcon fontSize="small" /> PRIMARY IDENTITY & ACCESS
+            </Typography>
             <Grid container spacing={3}>
-              
-              {/* Boy Name */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Boy Name
-                </Typography>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>FULL NAME</Typography>
                 <TextField
                   fullWidth
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><PersonIcon sx={{ color: "#a3aed0", fontSize: 18 }} /></InputAdornment> }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f4f7fe" } }}
                 />
               </Grid>
-
-              {/* Boy Phone */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Boy Phone
-                </Typography>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>CONTACT MOBILE</Typography>
                 <TextField
                   fullWidth
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIcon sx={{ color: "#a3aed0", fontSize: 18 }} /></InputAdornment> }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f4f7fe" } }}
                 />
               </Grid>
-
-              {/* Boy Email */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Boy Email
-                </Typography>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>EMAIL ID</Typography>
                 <TextField
                   fullWidth
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><EmailIcon sx={{ color: "#a3aed0", fontSize: 18 }} /></InputAdornment> }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f4f7fe" } }}
                 />
               </Grid>
-
-              {/* Password */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Password
-                </Typography>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>ACCESS PASSWORD</Typography>
                 <TextField
                   fullWidth
                   name="password"
                   type="password"
                   value={formData.password}
                   onChange={handleChange}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><LockIcon sx={{ color: "#a3aed0", fontSize: 18 }} /></InputAdornment> }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f4f7fe" } }}
                 />
               </Grid>
+            </Grid>
 
-              {/* Select City */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Select City
-                </Typography>
+            <Divider sx={{ my: 5, borderStyle: "dashed" }} />
+
+            {/* Section 2: Fleet Documentation */}
+            <Typography variant="subtitle2" fontWeight="900" color="#4318ff" sx={{ mb: 3, letterSpacing: "1px", display: "flex", alignItems: "center", gap: 1 }}>
+                <BadgeIcon fontSize="small" /> DOCUMENTATION & RESIDENCY
+            </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>OPERATIONAL REGION</Typography>
                 <FormControl fullWidth>
                   <Select
                     name="city"
                     value={formData.city}
                     onChange={handleChange}
-                    sx={{ borderRadius: "8px" }}
+                    startAdornment={<InputAdornment position="start"><PublicIcon sx={{ color: "#a3aed0", fontSize: 18, ml: 1, mr: 0.5 }} /></InputAdornment>}
+                    sx={{ borderRadius: "14px", bgcolor: "#f4f7fe" }}
                     input={<OutlinedInput />}
                   >
                     <MenuItem value="" disabled>Select City</MenuItem>
@@ -288,18 +302,15 @@ const EditDeliveryBoy = () => {
                   </Select>
                 </FormControl>
               </Grid>
-
-              {/* Select ID */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Select ID
-                </Typography>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>ID CATEGORY</Typography>
                 <FormControl fullWidth>
                   <Select
                     name="idType"
                     value={formData.idType}
                     onChange={handleChange}
-                    sx={{ borderRadius: "8px" }}
+                    startAdornment={<InputAdornment position="start"><BadgeIcon sx={{ color: "#a3aed0", fontSize: 18, ml: 1, mr: 0.5 }} /></InputAdornment>}
+                    sx={{ borderRadius: "14px", bgcolor: "#f4f7fe" }}
                     input={<OutlinedInput />}
                   >
                     {DELIVERY_BOY_ID_TYPES.map((type) => (
@@ -308,181 +319,147 @@ const EditDeliveryBoy = () => {
                   </Select>
                 </FormControl>
               </Grid>
-
-              {/* ID Number */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  ID Number
-                </Typography>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>DOCUMENT ID</Typography>
                 <TextField
                   fullWidth
                   name="idNumber"
                   value={formData.idNumber}
                   onChange={handleChange}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f4f7fe" } }}
                 />
               </Grid>
-
-              {/* ID Image */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  ID Image
-                </Typography>
-                <Box 
-                  sx={{ 
-                    border: "1px dashed #d1d5db", 
-                    borderRadius: "8px", 
-                    p: 1.5, 
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    backgroundColor: "#f9fafb"
-                  }}
-                >
-                  {existingImageUrl && !idImage && (
-                    <Box component="img" src={existingImageUrl} sx={{ width: 40, height: 40, borderRadius: "4px" }} />
-                  )}
-                  <input
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    id="id-image-upload"
-                    type="file"
-                    onChange={handleFileChange}
-                  />
-                  <label htmlFor="id-image-upload">
-                    <Button
-                      variant="text"
-                      component="span"
-                      startIcon={<CloudUploadIcon />}
-                      sx={{ textTransform: "none", color: "#4b5563" }}
-                    >
-                      {idImage ? idImage.name : "Change file"}
-                    </Button>
-                  </label>
-                </Box>
-              </Grid>
-
-              {/* Boy Address */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Boy Address
-                </Typography>
+              <Grid item xs={12} md={8}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>FULL ADDRESS</Typography>
                 <TextField
                   fullWidth
                   name="address"
-                  placeholder="Enter a location"
                   value={formData.address}
                   onChange={handleChange}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><HomeIcon sx={{ color: "#a3aed0", fontSize: 18 }} /></InputAdornment> }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f4f7fe" } }}
                 />
               </Grid>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>MODERATED ID IMAGE</Typography>
+                <Button
+                  component="label"
+                  fullWidth
+                  startIcon={<CloudUploadIcon />}
+                  variant="outlined"
+                  sx={{ 
+                    height: "56px",
+                    borderRadius: "14px", 
+                    textTransform: "none", 
+                    borderColor: "#e0e5f2", 
+                    color: idImage ? "#24d164" : "#4b5563",
+                    fontWeight: 700,
+                    borderStyle: "dashed"
+                  }}
+                >
+                  {idImage ? idImage.name : (existingImageUrl ? "ID Already Uploaded" : "Change File")}
+                  <input type="file" hidden onChange={handleFileChange} />
+                </Button>
+              </Grid>
+            </Grid>
 
-              {/* Earnings */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Total Earnings (Rs.)
-                </Typography>
+            <Divider sx={{ my: 5, borderStyle: "dashed" }} />
+
+            {/* Section 3: Operational Context */}
+            <Typography variant="subtitle2" fontWeight="900" color="#4318ff" sx={{ mb: 3, letterSpacing: "1px", display: "flex", alignItems: "center", gap: 1 }}>
+                <MapIcon fontSize="small" /> PERFORMANCE & CORE OPS
+            </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>FLEET RATING</Typography>
                 <TextField
                   fullWidth
-                  name="earnings"
                   type="number"
-                  placeholder="0"
-                  value={formData.earnings}
-                  onChange={handleChange}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                />
-              </Grid>
-
-              {/* Rating */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  Rating (1-5)
-                </Typography>
-                <TextField
-                  fullWidth
                   name="rating"
-                  type="number"
                   inputProps={{ step: 0.1, min: 0, max: 5 }}
-                  placeholder="5.0"
                   value={formData.rating}
                   onChange={handleChange}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><StarIcon sx={{ color: "#ffb800", fontSize: 18 }} /></InputAdornment> }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f4f7fe" } }}
                 />
               </Grid>
-
-              {/* All Stores */}
-              <Grid item xs={12}>
-                <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-                  All Stores
-                </Typography>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>TOTAL EARNINGS (₹)</Typography>
+                <TextField
+                  fullWidth
+                  type="number"
+                  name="earnings"
+                  value={formData.earnings}
+                  onChange={handleChange}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><Typography sx={{ color: "#24d164", fontWeight: 800, ml: 1, mr: 0.5 }}>₹</Typography></InputAdornment> }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f4f7fe" } }}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>HUB ASSIGNMENT</Typography>
                 <FormControl fullWidth>
                   <Select
                     name="stores"
                     multiple
                     value={formData.stores}
                     onChange={handleStoreChange}
-                    sx={{ borderRadius: "8px" }}
+                    sx={{ borderRadius: "14px", bgcolor: "#f4f7fe" }}
                     input={<OutlinedInput />}
+                    startAdornment={<InputAdornment position="start"><StorefrontIcon sx={{ color: "#4318ff", fontSize: 18, ml: 1, mr: 0.5 }} /></InputAdornment>}
                     renderValue={(selected) => {
-                      if (!selected || selected.length === 0) {
-                        return <Typography color="textSecondary">Select Stores</Typography>;
-                      }
-                      const selectedStoreNames = storeList
-                        .filter(store => selected.includes(store._id))
-                        .map(store => store.name);
-                      return selectedStoreNames.join(', ');
+                      if (!selected || selected.length === 0) return <Typography color="#a3aed0" fontWeight="600">Select Stores</Typography>;
+                      const names = storeList.filter(s => selected.includes(s._id)).map(s => s.name);
+                      return <Typography fontWeight="700" color="#2b3674">{names.join(", ")}</Typography>;
                     }}
                     MenuProps={MenuProps}
                   >
                     <MenuItem value="all">
-                        <Checkbox checked={formData.stores.length === storeList.length && storeList.length > 0} indeterminate={formData.stores.length > 0 && formData.stores.length < storeList.length} />
-                        <ListItemText primary="Select all" />
+                        <Checkbox 
+                            color="primary"
+                            checked={formData.stores.length === storeList.length && storeList.length > 0} 
+                            indeterminate={formData.stores.length > 0 && formData.stores.length < storeList.length}
+                        />
+                        <ListItemText primary="Select all" sx={{ "& span": { fontWeight: 800 } }} />
                     </MenuItem>
-                    {storeList.map(store => (
+                    {storeList.map((store) => (
                       <MenuItem key={store._id} value={store._id}>
-                        <Checkbox checked={formData.stores.indexOf(store._id) > -1} />
+                        <Checkbox color="primary" checked={formData.stores.indexOf(store._id) > -1} />
                         <ListItemText primary={store.name} />
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Grid>
+            </Grid>
 
-              <Grid item xs={12}>
-                <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                  <Button 
+            {/* Footer Actions */}
+            <Divider sx={{ my: 5 }} />
+            <Stack direction="row" spacing={2} justifyContent="flex-end">
+                <Button 
+                    variant="outlined" 
+                    onClick={() => navigate(-1)}
+                    sx={{ borderRadius: "16px", px: 5, py: 1.8, textTransform: "none", fontWeight: 800, borderColor: "#e0e5f2", color: "#2b3674" }}
+                >
+                    Cancel
+                </Button>
+                <Button 
                     type="submit"
                     variant="contained" 
                     disabled={isSubmitting}
                     sx={{ 
-                      backgroundColor: "#2d60ff", 
-                      "&:hover": { backgroundColor: "#2046cc" },
-                      borderRadius: "8px",
-                      textTransform: "none",
-                      px: 4,
-                      py: 1.5,
-                      fontWeight: "600"
+                        backgroundColor: "#4318ff", 
+                        "&:hover": { backgroundColor: "#3311cc" },
+                        borderRadius: "16px",
+                        textTransform: "none",
+                        px: 6,
+                        py: 1.8,
+                        fontWeight: "800",
+                        boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)",
                     }}
-                  >
-                    {isSubmitting ? "Updating..." : "Update Delivery Boy"}
-                  </Button>
-                  <Button 
-                    variant="outlined" 
-                    onClick={() => navigate("/delivery-boy-list")}
-                    sx={{ 
-                      borderRadius: "8px",
-                      textTransform: "none",
-                      px: 4,
-                      borderColor: "#d1d5db",
-                      color: "#4b5563"
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Stack>
-              </Grid>
-
-            </Grid>
+                >
+                    {isSubmitting ? "Syncing Updates..." : "Save Personnel Changes"}
+                </Button>
+            </Stack>
           </form>
         </Box>
       </Paper>

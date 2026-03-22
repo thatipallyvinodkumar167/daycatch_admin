@@ -26,8 +26,8 @@ const EditRedeemValue = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await genericApi.get("reedm value", id);
-        const data = response.data.data;
+        const response = await genericApi.getOne("reedm value", id);
+        const data = response.data.data || response.data;
         setFormData({
           rewardPoints: data?.["Reward Points"] || data?.rewardPoints || "",
           redeemValue: data?.["Redeem Value"] || data?.redeemValue || "",

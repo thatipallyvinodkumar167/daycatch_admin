@@ -6,245 +6,253 @@ import {
   CircularProgress,
   Paper,
   Typography,
+  Grid,
+  Divider,
+  IconButton,
+  Tooltip,
+  Snackbar,
+  Stack,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import SaveIcon from "@mui/icons-material/Save";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import EditIcon from "@mui/icons-material/Edit";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+
+// Default Story if API is empty
+const DYNAMIC_STORY_FALLBACK = `
+  <h1>The Daycatch Story</h1>
+  <p>Welcome to <strong>Daycatch</strong>, where our story is deeply rooted in a profound respect for the ocean and an unwavering commitment to bringing its freshest treasures directly to your home. We’re more than just a seafood provider; we are a bridge between the vibrant marine world and your kitchen, dedicated to delivering an unparalleled culinary experience.</p>
+  
+  <p>Our journey began with a simple, yet powerful, realization: that truly exceptional seafood, caught with integrity and delivered with care, was becoming increasingly rare. We saw a gap where quality was often compromised by lengthy supply chains and impersonal transactions. We envisioned a different way – a way to honor the ocean’s bounty, support responsible practices, and connect people directly with the pure, unadulterated taste of the sea. This vision blossomed into Daycatch.</p>
+
+  <h2>Our Promise: Uncompromising Freshness, Every Single Day</h2>
+  <p>At Daycatch, freshness isn’t just a claim; it’s our foundational promise. We believe that the true flavor of seafood shines brightest when it’s caught and delivered with meticulous speed and care. Our process is designed to maximize this freshness:</p>
+  <ul>
+    <li><strong>Direct Sourcing:</strong> We bypass intermediaries, partnering directly with a select network of trusted local fishermen. These are individuals and families who have dedicated their lives to the sea, understanding its rhythms and respecting its limits. This direct relationship ensures we receive the catch at its absolute peak.</li>
+    <li><strong>Immediate Care:</strong> From the moment it leaves the water, every piece of seafood is handled with utmost care. It’s immediately packed on ice, meticulously sorted, and swiftly transported to our state-of-the-art facility. This rapid, unbroken cold chain is crucial to preserving the delicate texture and robust flavors you expect.</li>
+    <li><strong>Expert Selection:</strong> Before anything leaves our doors, our experienced team conducts rigorous quality checks. We look for the vibrant colors, firm textures, and fresh aromas that are hallmarks of superior seafood. Only the best makes it into a Daycatch box.</li>
+  </ul>
+
+  <h2>Our Selection: A Taste of the Ocean's Best</h2>
+  <p>Dive into the exquisite variety that Daycatch proudly offers. Each item in our selection is chosen not just for its popularity, but for its exceptional quality and flavor profile:</p>
+  <ul>
+    <li><strong>Vibrant Prawns:</strong> Indulge in our plump, juicy prawns. Their naturally sweet taste and satisfying snap make them ideal for stir-fries, pasta dishes, or simply grilled with a squeeze of lemon. They are a true crowd-pleaser and a testament to the ocean’s generous offerings.</li>
+    <li><strong>Rich & Flavorful Crabs:</strong> For those seeking a truly decadent experience, our crabs are a must-try. Bursting with sweet, tender meat, they promise an unforgettable culinary adventure, whether steamed, boiled, or incorporated into your favorite seafood recipes.</li>
+    <li><strong>Delicate White Pomfret:</strong> Experience the refined taste of our White Pomfret. Celebrated for its fine texture and distinct, delightful flavor, it’s a prized fish perfect for sophisticated dishes, often enjoyed whole to truly savor its essence.</li>
+  </ul>
+
+  <h2>Our Commitment: Sustainability & Community</h2>
+  <p>Beyond freshness and flavor, Daycatch is deeply committed to the health of our oceans and the well-being of our fishing communities. We believe that responsible sourcing is not just good practice, but a moral imperative.</p>
+  <ul>
+    <li><strong>Sustainable Practices:</strong> We actively support and engage with fishermen who employ sustainable fishing methods, minimizing environmental impact and protecting marine ecosystems for future generations. We prioritize catches that are in season and from healthy stocks.</li>
+    <li><strong>Supporting Local Livelihoods:</strong> By partnering directly with local fishermen, we contribute to the economic vitality of coastal communities. We value their expertise, hard work, and the heritage they represent, fostering relationships built on trust and mutual respect.</li>
+    <li><strong>Traceability:</strong> We strive for transparency in our sourcing, so you can feel confident about where your seafood comes from and how it reached your plate.</li>
+  </ul>
+  
+  <p>With every Daycatch purchase, you’re not just enjoying premium seafood; you’re also contributing to a more sustainable future for our oceans and supporting the dedicated hands that bring this incredible bounty to us all.</p>
+
+  <h2>Experience the Daycatch Difference</h2>
+  <p>We invite you to experience the true taste of the ocean, delivered with integrity and passion. At Daycatch, every order is more than just a transaction – it’s an invitation to savor the freshest flavors, explore new culinary horizons, and connect with the story of the sea.</p>
+
+  <p>Thank you for choosing Daycatch. We look forward to being your trusted source for the finest seafood, day after day.</p>
+`;
 
 const unwrapPayload = (value) => {
   let currentValue = value;
   let depth = 0;
-
-  while (
-    currentValue &&
-    typeof currentValue === "object" &&
-    !Array.isArray(currentValue) &&
-    Object.prototype.hasOwnProperty.call(currentValue, "data") &&
-    depth < 5
-  ) {
+  while (currentValue && typeof currentValue === "object" && !Array.isArray(currentValue) && Object.prototype.hasOwnProperty.call(currentValue, "data") && depth < 5) {
     currentValue = currentValue.data;
     depth += 1;
   }
-
   return currentValue;
-};
-
-const getApiErrorMessage = (error, fallbackMessage) => {
-  const payload = unwrapPayload(error?.response?.data);
-
-  if (typeof payload === "string" && payload.trim()) {
-    return payload.trim();
-  }
-
-  if (payload && typeof payload === "object") {
-    const candidateMessage =
-      payload.message || payload.error || payload.details || payload.msg;
-
-    if (typeof candidateMessage === "string" && candidateMessage.trim()) {
-      return candidateMessage.trim();
-    }
-  }
-
-  if (typeof error?.message === "string" && error.message.trim()) {
-    return error.message.trim();
-  }
-
-  return fallbackMessage;
 };
 
 const extractHtmlContent = (response, preferredKeys) => {
   const payload = unwrapPayload(response);
-
-  if (typeof payload === "string" && payload.trim()) {
-    return payload.trim();
-  }
-
-  if (!payload || typeof payload !== "object") {
-    return "";
-  }
-
+  if (typeof payload === "string" && payload.trim()) return payload.trim();
+  if (!payload || typeof payload !== "object") return "";
   for (const key of preferredKeys) {
     const value = payload[key];
-
-    if (typeof value === "string" && value.trim()) {
-      return value.trim();
-    }
+    if (typeof value === "string" && value.trim()) return value.trim();
   }
-
-  const nestedObject = Object.values(payload).find(
-    (entry) => entry && typeof entry === "object" && !Array.isArray(entry)
-  );
-
-  if (nestedObject) {
-    for (const key of preferredKeys) {
-      const value = nestedObject[key];
-
-      if (typeof value === "string" && value.trim()) {
-        return value.trim();
-      }
-    }
-  }
-
-  const firstString = Object.values(payload).find(
-    (entry) => typeof entry === "string" && entry.trim()
-  );
-
-  return typeof firstString === "string" ? firstString.trim() : "";
+  return "";
 };
 
 const RichContentPage = ({
   title,
   description,
   fetchContent,
+  updateContent,
   contentKeys,
   emptyMessage,
+  fallbackContent,
 }) => {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showNotification, setShowNotification] = useState(false);
+  const [editMode, setEditMode] = useState(true);
 
   const loadContent = useCallback(async () => {
     setLoading(true);
     setError("");
-
     try {
       const response = await fetchContent();
-      const htmlContent = extractHtmlContent(response, contentKeys);
+      let htmlContent = extractHtmlContent(response, contentKeys);
+      if (!htmlContent || htmlContent === "N/A" || htmlContent.length < 10) {
+        htmlContent = fallbackContent || "";
+      }
       setContent(htmlContent);
     } catch (requestError) {
-      setContent("");
-      setError(getApiErrorMessage(requestError, `Unable to load ${title}.`));
+      setContent(fallbackContent || "");
     } finally {
       setLoading(false);
     }
-  }, [contentKeys, fetchContent, title]);
+  }, [contentKeys, fetchContent, fallbackContent]);
 
   useEffect(() => {
     loadContent();
   }, [loadContent]);
 
+  const handleSave = async () => {
+    if (!updateContent) return;
+    setIsSaving(true);
+    try {
+      await updateContent(content);
+      setShowNotification(true);
+    } catch (err) {
+      console.error("Save error:", err);
+      const is404 = err.response?.status === 404;
+      alert(is404 ? "Server Update Endpoint Not Found. Please ensure your backend is restarted and running with the new PATCH routes." : "Failed to commit changes to database. Please check server connectivity.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      ['link', 'image'],
+      ['clean']
+    ],
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "80vh" }}>
+        <CircularProgress sx={{ color: "#4318ff" }} />
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="700" color="#2b3674">
-          Hi, Day Catch Super Admin Panel.
-        </Typography>
-        <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-          {description}
-        </Typography>
+      
+      {/* Platform Header */}
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box>
+          <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+            Content Management Hub
+          </Typography>
+          <Typography variant="body2" color="#a3aed0" fontWeight="600">
+            {description}
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={2}>
+            <Tooltip title="Refresh from Database">
+                <IconButton onClick={loadContent} sx={{ bgcolor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+                    <RefreshIcon sx={{ color: "#4318ff" }} />
+                </IconButton>
+            </Tooltip>
+            <Button
+                variant="contained"
+                startIcon={isSaving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
+                onClick={handleSave}
+                disabled={isSaving}
+                sx={{
+                    backgroundColor: "#4318ff",
+                    "&:hover": { backgroundColor: "#3311cc" },
+                    borderRadius: "14px",
+                    textTransform: "none",
+                    px: 4,
+                    fontWeight: "800",
+                    boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
+                }}
+            >
+                {isSaving ? "Commiting..." : "Sync to Database"}
+            </Button>
+        </Stack>
       </Box>
 
-      <Paper
-        sx={{
-          borderRadius: "15px",
-          overflow: "hidden",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-        }}
-      >
-        <Box
-          sx={{
-            p: 3,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderBottom: "1px solid #f1f1f1",
-          }}
-        >
-          <Typography variant="h6" fontWeight="600" color="#1b2559">
-            {title}
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={loadContent}
-            disabled={loading}
-            startIcon={!loading ? <RefreshIcon /> : null}
-            sx={{
-              backgroundColor: "#2d60ff",
-              "&:hover": { backgroundColor: "#2046cc" },
-              borderRadius: "8px",
-              textTransform: "none",
-              px: 3,
-              fontWeight: "600",
-            }}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : "Refresh"}
-          </Button>
-        </Box>
-
-        <Box sx={{ p: 3 }}>
-          {error ? (
-            <Alert severity="error" sx={{ borderRadius: "12px" }}>
-              {error}
-            </Alert>
-          ) : loading ? (
-            <Box
-              sx={{
-                minHeight: "320px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <CircularProgress />
+      <Grid container spacing={4}>
+        {/* Left: Editor Console */}
+        <Grid item xs={12} lg={7}>
+          <Paper sx={{ p: 0, borderRadius: "24px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2" }}>
+            <Box sx={{ p: 2.5, bgcolor: "#fafbfc", borderBottom: "1px solid #e0e5f2", display: "flex", alignItems: "center", gap: 1.5 }}>
+                <EditIcon sx={{ color: "#4318ff", fontSize: 20 }} />
+                <Typography variant="subtitle2" fontWeight="800" color="#1b2559">Rich Text Editor</Typography>
             </Box>
-          ) : content ? (
-            <Box
-              sx={{
-                color: "#1b2559",
-                lineHeight: 1.8,
-                "& h1, & h2, & h3, & h4, & h5, & h6": {
-                  color: "#1b2559",
-                  fontWeight: 700,
-                  mt: 0,
-                  mb: 2,
-                },
-                "& p": {
-                  color: "#475467",
-                  mb: 2,
-                },
-                "& ul, & ol": {
-                  color: "#475467",
-                  pl: 3,
-                  mb: 2,
-                },
-                "& li": {
-                  mb: 1,
-                },
-                "& a": {
-                  color: "#2d60ff",
-                },
-                "& hr": {
-                  border: 0,
-                  borderTop: "1px solid #eaecf0",
-                  my: 3,
-                },
-                "& blockquote": {
-                  borderLeft: "4px solid #dbe4ff",
-                  pl: 2,
-                  ml: 0,
-                  color: "#344054",
-                },
-                "& img": {
-                  maxWidth: "100%",
-                  borderRadius: "12px",
-                },
-                "& table": {
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  mb: 2,
-                },
-                "& th, & td": {
-                  border: "1px solid #eaecf0",
-                  p: 1.5,
-                },
-              }}
-              dangerouslySetInnerHTML={{ __html: content }}
-            />
-          ) : (
-            <Alert severity="info" sx={{ borderRadius: "12px" }}>
-              {emptyMessage}
-            </Alert>
-          )}
-        </Box>
-      </Paper>
+            <Box sx={{ 
+                "& .ql-container": { border: "none !important", minHeight: "600px" },
+                "& .ql-toolbar": { border: "none !important", borderBottom: "1px solid #e0e5f2 !important", bgcolor: "#fff" },
+                "& .ql-editor": { p: 4, fontSize: "16px", color: "#475467" }
+            }}>
+                <ReactQuill 
+                    theme="snow" 
+                    value={content} 
+                    onChange={setContent} 
+                    modules={quillModules} 
+                />
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Right: Live Brand Preview */}
+        <Grid item xs={12} lg={5}>
+          <Paper sx={{ p: 0, borderRadius: "24px", height: "100%", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", position: "relative" }}>
+            <Box sx={{ p: 2.5, bgcolor: "#4318ff", color: "#fff", display: "flex", alignItems: "center", gap: 1.5 }}>
+                <VisibilityIcon sx={{ fontSize: 20 }} />
+                <Typography variant="subtitle2" fontWeight="800">Premium Brand Preview</Typography>
+            </Box>
+            
+            <Box sx={{ 
+                height: "calc(100% - 60px)", 
+                overflowY: "auto", 
+                p: 4, 
+                backgroundColor: "#fff",
+                "& h1": { fontSize: "32px", fontWeight: 800, color: "#2b3674", mb: 3, letterSpacing: "-1px" },
+                "& h2": { fontSize: "24px", fontWeight: 800, color: "#1b2559", mt: 4, mb: 2 },
+                "& p": { lineHeight: 1.8, color: "#475467", mb: 2, fontSize: "15px" },
+                "& ul": { pl: 3, mb: 2, "& li": { mb: 1.5, color: "#475467", fontWeight: 500 } },
+                "& strong": { color: "#1b2559", fontWeight: 800 }
+            }}>
+                {/* Simulated Web View Container */}
+                <Box sx={{ 
+                    p: 4, 
+                    borderRadius: "16px", 
+                    bgcolor: "#f4f7fe", 
+                    border: "1px solid #e0e5f2",
+                    boxShadow: "inset 0 2px 10px rgba(0,0,0,0.02)"
+                }}>
+                    <div dangerouslySetInnerHTML={{ __html: content }} />
+                </Box>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+
+      <Snackbar
+        open={showNotification}
+        autoHideDuration={4000}
+        onClose={() => setShowNotification(false)}
+        message="Platform content successfully updated in database."
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 };

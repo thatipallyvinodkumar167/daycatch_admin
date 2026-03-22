@@ -26,8 +26,8 @@ const EditReward = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await genericApi.get("rewards", id);
-        const data = response.data.data;
+        const response = await genericApi.getOne("rewards", id);
+        const data = response.data.data || response.data;
         setFormData({
           cartValue: data?.["Cart Value"] || data?.cartValue || "",
           rewardPoints: data?.["Reward Points"] || data?.rewardPoints || "",

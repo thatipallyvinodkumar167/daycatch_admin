@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -22,11 +22,19 @@ import {
   FormControl,
   Select,
   MenuItem,
+  InputAdornment,
+  Divider,
+  LinearProgress,
+  Fade,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import SearchIcon from "@mui/icons-material/Search";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import { genericApi } from "../api/genericApi";
 
 const Taxes = () => {
@@ -34,6 +42,8 @@ const Taxes = () => {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedTax, setSelectedTax] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -41,25 +51,31 @@ const Taxes = () => {
     status: "Active",
   });
 
-  useEffect(() => {
-    fetchTaxes();
-  }, []);
+  const fetchTaxes = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
 
-  const fetchTaxes = async () => {
     try {
       const response = await genericApi.getAll("tax");
       const results = response.data.results || response.data || [];
       const formattedTaxes = results.map((tax, index) => ({
         id: tax._id,
-        name: tax.name || tax["Tax Name"] || tax["Tax Type name"] || "Unnamed Tax",
-        rate: tax.rate || tax["Tax Rate"] || tax["Tax percentage"] || 0,
+        name: tax.name || tax["Tax Type name"] || tax["Tax Name"] || "Unnamed Fiscal Node",
+        rate: tax.rate || tax["Tax percentage"] || tax["Tax Rate"] || 0,
         status: tax.status || "Active",
       }));
       setTaxes(formattedTaxes);
     } catch (error) {
       console.error("Error fetching taxes:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchTaxes();
+  }, [fetchTaxes]);
 
   const handleOpen = (tax = null) => {
     if (tax) {
@@ -93,7 +109,6 @@ const Taxes = () => {
 
   const handleSave = async () => {
     if (!formData.name || formData.rate === "") {
-      alert("Please fill in all required fields.");
       return;
     }
 
@@ -106,157 +121,188 @@ const Taxes = () => {
 
       if (editMode) {
         await genericApi.update("tax", selectedTax.id, payload);
-        alert("Tax updated successfully!");
       } else {
         await genericApi.create("tax", payload);
-        alert("Tax added successfully!");
       }
       fetchTaxes();
       handleClose();
     } catch (error) {
       console.error("Error saving tax:", error);
-      alert("Error saving tax details.");
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this tax type?")) {
+    if (window.confirm("Are you sure you want to terminate this fiscal tier?")) {
       try {
         await genericApi.delete("tax", id);
         fetchTaxes();
-        alert("Tax deleted successfully!");
       } catch (error) {
         console.error("Error deleting tax:", error);
-        alert("Error deleting tax.");
       }
     }
   };
 
-  const filteredTaxes = taxes.filter((tax) =>
-    tax.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredTaxes = useMemo(() => {
+      const q = search.toLowerCase().trim();
+      if (!q) return taxes;
+      return taxes.filter((tax) =>
+        tax.name.toLowerCase().includes(q)
+      );
+  }, [taxes, search]);
+
+  const stats = useMemo(() => [
+    { label: "Fiscal Tiers", value: taxes.length, icon: <AccountBalanceIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Audit Level", value: "Verified", icon: <CurrencyRupeeIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+  ], [taxes]);
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
+      {/* Premium Header Container */}
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
-            <Typography variant="h4" fontWeight="700" color="#2b3674">
-                Hi, Day Catch Super Admin Panel.
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Fiscal Tier Management
             </Typography>
-            <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-                Configuration of different tax tiers for products and services.
+            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+                Architect and audit fiscal percentage rates for products and administrative services.
             </Typography>
         </Box>
-        <Button 
-            variant="contained" 
-            startIcon={<AddIcon />}
-            onClick={() => handleOpen()}
-            sx={{ 
-                backgroundColor: "#2d60ff", 
-                "&:hover": { backgroundColor: "#2046cc" },
-                borderRadius: "12px",
-                textTransform: "none",
-                px: 3,
-                fontWeight: "700"
-            }}
-        >
-            Add Tax Type
-        </Button>
+        <Stack direction="row" spacing={3} alignItems="center">
+            {stats.map((stat) => (
+                <Stack key={stat.label} direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ color: stat.color, display: "flex" }}>{stat.icon}</Box>
+                    <Box>
+                        <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase", display: "block", lineHeight: 1 }}>{stat.label}</Typography>
+                        <Typography variant="subtitle2" fontWeight="800" color="#1b2559">{stat.value}</Typography>
+                    </Box>
+                </Stack>
+            ))}
+            <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, alignSelf: "center" }} />
+            <Button 
+                variant="contained" 
+                startIcon={<AddIcon />}
+                onClick={() => handleOpen()}
+                sx={{ 
+                    backgroundColor: "#4318ff", 
+                    borderRadius: "14px",
+                    textTransform: "none",
+                    px: 3,
+                    py: 1.2,
+                    fontWeight: "800",
+                    boxShadow: "0 10px 25px rgba(67, 24, 255, 0.2)",
+                    "&:hover": { backgroundColor: "#3310cc" }
+                }}
+            >
+                Add Tier
+            </Button>
+        </Stack>
       </Box>
 
-      {/* Stats Summary */}
-      <Paper sx={{ p: 3, mb: 4, borderRadius: "16px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", borderLeft: "6px solid #2d60ff", width: "fit-content", minWidth: 220 }}>
-        <Stack direction="row" alignItems="center" spacing={2}>
-            <Box sx={{ p: 1.5, borderRadius: "12px", backgroundColor: "#e0e7ff" }}>
-                <ReceiptLongIcon sx={{ color: "#2d60ff" }} />
-            </Box>
-            <Box>
-                <Typography variant="caption" color="textSecondary" fontWeight="600">TAX CATEGORIES</Typography>
-                <Typography variant="h5" fontWeight="800" color="#1b2559">{taxes.length}</Typography>
-            </Box>
-        </Stack>
-      </Paper>
+      {/* Full Width Ledger Hub */}
+      <Paper sx={{ borderRadius: "28px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", backgroundColor: "#fff", position: "relative" }}>
+          {(loading || refreshing) && (
+              <LinearProgress sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, bgcolor: "#f4f7fe", "& .MuiLinearProgress-bar": { bgcolor: "#4318ff" } }} />
+          )}
+          
+          <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Fiscal Compliance Ledger</Typography>
+              <Stack direction="row" spacing={2} alignItems="center">
+                  <TextField
+                      size="small"
+                      placeholder="Search Fiscal Tier..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      InputProps={{
+                          startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} />
+                      }}
+                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#fff", width: "320px" } }}
+                  />
+                  <Tooltip title="Synchronize Repository">
+                      <IconButton onClick={() => fetchTaxes(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
+                          <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
+                      </IconButton>
+                  </Tooltip>
+              </Stack>
+          </Box>
 
-      <Paper sx={{ borderRadius: "20px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-        
-        <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
-          <Typography variant="h6" fontWeight="700" color="#1b2559">Tax Management</Typography>
-          <TextField
-            size="small"
-            placeholder="Search by tax name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" }, width: "280px" }}
-          />
-        </Box>
-
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>TAX TYPE NAME</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>PERCENTAGE RATE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredTaxes.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                    No tax types found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredTaxes.map((tax, index) => (
-                  <TableRow key={tax.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>{index + 1}</TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "700", fontSize: "16px" }}>{tax.name}</TableCell>
-                    <TableCell>
-                        <Chip 
-                            label={`${tax.rate}%`}
-                            sx={{ bgcolor: "#f4f7fe", color: "#4318ff", fontWeight: "800", fontSize: "14px" }}
-                        />
-                    </TableCell>
-                    <TableCell>
-                        <Chip 
-                            label={tax.status}
-                            size="small"
-                            sx={{ 
-                                bgcolor: tax.status === "Active" ? "#e6f9ed" : "#fff1f0", 
-                                color: tax.status === "Active" ? "#24d164" : "#ff4d49", 
-                                fontWeight: "700" 
-                            }}
-                        />
-                    </TableCell>
-                    <TableCell align="right" sx={{ pr: 3 }}>
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title="Edit Tax">
-                            <IconButton 
-                                onClick={() => handleOpen(tax)}
-                                sx={{ backgroundColor: "#24d164", color: "#ffffff", borderRadius: "10px", "&:hover": { backgroundColor: "#1eb856" } }}
-                            >
-                                <EditIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete Tax">
-                            <IconButton 
-                                onClick={() => handleDelete(tax.id)}
-                                sx={{ backgroundColor: "#ff4d49", color: "#ffffff", borderRadius: "10px", "&:hover": { backgroundColor: "#e04340" } }}
-                            >
-                                <DeleteIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+          <TableContainer sx={{ 
+              maxHeight: "calc(100vh - 280px)",
+              msOverflowStyle: "none",
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" }
+          }}>
+              <Table stickyHeader>
+                  <TableHead>
+                      <TableRow>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Fiscal Asset Label</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Percentage Protocol</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Compliance Status</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Fiscal Actions</TableCell>
+                      </TableRow>
+                  </TableHead>
+                  <TableBody>
+                      {filteredTaxes.length === 0 && !loading ? (
+                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>Zero fiscal tiers detected in current node.</TableCell></TableRow>
+                      ) : (
+                          filteredTaxes.map((tax, index) => (
+                              <TableRow key={tax.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
+                                  <TableCell sx={{ color: "#1b2559", fontWeight: "800", pl: 4 }}>#{index + 1}</TableCell>
+                                  <TableCell>
+                                      <Stack direction="row" spacing={1.5} alignItems="center">
+                                          <Box sx={{ p: 1, borderRadius: "10px", bgcolor: "rgba(67, 24, 255, 0.05)" }}>
+                                              <ReceiptLongIcon sx={{ color: "#4318ff", fontSize: 18 }} />
+                                          </Box>
+                                          <Typography variant="body2" fontWeight="800" color="#1b2559">{tax.name}</Typography>
+                                      </Stack>
+                                  </TableCell>
+                                  <TableCell>
+                                      <Chip 
+                                          label={`${tax.rate}%`}
+                                          sx={{ fontWeight: "900", bgcolor: "rgba(67, 24, 255, 0.05)", color: "#4318ff", borderRadius: "8px", fontSize: "13px", border: "1px solid rgba(67, 24, 255, 0.1)" }}
+                                      />
+                                  </TableCell>
+                                  <TableCell>
+                                      <Chip 
+                                          label={tax.status.toUpperCase()} 
+                                          size="small" 
+                                          sx={{ 
+                                              fontWeight: "900", 
+                                              bgcolor: tax.status === "Active" ? "rgba(0, 210, 106, 0.1)" : "rgba(163, 174, 208, 0.1)", 
+                                              color: tax.status === "Active" ? "#00d26a" : "#a3aed0", 
+                                              borderRadius: "8px",
+                                              fontSize: "10px",
+                                              border: `1px solid ${tax.status === "Active" ? "rgba(0, 210, 106, 0.2)" : "rgba(163, 174, 208, 0.2)"}`
+                                          }} 
+                                      />
+                                  </TableCell>
+                                  <TableCell align="right" sx={{ pr: 3 }}>
+                                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                      <Tooltip title="Modify Tier">
+                                          <IconButton 
+                                              onClick={() => handleOpen(tax)}
+                                              sx={{ backgroundColor: "#00d26a", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(0, 210, 106, 0.2)", "&:hover": { backgroundColor: "#00b85c" } }}
+                                          >
+                                              <EditIcon sx={{ fontSize: 18 }} />
+                                          </IconButton>
+                                      </Tooltip>
+                                      <Tooltip title="Terminate Tier">
+                                          <IconButton 
+                                              onClick={() => handleDelete(tax.id)}
+                                              sx={{ backgroundColor: "#ff4d49", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(255, 77, 73, 0.2)", "&:hover": { backgroundColor: "#d32f2f" } }}
+                                          >
+                                              <DeleteIcon sx={{ fontSize: 18 }} />
+                                          </IconButton>
+                                      </Tooltip>
+                                    </Stack>
+                                  </TableCell>
+                              </TableRow>
+                          ))
+                      )}
+                  </TableBody>
+              </Table>
+          </TableContainer>
       </Paper>
 
       {/* Add/Edit Tax Dialog */}
@@ -264,28 +310,27 @@ const Taxes = () => {
         open={open} 
         onClose={handleClose}
         PaperProps={{
-            sx: { borderRadius: "20px", p: 2, width: "100%", maxWidth: "450px" }
+            sx: { borderRadius: "24px", p: 1, width: "100%", maxWidth: "450px", border: "1px solid #e0e5f2", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }
         }}
       >
-        <DialogTitle sx={{ fontWeight: "700", color: "#1b2559" }}>
-            {editMode ? "Edit Tax Type" : "Add New Tax Type"}
+        <DialogTitle sx={{ fontWeight: "800", color: "#1b2559", pt: 3, pb: 1, letterSpacing: "-1px" }}>
+            {editMode ? "Modify Fiscal Tier" : "Initialize Fiscal Tier"}
         </DialogTitle>
         <DialogContent>
-            <Stack spacing={3} sx={{ mt: 1 }}>
+            <Stack spacing={3} sx={{ mt: 2 }}>
                 <Box>
-                    <Typography variant="body2" fontWeight="700" color="#1b2559" sx={{ mb: 1 }}>Tax Name</Typography>
+                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Fiscal Asset Label</Typography>
                     <TextField
                         fullWidth
                         name="name"
-                        placeholder="e.g. GST 18%"
+                        placeholder="e.g. GST Standard 18%"
                         value={formData.name}
                         onChange={handleInputChange}
-                        variant="outlined"
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
                     />
                 </Box>
                 <Box>
-                    <Typography variant="body2" fontWeight="700" color="#1b2559" sx={{ mb: 1 }}>Tax Rate (%)</Typography>
+                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Percentage Rate (%)</Typography>
                     <TextField
                         fullWidth
                         name="rate"
@@ -293,29 +338,29 @@ const Taxes = () => {
                         placeholder="e.g. 18"
                         value={formData.rate}
                         onChange={handleInputChange}
-                        variant="outlined"
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
                     />
                 </Box>
                 <Box>
-                    <Typography variant="body2" fontWeight="700" color="#1b2559" sx={{ mb: 1 }}>Status</Typography>
-                    <FormControl fullWidth sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}>
+                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Compliance Status</Typography>
+                    <FormControl fullWidth>
                         <Select
                             name="status"
                             value={formData.status}
                             onChange={handleInputChange}
+                            sx={{ borderRadius: "16px", bgcolor: "#fafbfc", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e5f2" } }}
                         >
-                            <MenuItem value="Active">Active</MenuItem>
-                            <MenuItem value="Inactive">Inactive</MenuItem>
+                            <MenuItem value="Active">Active Compliance</MenuItem>
+                            <MenuItem value="Inactive">Dormant Fiscal</MenuItem>
                         </Select>
                     </FormControl>
                 </Box>
             </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
+        <DialogActions sx={{ p: 4 }}>
             <Button 
                 onClick={handleClose}
-                sx={{ borderRadius: "10px", textTransform: "none", fontWeight: "600", color: "#475467" }}
+                sx={{ borderRadius: "14px", textTransform: "none", fontWeight: "800", color: "#a3aed0" }}
             >
                 Cancel
             </Button>
@@ -323,18 +368,32 @@ const Taxes = () => {
                 onClick={handleSave}
                 variant="contained"
                 sx={{ 
-                    borderRadius: "10px", 
+                    borderRadius: "14px", 
                     textTransform: "none", 
-                    fontWeight: "600", 
-                    backgroundColor: "#2d60ff",
-                    "&:hover": { backgroundColor: "#2046cc" },
-                    px: 4
+                    fontWeight: "800", 
+                    backgroundColor: "#4318ff",
+                    "&:hover": { backgroundColor: "#3310cc" },
+                    px: 4,
+                    py: 1.5,
+                    boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                 }}
             >
-                {editMode ? "Update" : "Save"}
+                {editMode ? "Confirm Modification" : "Deploy Fiscal Tier"}
             </Button>
         </DialogActions>
       </Dialog>
+
+      <style>
+          {`
+          @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+          }
+          .spin-animation {
+              animation: spin 1s linear infinite;
+          }
+          `}
+      </style>
     </Box>
   );
 };

@@ -41,7 +41,6 @@ const Rewards = () => {
       setRewards(formattedData);
     } catch (error) {
       console.error("Error fetching rewards:", error);
-    } finally {
     }
   }, []);
 
@@ -74,7 +73,7 @@ const Rewards = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this reward rule?")) {
       try {
-        await genericApi.delete("rewards", id);
+        await genericApi.remove("rewards", id);
         fetchRewards();
       } catch (error) {
         console.error("Error deleting reward:", error);
@@ -151,92 +150,62 @@ const Rewards = () => {
           </Stack>
         </Paper>
 
-        {/* List */}
-        <Paper sx={{ flex: 1, borderRadius: "20px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", width: "100%" }}>
-          <Box 
-            sx={{ 
-              p: 3, 
-              display: "flex", 
-              justifyContent: "space-between", 
-              alignItems: "center",
-              borderBottom: "1px solid #f1f1f1"
-            }}
-          >
-            <Typography variant="h6" fontWeight="700" color="#1b2559">
-              Reward Point Distribution
-            </Typography>
+        {/* List Section */}
+        <Paper sx={{ flex: 1, p: 4, borderRadius: "24px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", width: "100%" }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+            <Typography variant="h6" fontWeight="800" color="#1b2559">Reward Distribution</Typography>
             <TextField
               size="small"
-              placeholder="Search by value or points..."
+              placeholder="Search by amount..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              sx={{ 
-                "& .MuiOutlinedInput-root": { borderRadius: "10px" },
-                width: "280px"
-              }}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", backgroundColor: "#f4f7fe", "& fieldset": { border: "none" } }, width: "250px" }}
             />
-          </Box>
+          </Stack>
 
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                  <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CART VALUE</TableCell>
-                  <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>REWARD POINTS</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
+                <TableRow>
+                  <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", py: 2, pl: 4, borderBottom: "1px solid #e0e5f2" }}>#</TableCell>
+                  <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>CART VALUE (₹)</TableCell>
+                  <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>REWARD POINTS</TableCell>
+                  <TableCell align="right" sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", pr: 4, borderBottom: "1px solid #e0e5f2" }}>MANAGEMENT</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredRewards.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
-                      No reward rules found
+                    <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
+                      <Typography variant="body2" color="textSecondary">No reward rules defined.</Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredRewards.map((item, index) => (
-                    <TableRow 
-                      key={item.id} 
-                      sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}
-                    >
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>{index + 1}</TableCell>
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "700", fontSize: "16px" }}>
-                        ₹{item.cartValue.toLocaleString()}
-                      </TableCell>
+                    <TableRow key={item.id} sx={{ "&:hover": { bgcolor: "#f9fafc" } }}>
+                      <TableCell sx={{ color: "#a3aed0", fontWeight: "700", pl: 4 }}>{index + 1}</TableCell>
+                      <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>₹{item.cartValue}</TableCell>
                       <TableCell>
-                          <Chip 
-                              label={`${item.rewardPoints} Points`}
-                              sx={{ bgcolor: "#e6f9ed", color: "#24d164", fontWeight: "700", borderRadius: "8px" }}
-                          />
+                        <Chip label={`${item.rewardPoints} Points`} size="small" sx={{ bgcolor: "#eef2ff", color: "#4318ff", fontWeight: "800", borderRadius: "8px" }} />
                       </TableCell>
                       <TableCell align="right" sx={{ pr: 3 }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <Tooltip title="Edit Rule">
-                              <IconButton 
-                                  onClick={() => navigate(`/rewards-list/edit/${item.id}`)}
-                                  sx={{ 
-                                      backgroundColor: "#00d26a", 
-                                      color: "#fff", 
-                                      borderRadius: "10px",
-                                      "&:hover": { backgroundColor: "#00b85c" }
-                                  }}
-                              >
-                                  <EditIcon fontSize="small" />
-                              </IconButton>
-                          </Tooltip>
                           <Tooltip title="Delete Rule">
-                              <IconButton 
-                                  onClick={() => handleDelete(item.id)}
-                                  sx={{ 
-                                      backgroundColor: "#ff4d49", 
-                                      color: "#fff", 
-                                      borderRadius: "10px",
-                                      "&:hover": { backgroundColor: "#e03e3e" }
-                                  }}
-                              >
-                                  <DeleteIcon fontSize="small" />
-                              </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDelete(item.id)}
+                              sx={{
+                                color: "#fff",
+                                bgcolor: "#ff4d49",
+                                borderRadius: "10px",
+                                width: "32px",
+                                height: "32px",
+                                "&:hover": { bgcolor: "#e03e3a", transform: "translateY(-1px)" },
+                                transition: "0.2s"
+                              }}
+                            >
+                              <DeleteIcon sx={{ fontSize: "16px" }} />
+                            </IconButton>
                           </Tooltip>
                         </Stack>
                       </TableCell>

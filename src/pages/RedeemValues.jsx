@@ -73,7 +73,7 @@ const RedeemValues = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this redemption rule?")) {
       try {
-        await genericApi.delete("reedm value", id);
+        await genericApi.remove("reedm value", id);
         fetchRedeemValues();
       } catch (error) {
         console.error("Error deleting redeem value:", error);

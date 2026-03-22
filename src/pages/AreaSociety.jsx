@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Alert,
   Box,
@@ -28,6 +28,8 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import MapIcon from "@mui/icons-material/Map";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   addArea,
   deleteArea,
@@ -49,11 +51,13 @@ const modalStyle = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 450,
-  bgcolor: "background.paper",
-  borderRadius: "20px",
-  boxShadow: 24,
+  width: 480,
+  bgcolor: "#fff",
+  borderRadius: "24px",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
   p: 4,
+  outline: "none",
+  border: "1px solid #e0e5f2"
 };
 
 const initialFormState = {
@@ -71,6 +75,7 @@ const AreaSociety = () => {
   const [editingArea, setEditingArea] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -81,13 +86,13 @@ const AreaSociety = () => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const enrichAreasWithCities = (areaRecords, cityRecords) =>
+  const enrichAreasWithCities = useCallback((areaRecords, cityRecords) =>
     areaRecords.map((area) => {
       const matchedCity = cityRecords.find(
         (city) =>
           city.id === area.cityId ||
           city.code === area.cityId ||
-          city.name.toLowerCase() === area.cityName.toLowerCase()
+          (city.name && area.cityName && city.name.toLowerCase() === area.cityName.toLowerCase())
       );
 
       return {
@@ -95,75 +100,55 @@ const AreaSociety = () => {
         cityId: area.cityId || matchedCity?.id || "",
         cityName: area.cityName || matchedCity?.name || "Unassigned",
       };
-    });
+    }), []);
+
+  const fetchData = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+
+    try {
+      const [areasResult, citiesResult] = await Promise.allSettled([
+        getAllAreas(),
+        getAllCities(),
+      ]);
+
+      const normalizedCities =
+        citiesResult.status === "fulfilled"
+          ? extractCollection(citiesResult.value, ["cities", "cityList"]).map(
+              (city, index) => normalizeCityRecord(city, index)
+            )
+          : [];
+
+      const normalizedAreas =
+        areasResult.status === "fulfilled"
+          ? extractCollection(areasResult.value, ["areas", "areaList"]).map(
+              (area, index) => normalizeAreaRecord(area, index)
+            )
+          : [];
+
+      setCities(normalizedCities);
+      setAreas(enrichAreasWithCities(normalizedAreas, normalizedCities));
+
+      if (citiesResult.status === "rejected") {
+        showSnackbar(getErrorMessage(citiesResult.reason, "Unable to load cities."), "error");
+      }
+      if (areasResult.status === "rejected") {
+        showSnackbar(getErrorMessage(areasResult.reason, "Unable to load areas."), "error");
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [enrichAreasWithCities]);
 
   useEffect(() => {
-    const fetchAreaManagementData = async () => {
-      setLoading(true);
-
-      try {
-        const [areasResult, citiesResult] = await Promise.allSettled([
-          getAllAreas(),
-          getAllCities(),
-        ]);
-
-        const normalizedCities =
-          citiesResult.status === "fulfilled"
-            ? extractCollection(citiesResult.value, ["cities", "cityList"]).map(
-                (city, index) => normalizeCityRecord(city, index)
-              )
-            : [];
-
-        const normalizedAreas =
-          areasResult.status === "fulfilled"
-            ? extractCollection(areasResult.value, ["areas", "areaList"]).map(
-                (area, index) => normalizeAreaRecord(area, index)
-              )
-            : [];
-
-        setCities(normalizedCities);
-        setAreas(enrichAreasWithCities(normalizedAreas, normalizedCities));
-
-        if (citiesResult.status === "rejected") {
-          showSnackbar(
-            getErrorMessage(
-              citiesResult.reason,
-              "Unable to load city options for areas."
-            ),
-            "error"
-          );
-        }
-
-        if (areasResult.status === "rejected") {
-          showSnackbar(
-            getErrorMessage(areasResult.reason, "Unable to load areas right now."),
-            "error"
-          );
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAreaManagementData();
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
   const resetModalState = () => {
     setEditingArea(null);
     setFormData(initialFormState);
     setOpen(false);
-  };
-
-  const fetchAreasOnly = async () => {
-    try {
-      const response = await getAllAreas();
-      const records = extractCollection(response, ["areas", "areaList"]).map(
-        (area, index) => normalizeAreaRecord(area, index)
-      );
-      setAreas(enrichAreasWithCities(records, cities));
-    } catch (error) {
-      showSnackbar(getErrorMessage(error, "Unable to refresh areas."), "error");
-    }
   };
 
   const handleOpenAdd = () => {
@@ -174,10 +159,10 @@ const AreaSociety = () => {
 
   const handleOpenEdit = (area) => {
     const matchedCity = cities.find(
-      (city) =>
-        city.id === area.cityId ||
-        city.code === area.cityId ||
-        city.name.toLowerCase() === area.cityName.toLowerCase()
+        (city) =>
+          city.id === area.cityId ||
+          city.code === area.cityId ||
+          (city.name && area.cityName && city.name.toLowerCase() === area.cityName.toLowerCase())
     );
 
     setEditingArea(area);
@@ -191,7 +176,6 @@ const AreaSociety = () => {
 
   const handleCityChange = (event) => {
     const selectedCity = cities.find((city) => city.id === event.target.value);
-
     setFormData((currentValue) => ({
       ...currentValue,
       cityId: selectedCity?.id || "",
@@ -201,17 +185,16 @@ const AreaSociety = () => {
 
   const handleSubmit = async () => {
     if (!formData.cityId || !formData.cityName) {
-      showSnackbar("Please select a city for this area.", "error");
+      showSnackbar("Please select a valid city for this mapping.", "error");
       return;
     }
 
     if (!formData.areaName.trim()) {
-      showSnackbar("Area name is required.", "error");
+      showSnackbar("Area name identifier is required.", "error");
       return;
     }
 
     setSubmitting(true);
-
     try {
       const payloads = buildAreaPayloads({
         name: formData.areaName,
@@ -224,229 +207,182 @@ const AreaSociety = () => {
           (payload) => updateArea(editingArea.backendId, payload),
           payloads
         );
-        showSnackbar("Area updated successfully.");
+        showSnackbar("Area credentials updated successfully.");
       } else {
         await runRequestWithPayloads((payload) => addArea(payload), payloads);
-        showSnackbar("Area added successfully.");
+        showSnackbar("New area registered in domain.");
       }
 
       resetModalState();
-      await fetchAreasOnly();
+      await fetchData(true);
     } catch (error) {
-      showSnackbar(
-        getErrorMessage(
-          error,
-          editingArea ? "Unable to update the area." : "Unable to add the area."
-        ),
-        "error"
-      );
+      showSnackbar(getErrorMessage(error, "Operational Sync Error."), "error");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (area) => {
-    if (!window.confirm(`Delete "${area.name}" from the area list?`)) {
+    if (!window.confirm(`Permanently remove "${area.name}" from the mapping protocols?`)) {
       return;
     }
 
     try {
       await deleteArea(area.backendId);
-      showSnackbar("Area deleted successfully.");
-      await fetchAreasOnly();
+      showSnackbar("Area de-registered successfully.");
+      await fetchData(true);
     } catch (error) {
-      showSnackbar(getErrorMessage(error, "Unable to delete the area."), "error");
+      showSnackbar(getErrorMessage(error, "Removal Failed."), "error");
     }
   };
 
   const filteredAreas = areas.filter((area) => {
     const query = search.trim().toLowerCase();
-
-    if (!query) {
-      return true;
-    }
-
+    if (!query) return true;
     return (
       area.name.toLowerCase().includes(query) ||
-      area.cityName.toLowerCase().includes(query) ||
-      area.status.toLowerCase().includes(query)
+      area.cityName.toLowerCase().includes(query)
     );
   });
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
-      <Box
-        sx={{
-          mb: 4,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      
+      {/* Premium Header Container */}
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
-          <Typography variant="h4" fontWeight="700" color="#2b3674">
-            Hi, Day Catch Super Admin Panel.
-          </Typography>
-          <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-            Manage residential areas and societies for delivery mapping.
-          </Typography>
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Geospatial Management
+            </Typography>
+            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+                Manage residential territories and society clusters for logistical optimization.
+            </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAdd}
-          disabled={!cities.length && !loading}
-          sx={{
-            backgroundColor: "#2d60ff",
-            "&:hover": { backgroundColor: "#2046cc" },
-            borderRadius: "12px",
-            textTransform: "none",
-            fontWeight: "700",
-            px: 4,
-            py: 1.2,
-          }}
-        >
-          Add Area
-        </Button>
+        <Stack direction="row" spacing={2}>
+            <Tooltip title="Force Sync">
+                <IconButton 
+                    onClick={() => fetchData(true)} 
+                    disabled={refreshing || loading}
+                    sx={{ bgcolor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", p: 1.5 }}
+                >
+                    {refreshing ? <CircularProgress size={20} /> : <RefreshIcon sx={{ color: "#4318ff" }} />}
+                </IconButton>
+            </Tooltip>
+            <Button 
+                variant="contained" 
+                startIcon={<AddIcon />}
+                onClick={handleOpenAdd}
+                disabled={!cities.length && !loading}
+                sx={{ 
+                    backgroundColor: "#4318ff", 
+                    "&:hover": { backgroundColor: "#3311cc" },
+                    borderRadius: "14px",
+                    textTransform: "none",
+                    px: 4,
+                    fontWeight: "800",
+                    boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
+                }}
+            >
+                Register Area
+            </Button>
+        </Stack>
       </Box>
 
-      <Paper
-        sx={{
-          p: 3,
-          mb: 4,
-          borderRadius: "16px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-          borderLeft: "6px solid #4318ff",
-          width: "fit-content",
-          minWidth: 250,
-        }}
-      >
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <Box sx={{ p: 1.5, borderRadius: "12px", backgroundColor: "#e0e7ff" }}>
-            <MapIcon sx={{ color: "#4318ff" }} />
+      {/* Analytics Card */}
+      <Paper sx={{ p: 3, mb: 4, borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", width: "fit-content", minWidth: 280, bgcolor: "#fff" }}>
+        <Stack direction="row" alignItems="center" spacing={3}>
+          <Box sx={{ p: 2, borderRadius: "16px", backgroundColor: "#f4f7fe" }}>
+            <MapIcon sx={{ color: "#4318ff", fontSize: 32 }} />
           </Box>
           <Box>
-            <Typography variant="caption" color="textSecondary" fontWeight="600">
-              MAPPED AREAS
+            <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase" }}>
+              Active Territories
             </Typography>
-            <Typography variant="h5" fontWeight="800" color="#1b2559">
+            <Typography variant="h4" fontWeight="800" color="#1b2559">
               {areas.length}
             </Typography>
           </Box>
         </Stack>
       </Paper>
 
-      <Paper
-        sx={{
-          borderRadius: "20px",
-          overflow: "hidden",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-        }}
-      >
-        <Box
-          sx={{
-            p: 3,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderBottom: "1px solid #f1f1f1",
-          }}
-        >
-          <Typography variant="h6" fontWeight="600" color="#1b2559">
-            Areas Directory
-          </Typography>
-          <TextField
-            size="small"
-            placeholder="Search by area or city..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" }, width: "350px" }}
-          />
+      {/* Directory Paper */}
+      <Paper sx={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", backgroundColor: "#fff" }}>
+        
+        {/* Search Toolbar */}
+        <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
+            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Territory Directory</Typography>
+            <TextField
+                size="small"
+                placeholder="Search area or city footprint..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                InputProps={{
+                    startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} />
+                }}
+                sx={{ 
+                    "& .MuiOutlinedInput-root": { 
+                        borderRadius: "12px", 
+                        backgroundColor: "#fff",
+                        width: "360px"
+                    } 
+                }}
+            />
         </Box>
 
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CITY</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>AREA NAME</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>
-                  ACTIONS
-                </TableCell>
+              <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>#</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>City Domain</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Area Workspace</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Operations</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                    <Stack alignItems="center" spacing={1}>
-                      <CircularProgress size={28} />
-                      <Typography variant="body2" color="textSecondary">
-                        Loading areas...
-                      </Typography>
-                    </Stack>
+                  <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
+                    <CircularProgress sx={{ color: "#4318ff" }} />
                   </TableCell>
                 </TableRow>
               ) : filteredAreas.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                    {search.trim() ? "No matching areas found." : "No areas available yet."}
+                  <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
+                    <Typography color="#a3aed0" fontWeight="600">No geospatial mappings found in current sector.</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredAreas.map((area, index) => (
-                  <TableRow key={area.id} sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{index + 1}</TableCell>
+                  <TableRow 
+                    key={area.id} 
+                    sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}
+                  >
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "700", pl: 4 }}>#{index + 1}</TableCell>
                     <TableCell>
                       <Chip
                         label={area.cityName}
                         size="small"
-                        variant="outlined"
-                        sx={{ color: "#2d60ff", borderColor: "#2d60ff", fontWeight: "600" }}
+                        sx={{ bgcolor: "#f4f7fe", color: "#4318ff", fontWeight: "800", borderRadius: "8px" }}
                       />
                     </TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>{area.name}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={area.status}
-                        size="small"
-                        sx={{
-                          backgroundColor:
-                            area.status.toLowerCase() === "active" ? "#e6f9ed" : "#fff4e5",
-                          color:
-                            area.status.toLowerCase() === "active" ? "#24d164" : "#b54708",
-                          fontWeight: "700",
-                        }}
-                      />
-                    </TableCell>
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "800", fontSize: "15px" }}>{area.name}</TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title="Edit">
+                        <Tooltip title="Edit Footprint">
                           <IconButton
                             size="small"
                             onClick={() => handleOpenEdit(area)}
-                            sx={{
-                              backgroundColor: "#00d26a",
-                              color: "#fff",
-                              borderRadius: "10px",
-                              "&:hover": { backgroundColor: "#00b85c" },
-                            }}
+                            sx={{ backgroundColor: "#f4f7fe", color: "#4318ff", borderRadius: "10px", "&:hover": { backgroundColor: "#e0e5f2" }, p: 1 }}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete">
+                        <Tooltip title="De-register">
                           <IconButton
                             size="small"
                             onClick={() => handleDelete(area)}
-                            sx={{
-                              backgroundColor: "#ff4d49",
-                              color: "#fff",
-                              borderRadius: "10px",
-                              "&:hover": { backgroundColor: "#e03e3e" },
-                            }}
+                            sx={{ backgroundColor: "#fff5f5", color: "#ff4d49", borderRadius: "10px", "&:hover": { backgroundColor: "#ffebeb" }, p: 1 }}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -462,52 +398,58 @@ const AreaSociety = () => {
       </Paper>
 
       {!loading && !cities.length && (
-        <Alert severity="warning" sx={{ mt: 2, borderRadius: "12px" }}>
-          Add a city first to create mapped areas.
+        <Alert severity="warning" sx={{ mt: 3, borderRadius: "14px", fontWeight: "600" }}>
+          Operational Alert: Please establish city definitions before mapping territories.
         </Alert>
       )}
 
+      {/* Premium Modal */}
       <Modal open={open} onClose={() => !submitting && resetModalState()}>
         <Box sx={modalStyle}>
-          <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }} color="#1b2559">
-            {editingArea ? "Edit Area" : "Add New Area"}
+          <Typography variant="h5" fontWeight="800" sx={{ mb: 1 }} color="#1b2559">
+            {editingArea ? "Update Territory" : "Register Territory"}
+          </Typography>
+          <Typography variant="body2" color="#a3aed0" fontWeight="600" sx={{ mb: 4 }}>
+            Ensure exact geospatial identifiers for logistical precision.
           </Typography>
 
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Select City</InputLabel>
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <Typography variant="body2" fontWeight="800" color="#2b3674" sx={{ mb: 1, ml: 0.5 }}>PARENT CITY</Typography>
             <Select
               value={formData.cityId}
-              label="Select City"
               onChange={handleCityChange}
-              sx={{ borderRadius: "12px" }}
-              disabled={submitting || !cities.length}
+              displayEmpty
+              sx={{ borderRadius: "14px", backgroundColor: "#f4f7fe", "& .MuiOutlinedInput-notchedOutline": { border: "none" } }}
+              disabled={submitting}
             >
+              <MenuItem value="" disabled><Typography variant="body2" color="#a3aed0">Select Target City</Typography></MenuItem>
               {cities.map((city) => (
                 <MenuItem key={city.id} value={city.id}>
-                  {city.name}
+                    <Typography variant="body2" fontWeight="700">{city.name}</Typography>
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <TextField
-            fullWidth
-            label="Area Name"
-            value={formData.areaName}
-            onChange={(event) =>
-              setFormData((currentValue) => ({
-                ...currentValue,
-                areaName: event.target.value,
-              }))
-            }
-            sx={{ mb: 4, "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
-            disabled={submitting}
-          />
+          <Box sx={{ mb: 5 }}>
+            <Typography variant="body2" fontWeight="800" color="#2b3674" sx={{ mb: 1, ml: 0.5 }}>AREA / SOCIETY NAME</Typography>
+            <TextField
+              fullWidth
+              placeholder="e.g. Jubilee Hills Sector 1"
+              value={formData.areaName}
+              onChange={(e) => setFormData(prev => ({ ...prev, areaName: e.target.value }))}
+              sx={{ 
+                "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#f4f7fe", border: "none" },
+                "& .MuiOutlinedInput-notchedOutline": { border: "none" }
+              }}
+              disabled={submitting}
+            />
+          </Box>
 
           <Stack direction="row" spacing={2} justifyContent="flex-end">
             <Button
               onClick={resetModalState}
-              sx={{ textTransform: "none", color: "#475467" }}
+              sx={{ textTransform: "none", color: "#a3aed0", fontWeight: "800" }}
               disabled={submitting}
             >
               Cancel
@@ -517,15 +459,17 @@ const AreaSociety = () => {
               onClick={handleSubmit}
               disabled={submitting || !cities.length}
               sx={{
-                backgroundColor: "#2d60ff",
-                borderRadius: "12px",
+                backgroundColor: "#4318ff",
+                "&:hover": { backgroundColor: "#3311cc" },
+                borderRadius: "14px",
                 textTransform: "none",
                 px: 4,
-                py: 1,
-                fontWeight: "700",
+                py: 1.5,
+                fontWeight: "800",
+                boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
               }}
             >
-              {submitting ? "Saving..." : editingArea ? "Update Area" : "Add Area"}
+              {submitting ? "Synchronizing..." : editingArea ? "Update Mapping" : "Activate Area"}
             </Button>
           </Stack>
         </Box>
@@ -533,18 +477,14 @@ const AreaSociety = () => {
 
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3500}
-        onClose={() =>
-          setSnackbar((currentValue) => ({ ...currentValue, open: false }))
-        }
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
         <Alert
           severity={snackbar.severity}
-          onClose={() =>
-            setSnackbar((currentValue) => ({ ...currentValue, open: false }))
-          }
-          sx={{ borderRadius: "10px" }}
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          sx={{ borderRadius: "14px", fontWeight: "600", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
         >
           {snackbar.message}
         </Alert>
