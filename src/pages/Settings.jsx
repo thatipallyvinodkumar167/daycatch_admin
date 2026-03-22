@@ -33,7 +33,7 @@ import {
   Map as MapIcon,
   DirectionsCar as DirectionsCarIcon,
   Link as LinkIcon,
-  ImageIcon,
+  Image as ImageIcon,
   Campaign as CampaignIcon,
   CloudUpload as BrowseGalleryIcon,
   Hub as HubIcon,
