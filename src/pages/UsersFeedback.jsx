@@ -13,8 +13,7 @@ import {
   Stack,
   IconButton,
   Tooltip,
-  CircularProgress,
-  Button
+  CircularProgress
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SearchIcon from "@mui/icons-material/Search";

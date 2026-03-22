@@ -14,7 +14,6 @@ import {
   Chip,
   Snackbar,
   IconButton,
-  Tooltip,
   Fade
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";

@@ -13,14 +13,11 @@ import {
   Snackbar,
   Alert,
   IconButton,
-  Tooltip,
-  Divider,
   Fade,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import DeliveryDiningIcon from "@mui/icons-material/DeliveryDining";
 import CampaignIcon from "@mui/icons-material/Campaign";
-import ImageIcon from "@mui/icons-material/Image";
 import CloseIcon from "@mui/icons-material/Close";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import SpeedIcon from "@mui/icons-material/Speed";

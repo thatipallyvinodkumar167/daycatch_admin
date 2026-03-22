@@ -15,7 +15,6 @@ import {
   Avatar,
   IconButton,
   Tooltip,
-  Button,
   Divider,
   LinearProgress,
   CircularProgress
@@ -27,8 +26,7 @@ import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
   Visibility as VisibilityIcon,
-  VerifiedUser as VerifiedUserIcon,
-  AdminPanelSettings as AdminPanelSettingsIcon
+  VerifiedUser as VerifiedUserIcon
 } from "@mui/icons-material";
 import { genericApi } from "../api/genericApi";
 

@@ -13,7 +13,6 @@ import {
   Snackbar,
   Alert,
   IconButton,
-  Tooltip,
   Divider,
   Fade,
   Chip
@@ -21,7 +20,6 @@ import {
 import SendIcon from "@mui/icons-material/Send";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import CampaignIcon from "@mui/icons-material/Campaign";
-import ImageIcon from "@mui/icons-material/Image";
 import CloseIcon from "@mui/icons-material/Close";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import TerminalIcon from "@mui/icons-material/Terminal";
