@@ -62,14 +62,14 @@ const Reports = () => {
         if (collectionName === "deliveryboy") {
           formatted = results.sort((a, b) => (b.Orders || 0) - (a.Orders || 0)).map((d, i) => ({
             id: i + 1,
-            name: d["Boy Name"] || d.name || "Unknown Fleet Asset",
+            name: d["Boy Name"] || d.name || "Unknown Driver",
             mobile: d["Boy Phone"] || d.mobile || "N/A",
             orders: d.Orders || 0
           }));
         } else if (collectionName === "users") {
           formatted = results.map((u, i) => ({
             id: i + 1,
-            name: u["User Name"] || u.name || "Unknown Identity",
+            name: u["User Name"] || u.name || "Unknown User",
             userMobile: u["User Phone"] || u.mobile || "N/A",
             currentMonth: u.ordersThisMonth || 0,
             previousMonth: u.ordersPrevMonth || 0,
@@ -80,7 +80,7 @@ const Reports = () => {
         } else if (collectionName === "storeList") {
           formatted = results.map((s, i) => ({
             id: i + 1,
-            name: s["Store Name"] || s.name || "Unknown Merchant Node",
+            name: s["Store Name"] || s.name || "Unknown Store",
             storeId: s.id || s._id || i + 1,
             orders: s.orders || 0
           }));
@@ -114,29 +114,29 @@ const Reports = () => {
   const mainCategories = [
     { 
         id: "delivery", 
-        title: "Fleet Operations", 
+        title: "Delivery Partner Reports", 
         icon: <DeliveryDiningIcon sx={{ fontSize: 32, color: "#4318ff" }} />,
         reports: [
-            { id: "delivery_top", name: "Top Performance Matrix" },
-            { id: "delivery_orders", name: "Fleet Volume Audit" }
+            { id: "delivery_top", name: "Top Performers" },
+            { id: "delivery_orders", name: "Delivery Volume" }
         ]
     },
     { 
         id: "users", 
-        title: "Consumer Insights", 
+        title: "User Reports", 
         icon: <PeopleIcon sx={{ fontSize: 32, color: "#4318ff" }} />,
         reports: [
-            { id: "users_top", name: "High-Value Consumer Tier" },
-            { id: "users_worst", name: "At-Risk Retention Audit" }
+            { id: "users_top", name: "Top Spenders" },
+            { id: "users_worst", name: "Inactive Users" }
         ]
     },
     { 
         id: "stores", 
-        title: "Merchant Matrix", 
+        title: "Store Reports", 
         icon: <StorefrontIcon sx={{ fontSize: 32, color: "#4318ff" }} />,
         reports: [
-            { id: "store_top", name: "High-Velocity Partners" },
-            { id: "store_orders", name: "Merchant Volume Ledger" }
+            { id: "store_top", name: "Top Selling Stores" },
+            { id: "store_orders", name: "Store Sales Volume" }
         ]
     }
   ];
@@ -155,14 +155,14 @@ const Reports = () => {
               </IconButton>
               <Box>
                   <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>{title}</Typography>
-                  <Typography variant="body2" color="#a3aed0" fontWeight="600">Day Catch Intelligent Audit Node</Typography>
+                  <Typography variant="body2" color="#a3aed0" fontWeight="600">Reports and Insights</Typography>
               </Box>
           </Stack>
           <Stack direction="row" spacing={3} alignItems="center">
                 <Stack direction="row" spacing={1} alignItems="center">
                     <Box sx={{ color: "#4318ff", display: "flex" }}><AssessmentIcon sx={{ fontSize: 18 }} /></Box>
                     <Box>
-                        <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase", display: "block", lineHeight: 1 }}>ANALYSIS TIER</Typography>
+                        <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase", display: "block", lineHeight: 1 }}>STATUS</Typography>
                         <Typography variant="subtitle2" fontWeight="800" color="#1b2559">Verified</Typography>
                     </Box>
                 </Stack>
@@ -172,7 +172,7 @@ const Reports = () => {
                     startIcon={<TrendingUpIcon />} 
                     sx={{ backgroundColor: "#4318ff", borderRadius: "14px", textTransform: "none", fontWeight: "800", "&:hover": { backgroundColor: "#3310cc" } }}
                 >
-                    Generate Manifest
+                    Export Report
                 </Button>
           </Stack>
         </Box>
@@ -184,11 +184,11 @@ const Reports = () => {
             )}
             
             <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-                <Typography variant="subtitle1" fontWeight="800" color="#1b2559">{title} Repository</Typography>
+                <Typography variant="subtitle1" fontWeight="800" color="#1b2559">{title}</Typography>
                 <Stack direction="row" spacing={2} alignItems="center">
                     <TextField
                         size="small"
-                        placeholder="Search Intelligence Manifest..."
+                        placeholder="Search Reports..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         InputProps={{
@@ -196,7 +196,7 @@ const Reports = () => {
                         }}
                         sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#fff", width: "320px" } }}
                     />
-                    <Tooltip title="Synchronize Repository">
+                    <Tooltip title="Refresh">
                         <IconButton onClick={() => fetchReportData(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
                             <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
                         </IconButton>
@@ -218,12 +218,12 @@ const Reports = () => {
                                     {h}
                                 </TableCell>
                             ))}
-                            <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Protocol</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {filteredData.length === 0 && !loading ? (
-                            <TableRow><TableCell colSpan={headers.length + 1} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>Zero intelligence records detected for current query.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={headers.length + 1} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>No records found.</TableCell></TableRow>
                         ) : (
                             filteredData.map((row, i) => (
                                 <TableRow key={i} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
@@ -266,7 +266,7 @@ const Reports = () => {
                                             startIcon={<VisibilityIcon sx={{ fontSize: 14 }} />}
                                             sx={{ borderRadius: "10px", color: "#4318ff", fontWeight: "800", textTransform: "none", "&:hover": { bgcolor: "rgba(67, 24, 255, 0.05)" } }}
                                         >
-                                            Detailed Analysis
+                                            Details
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -284,43 +284,43 @@ const Reports = () => {
     switch (activeTab) {
         case "delivery_top":
             return renderTable(
-                ["#", "Fleet Identity", "Volume (30D)"],
-                "Performance Matrix: Fleet Operations",
+                ["#", "Driver Name", "Volume (30D)"],
+                "Top Performing Delivery Partners",
                 true
             );
         case "delivery_orders":
             return renderTable(
-                ["#", "Fleet Identity", "Operational Volume"],
-                "Fleet Volume Audit Ledger",
+                ["#", "Driver Name", "Total Orders"],
+                "Delivery Volume Report",
                 true
             );
         case "users_top":
             return renderTable(
-                ["#", "Consumer Identity", "Curr. Month", "Prev. Month", "Delta"],
-                "Consumer Tier Intelligence",
+                ["#", "User Name", "Curr. Month", "Prev. Month", "Change"],
+                "Top User Spenders",
                 false,
                 false,
                 true
             );
         case "users_worst":
             return renderTable(
-                ["#", "Consumer Identity", "Curr. Month", "Prev. Month", "Delta"],
-                "Consumer Retention Audit",
+                ["#", "User Name", "Curr. Month", "Prev. Month", "Change"],
+                "Inactive User Report",
                 false,
                 false,
                 true
             );
         case "store_top":
             return renderTable(
-                ["#", "Merchant Identity", "Volume Ledger"],
-                "High-Velocity Partner Matrix",
+                ["#", "Store Name", "Total Orders"],
+                "Top Selling Stores Report",
                 false,
                 true
             );
         case "store_orders":
             return renderTable(
-                ["#", "Merchant Identity", "Order Manifests"],
-                "Merchant Volume Repository",
+                ["#", "Store Name", "Order Volume"],
+                "Store Sales Volume Report",
                 false,
                 true
             );
@@ -376,8 +376,8 @@ const Reports = () => {
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       {activeTab === "main" && (
         <Box sx={{ mb: 6 }}>
-            <Typography variant="h3" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-2px" }}>Intelligent Insights Hub</Typography>
-            <Typography variant="body1" color="#a3aed0" fontWeight="600">Day Catch Predictive Analytics & Operational Auditor</Typography>
+            <Typography variant="h3" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-2px" }}>Reports Dashboard</Typography>
+            <Typography variant="body1" color="#a3aed0" fontWeight="600">View and manage all application reports and insights.</Typography>
         </Box>
       )}
 

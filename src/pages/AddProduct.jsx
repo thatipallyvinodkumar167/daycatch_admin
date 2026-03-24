@@ -98,10 +98,10 @@ const AddProduct = () => {
         description: formData.description,
       };
       await createProduct(payload);
-      alert("Operational Sync: New SKU registered in central catalog.");
+      alert("Product added successfully to the catalog.");
       navigate("/products");
     } catch (error) {
-      console.error("Persistence Error:", error);
+      console.error("Error adding product:", error);
     } finally {
       setLoading(false);
     }
@@ -119,10 +119,10 @@ const AddProduct = () => {
         </Tooltip>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Register Inventory SKU
+                Add Admin Product
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Establish a fresh root-level entry within the global product taxonomy.
+                Add a new product to your master inventory.
             </Typography>
         </Box>
       </Box>
@@ -134,7 +134,7 @@ const AddProduct = () => {
           <Grid item xs={12} md={6}>
             <Stack spacing={4}>
               <Box>
-                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>PRODUCT NARRATIVE (NAME)</Typography>
+                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>PRODUCT NAME</Typography>
                 <TextField 
                     fullWidth 
                     placeholder="e.g. Organic Atlantic Salmon"
@@ -147,7 +147,7 @@ const AddProduct = () => {
               <Grid container spacing={2}>
                   <Grid item xs={6}>
                     <Box>
-                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>ROOT HIERARCHY</Typography>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>PARENT CATEGORY</Typography>
                         <Select 
                             fullWidth 
                             value={formData.category} 
@@ -162,7 +162,7 @@ const AddProduct = () => {
                   </Grid>
                   <Grid item xs={6}>
                     <Box>
-                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>SUBORDINATE TYPE</Typography>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>SUB CATEGORY</Typography>
                         <Select 
                             fullWidth
                             displayEmpty
@@ -186,7 +186,7 @@ const AddProduct = () => {
 
               <Stack direction="row" spacing={3}>
                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>VALUATION (PRICE)</Typography>
+                    <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>SELLING PRICE</Typography>
                     <TextField 
                         fullWidth 
                         type="number" 
@@ -196,7 +196,7 @@ const AddProduct = () => {
                     />
                  </Box>
                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>AVAILABILITY (QTY)</Typography>
+                    <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>QUANTITY</Typography>
                     <TextField 
                         fullWidth 
                         type="number" 
@@ -206,46 +206,11 @@ const AddProduct = () => {
                     />
                  </Box>
               </Stack>
-            </Stack>
-          </Grid>
-          
-          {/* Functional Column 2 */}
-          <Grid item xs={12} md={6}>
-             <Stack spacing={4}>
-              <Box>
-                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>DOMINAL IDENTIFIER (SKU ID)</Typography>
-                <TextField 
-                    fullWidth 
-                    placeholder="Auto-generated if blank"
-                    value={formData.productID} 
-                    onChange={e => setFormData({...formData, productID: e.target.value})} 
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }} 
-                />
-              </Box>
-
-              <Box>
-                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>VISUAL ASSET (IMAGE)</Typography>
-                <Box component="label" sx={{ 
-                  display: "flex", alignItems: "center", gap: 2, p: 2, border: "2px dashed #e0e5f2", borderRadius: "18px", cursor: "pointer", transition: "0.2s",
-                  "&:hover": { backgroundColor: "#f4f7fe", borderColor: "#4318ff" }
-                }}>
-                  <input type="file" hidden accept="image/*" onChange={handleImageChange} />
-                  <CloudUploadIcon sx={{ color: "#a3aed0" }} />
-                  <Typography variant="body2" color="#1b2559" fontWeight="700" sx={{ flex: 1, overflow: "hidden" }}>
-                    {formData.imagePreview ? "Asset staged for upload" : "Select high-res image"}
-                  </Typography>
-                </Box>
-                {formData.imagePreview && (
-                    <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
-                        <img src={formData.imagePreview} alt="Preview" style={{ width: "100%", maxHeight: 180, borderRadius: 20, objectFit: "contain", border: "4px solid #f4f7fe" }} />
-                    </Box>
-                )}
-              </Box>
 
               <Grid container spacing={2}>
                   <Grid item xs={6}>
                     <Box>
-                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>MARKET VALUATION (MRP)</Typography>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>MRP (ORIGINAL PRICE)</Typography>
                         <TextField 
                             fullWidth 
                             type="number" 
@@ -270,15 +235,96 @@ const AddProduct = () => {
               </Grid>
             </Stack>
           </Grid>
+          
+          {/* Functional Column 2 */}
+          <Grid item xs={12} md={6}>
+             <Stack spacing={4}>
+              <Box>
+                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>PRODUCT ID (SKU)</Typography>
+                <TextField 
+                    fullWidth 
+                    placeholder="Auto-generated if blank"
+                    value={formData.productID} 
+                    onChange={e => setFormData({...formData, productID: e.target.value})} 
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }} 
+                />
+              </Box>
+
+              <Box>
+                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>Image (Max. Size 1000 KB)</Typography>
+                <Box sx={{ 
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 3, p: 3, 
+                  border: "2px dashed #e0e5f2", borderRadius: "18px", backgroundColor: "transparent",
+                  transition: "0.2s", "&:hover": { borderColor: "#4318ff", backgroundColor: "#f4f7fe" }
+                }}>
+                  {formData.imagePreview ? (
+                    <>
+                      {/* Thumbnail */}
+                      <Box sx={{ width: 80, height: 80, borderRadius: "12px", overflow: "hidden", border: "1px solid #e0e5f2", display: "flex", justifyContent: "center", alignItems: "center", bgcolor: "#fff" }}>
+                          <img src={formData.imagePreview} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </Box>
+                      
+                      {/* Text & Input wrapper */}
+                      <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                          <Typography 
+                              component="label" 
+                              variant="subtitle1" 
+                              fontWeight="700" 
+                              color="#4318ff" 
+                              sx={{ cursor: "pointer", display: "inline-block" }}
+                          >
+                              Change Image
+                              <input type="file" hidden accept="image/*" onChange={handleImageChange} />
+                          </Typography>
+                          <Typography variant="caption" color="#a3aed0">
+                              Click to choose file · PNG, JPG, WEBP
+                          </Typography>
+                      </Box>
+
+                      {/* Remove Button */}
+                      <Button 
+                          variant="outlined" 
+                          size="small" 
+                          onClick={(e) => {
+                              e.preventDefault();
+                              setFormData(prev => ({ ...prev, imagePreview: "" }));
+                          }}
+                          sx={{ 
+                              color: "#ff4d4f", borderColor: "#ff4d4f", borderRadius: "8px", textTransform: "none", 
+                              fontWeight: "600", px: 2, "&:hover": { borderColor: "#ff4d4f", backgroundColor: "#fff1f0" } 
+                          }}
+                      >
+                          Remove
+                      </Button>
+                    </>
+                  ) : (
+                    <Box component="label" sx={{ display: "flex", alignItems: "center", gap: 2, cursor: "pointer", width: "100%", justifyContent: "center", py: 2 }}>
+                        <input type="file" hidden accept="image/*" onChange={handleImageChange} />
+                        <CloudUploadIcon sx={{ color: "#a3aed0", fontSize: 32 }} />
+                        <Box>
+                            <Typography variant="body1" color="#4318ff" fontWeight="700">
+                                Upload Image
+                            </Typography>
+                            <Typography variant="caption" color="#a3aed0">
+                                Click to choose file · PNG, JPG, WEBP
+                            </Typography>
+                        </Box>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+
+            </Stack>
+          </Grid>
 
           <Grid item xs={12}>
               <Box>
-                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>SPECIFICATIONS / PERSISTENT DESCRIPTION</Typography>
+                <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>PRODUCT DESCRIPTION</Typography>
                 <TextField 
                     fullWidth 
                     multiline 
                     rows={4} 
-                    placeholder="Enter detailed SKU metadata..."
+                    placeholder="Enter detailed product description..."
                     value={formData.description} 
                     onChange={e => setFormData({...formData, description: e.target.value})} 
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "20px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }} 
@@ -299,7 +345,7 @@ const AddProduct = () => {
                     fontWeight: "800", textTransform: "none", fontSize: "1.1rem", boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                 }}
               >
-                {loading ? "Synchronizing SKU..." : "Establish Inventory Entry"}
+                {loading ? "Adding Product..." : "Add Product"}
               </Button>
           </Grid>
         </Grid>

@@ -10,12 +10,11 @@ import {
   Divider, 
   Checkbox, 
   FormControlLabel, 
-  MenuItem, 
   InputAdornment, 
   Stack 
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-import { Person, Email, Lock, AssignmentInd } from '@mui/icons-material';
+import { Person, Email, Lock } from '@mui/icons-material';
 import axios from 'axios';
 import logo from '../assets/logo.png';
 
@@ -25,7 +24,7 @@ const RegisterPage = () => {
     name: '',
     email: '',
     password: '',
-    roleName: 'Manager'
+    roleName: 'Super Admin'
   });
   const [loading, setLoading] = useState(false);
 
@@ -42,11 +41,19 @@ const RegisterPage = () => {
       navigate('/login');
     } catch (error) {
       console.error('Registration error:', error);
+      const errData = error.response?.data;
+      const errMsg =
+        typeof errData === 'string'
+          ? errData
+          : errData?.message || errData?.error || errData?.msg
+          ? String(errData?.message || errData?.error || errData?.msg)
+          : 'Registration failed. Please try again.';
+
       if (error.response?.status === 403) {
-        alert(error.response.data.error || 'Super Admin already registered. Navigating to login.');
+        alert(errMsg || 'Super Admin already registered. Please login instead.');
         navigate('/login');
       } else {
-        alert(error.response?.data?.error || 'Registration failed. Please try again.');
+        alert(errMsg);
       }
     } finally {
       setLoading(false);
@@ -166,32 +173,6 @@ const RegisterPage = () => {
                 }}
               />
 
-              <TextField
-                fullWidth
-                size="small"
-                select
-                label="ADMINISTRATIVE ROLE"
-                name="roleName"
-                required
-                value={formData.roleName}
-                onChange={handleChange}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <AssignmentInd sx={{ color: '#a3aed0', mr: 1, fontSize: '18px' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ 
-                  "& .MuiOutlinedInput-root": { borderRadius: '12px', backgroundColor: '#fff', "& fieldset": { borderColor: '#e0e5f2' } },
-                  "& .MuiInputLabel-root": { fontSize: '12px', fontWeight: 700, transform: 'translate(40px, 10px) scale(1)' },
-                  "& .MuiInputLabel-shrink": { transform: 'translate(14px, -6px) scale(0.85)' }
-                }}
-              >
-                <MenuItem value="Super Admin" sx={{ py: 1, fontWeight: 700, fontSize: '13px' }}>Super Admin</MenuItem>
-                <MenuItem value="Manager" sx={{ py: 1, fontWeight: 700, fontSize: '13px' }}>Manager</MenuItem>
-                <MenuItem value="Staff" sx={{ py: 1, fontWeight: 700, fontSize: '13px' }}>Staff</MenuItem>
-              </TextField>
 
               <FormControlLabel
                 control={

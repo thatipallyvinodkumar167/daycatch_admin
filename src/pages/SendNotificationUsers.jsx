@@ -44,7 +44,7 @@ const SendNotificationUsers = () => {
 
     const maxSize = 1000 * 1024; // 1000 KB
     if (file.size > maxSize) {
-      setSnackbar({ open: true, message: "Asset payload exceeds 1000 KB threshold.", severity: "error" });
+      setSnackbar({ open: true, message: "Image size exceeds 1MB.", severity: "error" });
       e.target.value = "";
       return;
     }
@@ -64,7 +64,7 @@ const SendNotificationUsers = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.message) {
-      setSnackbar({ open: true, message: "Operational Title and Message manifest are required.", severity: "error" });
+      setSnackbar({ open: true, message: "Title and Message are required.", severity: "error" });
       return;
     }
 
@@ -74,12 +74,12 @@ const SendNotificationUsers = () => {
         ...formData,
         image: imageFile ? imageFile.name : null,
       });
-      setSnackbar({ open: true, message: "Broadcast dispatched to consumers successfully!", severity: "success" });
+      setSnackbar({ open: true, message: "Notification sent successfully!", severity: "success" });
       setFormData({ selectUsers: "all", title: "", message: "" });
       removeImage();
     } catch (error) {
       console.error("Error sending notification:", error);
-      setSnackbar({ open: true, message: "Transmission failure identified.", severity: "error" });
+      setSnackbar({ open: true, message: "Failed to send notification.", severity: "error" });
     } finally {
       setIsSubmitting(false);
     }
@@ -92,10 +92,10 @@ const SendNotificationUsers = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Consumer Broadcast Console
+                Send User Notification
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Compose and dispatch high-velocity push notifications to the registered audience.
+                Create and send push notifications to all registered users.
             </Typography>
         </Box>
         <Stack direction="row" spacing={2} alignItems="center">
@@ -116,7 +116,7 @@ const SendNotificationUsers = () => {
                     <CampaignIcon sx={{ color: "#4318ff" }} />
                 </Box>
                 <Typography variant="h6" fontWeight="800" color="#1b2559">
-                    Compose Manifest
+                    Create Notification
                 </Typography>
             </Stack>
 
@@ -126,7 +126,7 @@ const SendNotificationUsers = () => {
                 {/* Select Audience */}
                 <Box>
                   <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                    Target Audience Cluster
+                    Target Audience
                   </Typography>
                   <FormControl fullWidth>
                     <Select
@@ -139,11 +139,11 @@ const SendNotificationUsers = () => {
                         "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e5f2" }
                       }}
                     >
-                      <MenuItem value="all">All Global Consumers</MenuItem>
-                      <MenuItem value="active">Active High-Velocity Users</MenuItem>
-                      <MenuItem value="verified">Verified Identity Tier</MenuItem>
-                      <MenuItem value="new">New Registry (30 Days)</MenuItem>
-                      <MenuItem value="inactive">Dormant Audience</MenuItem>
+                      <MenuItem value="all">All Users</MenuItem>
+                      <MenuItem value="active">Active Users</MenuItem>
+                      <MenuItem value="verified">Verified Users</MenuItem>
+                      <MenuItem value="new">New Users (Last 30 Days)</MenuItem>
+                      <MenuItem value="inactive">Inactive Users</MenuItem>
                     </Select>
                   </FormControl>
                 </Box>
@@ -151,12 +151,12 @@ const SendNotificationUsers = () => {
                 {/* Title */}
                 <Box>
                   <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                    Broadcast Title
+                    Notification Title
                   </Typography>
                   <TextField
                     fullWidth
                     name="title"
-                    placeholder="Capture attention with a compelling headline..."
+                    placeholder="Enter notification title..."
                     value={formData.title}
                     onChange={handleChange}
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
@@ -166,14 +166,14 @@ const SendNotificationUsers = () => {
                 {/* Message */}
                 <Box>
                   <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                    Notification Body Manifest
+                    Notification Message
                   </Typography>
                   <TextField
                     fullWidth
                     multiline
                     rows={4}
                     name="message"
-                    placeholder="Enter the detailed communication payload..."
+                    placeholder="Enter notification message..."
                     value={formData.message}
                     onChange={handleChange}
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
@@ -183,7 +183,7 @@ const SendNotificationUsers = () => {
                 {/* Image Upload Protocol */}
                 <Box>
                   <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                    Visual Asset Payload (Optional)
+                    Notification Image (Optional)
                   </Typography>
 
                   <Box
@@ -214,7 +214,7 @@ const SendNotificationUsers = () => {
                     </Box>
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="body2" fontWeight="800" color="#1b2559">
-                        {imageFile ? imageFile.name : "Select Visual Asset"}
+                        {imageFile ? imageFile.name : "Select Image"}
                       </Typography>
                       <Typography variant="caption" color="#a3aed0" fontWeight="600">
                         {imageFile
@@ -291,7 +291,7 @@ const SendNotificationUsers = () => {
                     transition: "0.2s"
                   }}
                 >
-                  {isSubmitting ? "Initiating Dispatch..." : "Execute Broadcast"}
+                  {isSubmitting ? "Sending..." : "Send Notification"}
                 </Button>
               </Stack>
             </form>
@@ -360,7 +360,7 @@ const SendNotificationUsers = () => {
                         </Stack>
                         
                         <Typography variant="body2" fontWeight="900" color="#1b2559" sx={{ fontSize: "14px", mb: 0.5 }}>
-                            {formData.title || "Dispatch Headline"}
+                            {formData.title || "Notification Title"}
                         </Typography>
                         <Typography
                             variant="caption"
@@ -375,7 +375,7 @@ const SendNotificationUsers = () => {
                                 fontWeight: "600"
                             }}
                         >
-                            {formData.message || "Enter broadcast content to simulate real-time notification delivery on the end-user device..."}
+                            {formData.message || "Enter notification message to see a preview of how it will appear on user devices."}
                         </Typography>
                         
                         {imagePreview && (
@@ -391,11 +391,11 @@ const SendNotificationUsers = () => {
                 {/* Protocol Tier Indicator */}
                 <Box sx={{ mt: 2, px: 1 }}>
                     <Chip
-                        label={`→ Cluster: ${
-                        formData.selectUsers === "all" ? "Global" :
+                        label={`→ Audience: ${
+                        formData.selectUsers === "all" ? "All Users" :
                         formData.selectUsers === "active" ? "Active" :
                         formData.selectUsers === "verified" ? "Verified" :
-                        formData.selectUsers === "new" ? "Recent" : "Inactive"
+                        formData.selectUsers === "new" ? "New" : "Inactive"
                         }`}
                         size="small"
                         sx={{ backgroundColor: "rgba(67, 24, 255, 0.1)", color: "#4318ff", fontWeight: "900", fontSize: "10px", borderRadius: "8px" }}

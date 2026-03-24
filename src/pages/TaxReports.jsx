@@ -39,7 +39,7 @@ const TaxReports = () => {
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item, index) => ({
         id: item._id || index + 1,
-        productName: item["Product Name"] || item.productName || "Unknown Asset",
+        productName: item["Product Name"] || item.productName || "Unknown Product",
         quantity: item["Quantity"] || item.quantity || "0",
       }));
       setReports(formattedData);
@@ -64,8 +64,8 @@ const TaxReports = () => {
   }, [reports, search]);
 
   const stats = useMemo(() => [
-    { label: "Taxed Assets", value: reports.length, icon: <AssessmentIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
-    { label: "Audit Node", value: "Verified", icon: <ReceiptIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+    { label: "Total Items", value: reports.length, icon: <AssessmentIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Status", value: "Verified", icon: <ReceiptIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
   ], [reports]);
 
   return (
@@ -75,10 +75,10 @@ const TaxReports = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Fiscal Audit Console
+                Tax Reports
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Auditing item-wise tax manifest and fiscal quantities for administrative records.
+                View item-wise tax reports and quantities for administrative records.
             </Typography>
         </Box>
         <Stack direction="row" spacing={3} alignItems="center">
@@ -93,7 +93,7 @@ const TaxReports = () => {
             ))}
             <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, alignSelf: "center" }} />
             <Box>
-                <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase", display: "block", lineHeight: 1 }}>INTERVAL</Typography>
+                <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase", display: "block", lineHeight: 1 }}>DATE</Typography>
                 <TextField
                     type="date"
                     size="small"
@@ -121,11 +121,11 @@ const TaxReports = () => {
           )}
           
           <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Product Fiscal Ledger</Typography>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Tax Report List</Typography>
               <Stack direction="row" spacing={2} alignItems="center">
                   <TextField
                       size="small"
-                      placeholder="Search Fiscal Asset..."
+                      placeholder="Search Product..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       InputProps={{
@@ -139,7 +139,7 @@ const TaxReports = () => {
                           } 
                       }}
                   />
-                  <Tooltip title="Synchronize Audit">
+                  <Tooltip title="Refresh">
                       <IconButton onClick={() => fetchTaxReports(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
                           <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
                       </IconButton>
@@ -157,9 +157,9 @@ const TaxReports = () => {
                   <TableHead>
                       <TableRow>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Product Fiscal Identity</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Node Status</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Fiscal Quantity Protocol</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Product Name</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Status</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Taxed Quantity</TableCell>
                       </TableRow>
                   </TableHead>
                   <TableBody>
@@ -169,7 +169,7 @@ const TaxReports = () => {
                                   <Box sx={{ opacity: 0.1, mb: 1 }}>
                                       <EventNoteIcon sx={{ fontSize: 60, color: "#4318ff" }} />
                                   </Box>
-                                  <Typography variant="subtitle1" fontWeight="800" color="#a3aed0">Zero manifest data found for the selected interval.</Typography>
+                                  <Typography variant="subtitle1" fontWeight="800" color="#a3aed0">No tax data found for the selected date.</Typography>
                               </TableCell>
                           </TableRow>
                       ) : (
@@ -187,7 +187,7 @@ const TaxReports = () => {
                                   <TableCell>
                                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                           <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#00d26a" }} />
-                                          <Typography variant="caption" fontWeight="800" color="#00d26a">AUDITED</Typography>
+                                          <Typography variant="caption" fontWeight="800" color="#00d26a">VERIFIED</Typography>
                                       </Box>
                                   </TableCell>
                                   <TableCell align="right" sx={{ pr: 3, color: "#4318ff", fontWeight: "900" }}>

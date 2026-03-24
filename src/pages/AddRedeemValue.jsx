@@ -8,8 +8,8 @@ import {
   Stack,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { genericApi } from "../api/genericApi";
 
 const AddRedeemValue = () => {
   const navigate = useNavigate();
@@ -32,7 +32,10 @@ const AddRedeemValue = () => {
 
     setIsSubmitting(true);
     try {
-      await axios.post("https://jsonplaceholder.typicode.com/posts", formData);
+      await genericApi.create("reedm value", {
+        "Reward Points": Number(formData.rewardPoints),
+        "Redeem Values": Number(formData.redeemValue),
+      });
       alert("Redeem value added successfully!");
       navigate("/redeem-value");
     } catch (error) {

@@ -30,7 +30,8 @@ const EditRedeemValue = () => {
         const data = response.data.data || response.data;
         setFormData({
           rewardPoints: data?.["Reward Points"] || data?.rewardPoints || "",
-          redeemValue: data?.["Redeem Value"] || data?.redeemValue || "",
+          redeemValue:
+            data?.["Redeem Values"] || data?.["Redeem Value"] || data?.redeemValue || "",
         });
         setLoading(false);
       } catch (error) {
@@ -51,7 +52,7 @@ const EditRedeemValue = () => {
     try {
       const payload = {
         "Reward Points": Number(formData.rewardPoints),
-        "Redeem Value": Number(formData.redeemValue),
+        "Redeem Values": Number(formData.redeemValue),
       };
       await genericApi.update("reedm value", id, payload);
       alert("Redeem value updated successfully!");

@@ -47,7 +47,7 @@ const SendNotificationStore = () => {
 
     const maxSize = 1000 * 1024; // 1000 KB
     if (file.size > maxSize) {
-      setSnackbar({ open: true, message: "Memorandum asset exceeds 1000 KB threshold.", severity: "error" });
+      setSnackbar({ open: true, message: "Image size exceeds 1MB.", severity: "error" });
       e.target.value = "";
       return;
     }
@@ -67,7 +67,7 @@ const SendNotificationStore = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.message) {
-      setSnackbar({ open: true, message: "Memorandum Headline and Content manifest are required.", severity: "error" });
+      setSnackbar({ open: true, message: "Subject and Message are required.", severity: "error" });
       return;
     }
 
@@ -77,12 +77,12 @@ const SendNotificationStore = () => {
         ...formData,
         image: imageFile ? imageFile.name : null,
       });
-      setSnackbar({ open: true, message: "Internal Bulletin dispatched to partners successfully!", severity: "success" });
+      setSnackbar({ open: true, message: "Notification sent successfully!", severity: "success" });
       setFormData({ selectStores: "all", title: "", message: "" });
       removeImage();
     } catch (error) {
       console.error("Error sending store notification:", error);
-      setSnackbar({ open: true, message: "Transmission failure identified.", severity: "error" });
+      setSnackbar({ open: true, message: "Failed to send notification.", severity: "error" });
     } finally {
       setIsSubmitting(false);
     }
@@ -95,16 +95,16 @@ const SendNotificationStore = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Merchant Bulletin HQ
+                Send Store Notification
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Compose internal memorandums and operational bulletins for the partner gateway.
+                Create and send notifications to all registered stores.
             </Typography>
         </Box>
         <Stack direction="row" spacing={2} alignItems="center">
             <Box sx={{ px: 2, py: 1, borderRadius: "12px", bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
-                <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ display: "block", lineHeight: 1 }}>GATEWAY</Typography>
-                <Typography variant="subtitle2" fontWeight="800" color="#4318ff">B2B-SECURE</Typography>
+                <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ display: "block", lineHeight: 1 }}>STATUS</Typography>
+                <Typography variant="subtitle2" fontWeight="800" color="#4318ff">Active</Typography>
             </Box>
         </Stack>
       </Box>
@@ -119,7 +119,7 @@ const SendNotificationStore = () => {
                         <TerminalIcon sx={{ color: "#4318ff" }} />
                     </Box>
                     <Typography variant="h6" fontWeight="800" color="#1b2559">
-                        Draft Memorandum
+                        Create Notification
                     </Typography>
                 </Stack>
 
@@ -129,7 +129,7 @@ const SendNotificationStore = () => {
                         {/* Select Target Cluster */}
                         <Box>
                             <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                                Target Merchant Cluster
+                                Target Stores
                             </Typography>
                             <FormControl fullWidth>
                                 <Select
@@ -142,9 +142,9 @@ const SendNotificationStore = () => {
                                         "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e5f2" }
                                     }}
                                 >
-                                    <MenuItem value="all">Global Partner Fleet</MenuItem>
-                                    <MenuItem value="active">Active High-Velocity Stores</MenuItem>
-                                    <MenuItem value="pending">Awaiting Verification Hub</MenuItem>
+                                    <MenuItem value="all">All Stores</MenuItem>
+                                    <MenuItem value="active">Active Stores</MenuItem>
+                                    <MenuItem value="pending">Pending Verification</MenuItem>
                                 </Select>
                             </FormControl>
                         </Box>
@@ -152,12 +152,12 @@ const SendNotificationStore = () => {
                         {/* Title */}
                         <Box>
                             <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                                Bulletin Headline
+                                Notification Subject
                             </Typography>
                             <TextField
                                 fullWidth
                                 name="title"
-                                placeholder="Enter memorandum subject..."
+                                placeholder="Enter notification subject..."
                                 value={formData.title}
                                 onChange={handleChange}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
@@ -167,14 +167,14 @@ const SendNotificationStore = () => {
                         {/* Message Manifest */}
                         <Box>
                             <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                                Detailed Memorandum Manifest
+                                Notification Message
                             </Typography>
                             <TextField
                                 fullWidth
                                 multiline
                                 rows={5}
                                 name="message"
-                                placeholder="Formal bulletin content or policy update..."
+                                placeholder="Enter notification message..."
                                 value={formData.message}
                                 onChange={handleChange}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
@@ -184,7 +184,7 @@ const SendNotificationStore = () => {
                         {/* Visual Documentation Protocol */}
                         <Box>
                           <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                            Documentation Asset (Optional)
+                            Notification Image (Optional)
                           </Typography>
 
                           <Box
@@ -215,7 +215,7 @@ const SendNotificationStore = () => {
                             </Box>
                             <Box sx={{ flex: 1 }}>
                               <Typography variant="body2" fontWeight="800" color="#1b2559">
-                                {imageFile ? imageFile.name : "Select Asset Node"}
+                                {imageFile ? imageFile.name : "Select Image"}
                               </Typography>
                               <Typography variant="caption" color="#a3aed0" fontWeight="600">
                                 {imageFile
@@ -290,7 +290,7 @@ const SendNotificationStore = () => {
                                 boxShadow: "0 10px 25px rgba(67, 24, 255, 0.25)"
                             }}
                         >
-                            {isSubmitting ? "Initiating Transmission..." : "Notify Merchant Fleet"}
+                            {isSubmitting ? "Sending..." : "Send Notification"}
                         </Button>
                     </Stack>
                 </form>
@@ -301,7 +301,7 @@ const SendNotificationStore = () => {
         <Grid item xs={12} md={5}>
             <Box sx={{ position: "sticky", top: 20 }}>
                 <Typography variant="h6" fontWeight="800" color="#1b2559" sx={{ mb: 3, px: 1 }}>
-                    B2B Protocol Preview
+                    Notification Preview
                 </Typography>
                 
                 <Paper sx={{ p: 4, borderRadius: "28px", backgroundColor: "#1b2559", color: "#fff", border: "1px solid #e0e5f2", overflow: "hidden", position: "relative" }}>
@@ -314,8 +314,8 @@ const SendNotificationStore = () => {
                             <StorefrontIcon sx={{ color: "#fff" }} />
                         </Box>
                         <Box>
-                            <Typography variant="subtitle2" fontWeight="900" sx={{ color: "#fff" }}>MERCHANT INTERFACE</Typography>
-                            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)", fontWeight: "700" }}>PROTOCOL: INTERNAL-SEC-9</Typography>
+                            <Typography variant="subtitle2" fontWeight="900" sx={{ color: "#fff" }}>STORE APP</Typography>
+                            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)", fontWeight: "700" }}>TYPE: INTERNAL</Typography>
                         </Box>
                     </Stack>
                     
@@ -331,7 +331,7 @@ const SendNotificationStore = () => {
                             <Box>
                                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
                                     <CampaignIcon sx={{ color: "#4318ff", fontSize: "20px" }} />
-                                    <Typography variant="caption" fontWeight="900" sx={{ color: "#4318ff", letterSpacing: "2px" }}>ADMIN BULLET-DISPATCH</Typography>
+                                    <Typography variant="caption" fontWeight="900" sx={{ color: "#4318ff", letterSpacing: "2px" }}>ADMIN NOTIFICATION</Typography>
                                 </Stack>
                                 
                                 {imagePreview && (
@@ -350,16 +350,16 @@ const SendNotificationStore = () => {
                                 )}
                                 
                                 <Typography variant="h6" fontWeight="800" sx={{ mb: 1, lineHeight: 1.2 }}>
-                                    {formData.title || "Subject Memorandum"}
+                                    {formData.title || "Notification Subject"}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", lineHeight: "1.7", fontSize: "13px", fontWeight: "500" }}>
-                                    {formData.message || "Enter internal memorandum content to simulate the Merchant Interface experience..."}
+                                    {formData.message || "Enter notification message to see a preview of how it will appear on the store app."}
                                 </Typography>
                                 
                                 <Divider sx={{ my: 3, opacity: 0.1, px: 2 }} />
                                 
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.3)", fontWeight: "700" }}>TARGET: {formData.selectStores.toUpperCase()}</Typography>
+                                    <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.3)", fontWeight: "700" }}>AUDIENCE: {formData.selectStores.toUpperCase()}</Typography>
                                     <Chip label="ACK REQUIRED" size="small" sx={{ height: 20, fontSize: "9px", fontWeight: "900", bgcolor: "rgba(67, 24, 255, 0.2)", color: "#fff", border: "1px solid #4318ff" }} />
                                 </Stack>
                             </Box>
@@ -368,7 +368,7 @@ const SendNotificationStore = () => {
 
                     <Box sx={{ mt: 4, textAlign: "center", position: "relative", zIndex: 1 }}>
                         <Typography variant="caption" color="rgba(255,255,255,0.4)" fontWeight="600">
-                            * Internal bulletins are cryptographically signed for partner verification.
+                            * Notifications are sent to the store app in real-time.
                         </Typography>
                     </Box>
                 </Paper>

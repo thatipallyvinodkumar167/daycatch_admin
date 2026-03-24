@@ -116,14 +116,14 @@ const RichContentPage = ({
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
           <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-            Content Management Hub
+            Content Settings
           </Typography>
           <Typography variant="body2" color="#a3aed0" fontWeight="600">
             {description}
           </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
-            <Tooltip title="Refresh from Database">
+            <Tooltip title="Refresh">
                 <IconButton onClick={loadContent} sx={{ bgcolor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
                     <RefreshIcon sx={{ color: "#4318ff" }} />
                 </IconButton>
@@ -143,7 +143,7 @@ const RichContentPage = ({
                     boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                 }}
             >
-                {isSaving ? "Commiting..." : "Sync to Database"}
+                {isSaving ? "Saving..." : "Save"}
             </Button>
         </Stack>
       </Box>
@@ -154,7 +154,7 @@ const RichContentPage = ({
           <Paper sx={{ p: 0, borderRadius: "24px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2" }}>
             <Box sx={{ p: 2.5, bgcolor: "#fafbfc", borderBottom: "1px solid #e0e5f2", display: "flex", alignItems: "center", gap: 1.5 }}>
                 <EditIcon sx={{ color: "#4318ff", fontSize: 20 }} />
-                <Typography variant="subtitle2" fontWeight="800" color="#1b2559">Rich Text Editor</Typography>
+                <Typography variant="subtitle2" fontWeight="800" color="#1b2559">Editor</Typography>
             </Box>
             <Box sx={{ 
                 "& .ql-container": { border: "none !important", minHeight: "600px" },
@@ -176,7 +176,7 @@ const RichContentPage = ({
           <Paper sx={{ p: 0, borderRadius: "24px", height: "100%", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", position: "relative" }}>
             <Box sx={{ p: 2.5, bgcolor: "#4318ff", color: "#fff", display: "flex", alignItems: "center", gap: 1.5 }}>
                 <VisibilityIcon sx={{ fontSize: 20 }} />
-                <Typography variant="subtitle2" fontWeight="800">Premium Brand Preview</Typography>
+                <Typography variant="subtitle2" fontWeight="800">Preview</Typography>
             </Box>
             
             <Box sx={{ 
@@ -209,7 +209,7 @@ const RichContentPage = ({
         open={showNotification}
         autoHideDuration={4000}
         onClose={() => setShowNotification(false)}
-        message="Platform content successfully updated in database."
+        message="Content saved successfully."
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
     </Box>

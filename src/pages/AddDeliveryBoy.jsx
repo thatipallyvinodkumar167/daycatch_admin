@@ -71,6 +71,7 @@ const AddDeliveryBoy = () => {
     rating: 5.0,
   });
   const [idImage, setIdImage] = useState(null);
+  const [idImageBase64, setIdImageBase64] = useState("");
 
   const cities = [
     { name: "Hyderabad", _id: "city_hyd_001" },
@@ -88,10 +89,10 @@ const AddDeliveryBoy = () => {
   };
 
   const handleStoreChange = (event) => {
-    const { value } = event;
+    const { target: { value } } = event;
     
     if (value && value.includes("all")) {
-        if (formData.stores.length === storeList.length) {
+        if (formData.stores && formData.stores.length === storeList.length) {
             setFormData({ ...formData, stores: [] });
         } else {
             setFormData({ ...formData, stores: storeList.map(s => s._id) });
@@ -101,12 +102,22 @@ const AddDeliveryBoy = () => {
 
     setFormData({
       ...formData,
-      stores: typeof value === 'string' ? value.split(',') : value
+      stores: typeof value === 'string' ? value.split(',') : (value || [])
     });
   };
 
   const handleFileChange = (e) => {
-    setIdImage(e.target.files[0]);
+    const file = e.target.files[0];
+    setIdImage(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setIdImageBase64(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setIdImageBase64("");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -132,7 +143,7 @@ const AddDeliveryBoy = () => {
           "ID Number": formData.idNumber,
           "Boy Address": formData.address,
           "Store": formData.stores && formData.stores.length > 0 ? formData.stores[0] : "",
-          "ID Image": idImage ? idImage.name : "placeholder_image.jpg"
+          "ID Image": idImageBase64 ? idImageBase64 : "placeholder_image.jpg"
         }
       };
 
@@ -166,8 +177,8 @@ const AddDeliveryBoy = () => {
           </IconButton>
         </Tooltip>
         <Box>
-          <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>Fleet Enrollment</Typography>
-          <Typography variant="body2" color="#a3aed0" fontWeight="600">Register new logistics personnel to the DayCatch delivery network.</Typography>
+          <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>Add Delivery Boy</Typography>
+          <Typography variant="body2" color="#a3aed0" fontWeight="600">Register a new delivery boy to your system.</Typography>
         </Box>
       </Box>
 
@@ -179,7 +190,7 @@ const AddDeliveryBoy = () => {
             
             {/* Section 1: Personal Background */}
             <Typography variant="subtitle2" fontWeight="900" color="#4318ff" sx={{ mb: 3, letterSpacing: "1px", display: "flex", alignItems: "center", gap: 1 }}>
-                <PersonIcon fontSize="small" /> PERSONAL BACKGROUND & AUTH
+                <PersonIcon fontSize="small" /> PERSONAL DETAILS
             </Typography>
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
@@ -220,7 +231,7 @@ const AddDeliveryBoy = () => {
                 />
               </Grid>
               <Grid item xs={12} md={4}>
-                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>APP LOGIN PASSWORD</Typography>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>PASSWORD</Typography>
                 <TextField
                   fullWidth
                   name="password"
@@ -238,11 +249,11 @@ const AddDeliveryBoy = () => {
 
             {/* Section 2: Fleet Documentation */}
             <Typography variant="subtitle2" fontWeight="900" color="#4318ff" sx={{ mb: 3, letterSpacing: "1px", display: "flex", alignItems: "center", gap: 1 }}>
-                <BadgeIcon fontSize="small" /> FLEET DOCUMENTATION & GEO
+                <BadgeIcon fontSize="small" /> DOCUMENT DETAILS
             </Typography>
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
-                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>BASE LOGISTICS REGION</Typography>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>SELECT CITY</Typography>
                 <FormControl fullWidth>
                   <Select
                     name="city"
@@ -303,7 +314,7 @@ const AddDeliveryBoy = () => {
                 />
               </Grid>
               <Grid item xs={12} md={4}>
-                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>DIGITAL ID UPLOAD</Typography>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>UPLOAD ID IMAGE</Typography>
                 <Button
                   component="label"
                   fullWidth
@@ -379,14 +390,14 @@ const AddDeliveryBoy = () => {
                     <MenuItem value="all">
                         <Checkbox 
                             color="primary"
-                            checked={formData.stores.length === storeList.length && storeList.length > 0} 
-                            indeterminate={formData.stores.length > 0 && formData.stores.length < storeList.length}
+                            checked={(formData.stores || []).length === storeList.length && storeList.length > 0} 
+                            indeterminate={(formData.stores || []).length > 0 && (formData.stores || []).length < storeList.length}
                         />
                         <ListItemText primary="Select all" sx={{ "& span": { fontWeight: 800 } }} />
                     </MenuItem>
                     {storeList.map((store) => (
                       <MenuItem key={store._id} value={store._id}>
-                        <Checkbox color="primary" checked={formData.stores.indexOf(store._id) > -1} />
+                        <Checkbox color="primary" checked={(formData.stores || []).indexOf(store._id) > -1} />
                         <ListItemText primary={store.name} />
                       </MenuItem>
                     ))}
@@ -420,7 +431,7 @@ const AddDeliveryBoy = () => {
                         boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)",
                     }}
                 >
-                    {isSubmitting ? "Enrolling..." : "Complete Registration"}
+                    {isSubmitting ? "Adding..." : "Add Delivery Boy"}
                 </Button>
             </Stack>
           </form>

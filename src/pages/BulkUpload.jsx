@@ -39,7 +39,7 @@ const BulkUpload = () => {
 
   const handleUpload = async () => {
     if (!file) {
-      alert("Validation Error: No asset selected for ingestion.");
+      alert("Please select a file to upload.");
       return;
     }
 
@@ -72,17 +72,17 @@ const BulkUpload = () => {
             setUploading(false);
             setFile(null);
             setProgress(0);
-            showSnackbar(`Operational Sync: ${data.length} SKUs successfully ingested.`, "success");
+            showSnackbar(`${data.length} products uploaded successfully.`, "success");
           }, 800);
         } catch (error) {
           console.error("Ingestion Error:", error);
-          showSnackbar(error.response?.data?.error || "Persistence Sync Error: Bulk ingestion rejected.", "error");
+          showSnackbar(error.response?.data?.error || "Bulk upload failed.", "error");
           setUploading(false);
         }
       };
       
       reader.onerror = () => {
-        showSnackbar("Read Error: IO stream interrupted.", "error");
+        showSnackbar("Error reading file.", "error");
         setUploading(false);
       };
       
@@ -111,13 +111,13 @@ const BulkUpload = () => {
       <Box sx={{ mb: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Inventory Mass Ingestion
+                Bulk Product Upload
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                High-fidelity bulk processing for large-scale SKU repository expansion.
+                Upload CSV or Excel files to add multiple products at once.
             </Typography>
         </Box>
-        <Tooltip title="Help Protocol">
+        <Tooltip title="Upload Help">
             <IconButton sx={{ bgcolor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", p: 1.5 }}>
                 <HelpOutlineIcon sx={{ color: "#4318ff" }} />
             </IconButton>
@@ -141,10 +141,10 @@ const BulkUpload = () => {
             >
                 <CloudUploadIcon sx={{ fontSize: 80, color: "#a3aed0", mb: 3 }} />
                 <Typography variant="h5" fontWeight="800" color="#1b2559">
-                   {file ? file.name : "Select Transfer Asset"}
+                   {file ? file.name : "Select File"}
                 </Typography>
                 <Typography variant="body2" color="#a3aed0" fontWeight="600" sx={{ mt: 1 }}>
-                    Click to browse or drag and drop your CSV/Excel manifest here
+                    Click to browse or drag and drop your CSV/Excel file here
                 </Typography>
                 <input type="file" id="fileInput" hidden accept=".csv, .xlsx" onChange={handleFileChange} />
             </Box>
@@ -156,7 +156,7 @@ const BulkUpload = () => {
                     onClick={downloadTemplate}
                     sx={{ borderRadius: "16px", px: 4, py: 1.8, textTransform: "none", fontWeight: "800", borderColor: "#4318ff", color: "#4318ff", "&:hover": { borderColor: "#3311cc", bgcolor: "#f4f7fe" } }}
                 >
-                    Obtain Template Protocol
+                    Download Template
                 </Button>
                 <Button
                     variant="contained"
@@ -164,14 +164,14 @@ const BulkUpload = () => {
                     onClick={handleUpload}
                     sx={{ backgroundColor: "#4318ff", "&:hover": { backgroundColor: "#3311cc" }, borderRadius: "16px", px: 6, py: 1.8, textTransform: "none", fontWeight: "800", boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)" }}
                 >
-                    {uploading ? "Ingesting Sync Grid..." : "Execute Ingestion"}
+                    {uploading ? "Uploading products..." : "Start Upload"}
                 </Button>
             </Stack>
 
             {uploading && (
                 <Box sx={{ mt: 6 }}>
                     <Stack direction="row" justifyContent="space-between" sx={{ mb: 1.5 }}>
-                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ textTransform: "uppercase" }}>Manifest Processing Stream</Typography>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ textTransform: "uppercase" }}>Upload Progress</Typography>
                         <Typography variant="caption" fontWeight="900" color="#4318ff">{progress}%</Typography>
                     </Stack>
                     <LinearProgress 
@@ -189,15 +189,15 @@ const BulkUpload = () => {
                 <Box sx={{ p: 1.5, borderRadius: "12px", background: "rgba(67, 24, 255, 0.05)" }}>
                     <InfoIcon sx={{ color: "#4318ff" }} />
                 </Box>
-                <Typography variant="h6" fontWeight="800" color="#1b2559">Instruction Protocol</Typography>
+                <Typography variant="h6" fontWeight="800" color="#1b2559">Upload Instructions</Typography>
             </Stack>
             <Divider sx={{ mb: 3, opacity: 0.1 }} />
             <Grid container spacing={2}>
                 {[
-                    "Utilize the standard CSV manifest protocol for cross-platform data integrity.",
-                    "Verify Cat-IDs and Titles match the existing root hierarchy strictly.",
-                    "Redundant SKU strings will trigger the system's overwrite protection logic.",
-                    "Maximum ingestion payload limit: 10MB per stream (CSV/XLSX)."
+                    "Use the standard CSV template for consistent data.",
+                    "Ensure categories and IDs match the existing list.",
+                    "Duplicate product IDs will update existing records.",
+                    "Maximum file size: 10MB."
                 ].map((text, idx) => (
                     <Grid item xs={12} key={idx}>
                         <Stack direction="row" spacing={2} alignItems="center">

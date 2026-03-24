@@ -184,12 +184,12 @@ const AreaSociety = () => {
 
   const handleSubmit = async () => {
     if (!formData.cityId || !formData.cityName) {
-      showSnackbar("Please select a valid city for this mapping.", "error");
+      showSnackbar("Please select a city.", "error");
       return;
     }
 
     if (!formData.areaName.trim()) {
-      showSnackbar("Area name identifier is required.", "error");
+      showSnackbar("Area name is required.", "error");
       return;
     }
 
@@ -206,32 +206,32 @@ const AreaSociety = () => {
           (payload) => updateArea(editingArea.backendId, payload),
           payloads
         );
-        showSnackbar("Area credentials updated successfully.");
+        showSnackbar("Area updated successfully.");
       } else {
         await runRequestWithPayloads((payload) => addArea(payload), payloads);
-        showSnackbar("New area registered in domain.");
+        showSnackbar("New area added.");
       }
 
       resetModalState();
       await fetchData(true);
     } catch (error) {
-      showSnackbar(getErrorMessage(error, "Operational Sync Error."), "error");
+      showSnackbar(getErrorMessage(error, "Failed to sync."), "error");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (area) => {
-    if (!window.confirm(`Permanently remove "${area.name}" from the mapping protocols?`)) {
+    if (!window.confirm(`Permanently delete "${area.name}"?`)) {
       return;
     }
 
     try {
       await deleteArea(area.backendId);
-      showSnackbar("Area de-registered successfully.");
+      showSnackbar("Area deleted successfully.");
       await fetchData(true);
     } catch (error) {
-      showSnackbar(getErrorMessage(error, "Removal Failed."), "error");
+      showSnackbar(getErrorMessage(error, "Failed to delete area."), "error");
     }
   };
 
@@ -251,14 +251,14 @@ const AreaSociety = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Geospatial Management
+                Society / Areas
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Manage residential territories and society clusters for logistical optimization.
+                Manage residential areas and societies for delivery locations.
             </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
-            <Tooltip title="Force Sync">
+            <Tooltip title="Refresh List">
                 <IconButton 
                     onClick={() => fetchData(true)} 
                     disabled={refreshing || loading}
@@ -282,7 +282,7 @@ const AreaSociety = () => {
                     boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                 }}
             >
-                Register Area
+                Add Area
             </Button>
         </Stack>
       </Box>
@@ -295,7 +295,7 @@ const AreaSociety = () => {
           </Box>
           <Box>
             <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase" }}>
-              Active Territories
+              Total Areas
             </Typography>
             <Typography variant="h4" fontWeight="800" color="#1b2559">
               {areas.length}
@@ -309,10 +309,10 @@ const AreaSociety = () => {
         
         {/* Search Toolbar */}
         <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Territory Directory</Typography>
+            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Area List</Typography>
             <TextField
                 size="small"
-                placeholder="Search area or city footprint..."
+                placeholder="Search areas..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 InputProps={{
@@ -333,9 +333,9 @@ const AreaSociety = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
                 <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>City Domain</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Area Workspace</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Operations</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>City</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Area Name</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -348,7 +348,7 @@ const AreaSociety = () => {
               ) : filteredAreas.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
-                    <Typography color="#a3aed0" fontWeight="600">No geospatial mappings found in current sector.</Typography>
+                    <Typography color="#a3aed0" fontWeight="600">No areas found.</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -368,7 +368,7 @@ const AreaSociety = () => {
                     <TableCell sx={{ color: "#1b2559", fontWeight: "800", fontSize: "15px" }}>{area.name}</TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title="Edit Footprint">
+                        <Tooltip title="Edit Area">
                           <IconButton
                             size="small"
                             onClick={() => handleOpenEdit(area)}
@@ -377,7 +377,7 @@ const AreaSociety = () => {
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="De-register">
+                        <Tooltip title="Delete Area">
                           <IconButton
                             size="small"
                             onClick={() => handleDelete(area)}
@@ -398,7 +398,7 @@ const AreaSociety = () => {
 
       {!loading && !cities.length && (
         <Alert severity="warning" sx={{ mt: 3, borderRadius: "14px", fontWeight: "600" }}>
-          Operational Alert: Please establish city definitions before mapping territories.
+          Please add cities before adding areas.
         </Alert>
       )}
 
@@ -406,14 +406,14 @@ const AreaSociety = () => {
       <Modal open={open} onClose={() => !submitting && resetModalState()}>
         <Box sx={modalStyle}>
           <Typography variant="h5" fontWeight="800" sx={{ mb: 1 }} color="#1b2559">
-            {editingArea ? "Update Territory" : "Register Territory"}
+            {editingArea ? "Edit Area" : "Add Area"}
           </Typography>
           <Typography variant="body2" color="#a3aed0" fontWeight="600" sx={{ mb: 4 }}>
-            Ensure exact geospatial identifiers for logistical precision.
+            Enter area details for delivery locations.
           </Typography>
 
           <FormControl fullWidth sx={{ mb: 3 }}>
-            <Typography variant="body2" fontWeight="800" color="#2b3674" sx={{ mb: 1, ml: 0.5 }}>PARENT CITY</Typography>
+            <Typography variant="body2" fontWeight="800" color="#2b3674" sx={{ mb: 1, ml: 0.5 }}>CITY</Typography>
             <Select
               value={formData.cityId}
               onChange={handleCityChange}
@@ -421,7 +421,7 @@ const AreaSociety = () => {
               sx={{ borderRadius: "14px", backgroundColor: "#f4f7fe", "& .MuiOutlinedInput-notchedOutline": { border: "none" } }}
               disabled={submitting}
             >
-              <MenuItem value="" disabled><Typography variant="body2" color="#a3aed0">Select Target City</Typography></MenuItem>
+              <MenuItem value="" disabled><Typography variant="body2" color="#a3aed0">Select City</Typography></MenuItem>
               {cities.map((city) => (
                 <MenuItem key={city.id} value={city.id}>
                     <Typography variant="body2" fontWeight="700">{city.name}</Typography>
@@ -431,7 +431,7 @@ const AreaSociety = () => {
           </FormControl>
 
           <Box sx={{ mb: 5 }}>
-            <Typography variant="body2" fontWeight="800" color="#2b3674" sx={{ mb: 1, ml: 0.5 }}>AREA / SOCIETY NAME</Typography>
+            <Typography variant="body2" fontWeight="800" color="#2b3674" sx={{ mb: 1, ml: 0.5 }}>AREA NAME</Typography>
             <TextField
               fullWidth
               placeholder="e.g. Jubilee Hills Sector 1"
@@ -468,7 +468,7 @@ const AreaSociety = () => {
                 boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
               }}
             >
-              {submitting ? "Synchronizing..." : editingArea ? "Update Mapping" : "Activate Area"}
+              {submitting ? "Saving..." : editingArea ? "Update Area" : "Add Area"}
             </Button>
           </Stack>
         </Box>

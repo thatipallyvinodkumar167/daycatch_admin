@@ -35,6 +35,23 @@ import axios from "axios";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5001/api/v1";
 
+const SectionTitle = ({ children, subtitle }) => (
+  <Box sx={{ mb: 2 }}>
+    <Typography variant="subtitle2" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-0.5px" }}>{children}</Typography>
+    {subtitle && <Typography variant="caption" color="#a3aed0" fontWeight="700" sx={{ display: "block", fontSize: "10px" }}>{subtitle}</Typography>}
+    <Divider sx={{ mt: 1, borderColor: "#f1f4f9" }} />
+  </Box>
+);
+
+const StyledTextField = ({ label, value, onChange, type = "text", placeholder, disabled = false, endAdornment }) => (
+  <Box sx={{ mb: 2 }}>
+      <Typography variant="caption" fontWeight="900" color="#1b2559" sx={{ mb: 0.5, display: "block", textTransform: "uppercase", fontSize: "9px" }}>{label}</Typography>
+      <TextField fullWidth size="small" type={type} placeholder={placeholder} value={value} onChange={onChange} disabled={disabled}
+          InputProps={{ endAdornment, sx: { borderRadius: "10px", backgroundColor: disabled ? "#f4f7fe" : "#fcfdff", fontSize: "12px", fontWeight: "600" } }}
+          sx={{ "& .MuiOutlinedInput-root": { "& fieldset": { borderColor: "#e0e5f2" } } }} />
+  </Box>
+);
+
 const ProfilePage = () => {
   const [editing, setEditing] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -63,14 +80,30 @@ const ProfilePage = () => {
 
   const handleSaveProfile = async () => {
     if (!editForm.name.trim()) return showSnack("Name cannot be empty.", "error");
+    if (!editForm.email?.trim()) return showSnack("Email cannot be empty.", "error");
     setLoading(true);
     try {
+      const token = localStorage.getItem("token");
+      await axios.patch(`${API_BASE}/auth/update-profile`, { 
+        Name: editForm.name.trim(), 
+        Email: editForm.email.trim() 
+      }, { headers: { Authorization: `Bearer ${token}` } });
+
       localStorage.setItem("user_name", editForm.name.trim());
-      setProfile((prev) => ({ ...prev, name: editForm.name.trim() }));
+      localStorage.setItem("user_email", editForm.email.trim());
+      setProfile((prev) => ({ ...prev, name: editForm.name.trim(), email: editForm.email.trim() }));
       setEditing(false);
       showSnack("Identity nodes updated successfully!");
     } catch (err) {
-      showSnack("Failed to update identity record.", "error");
+      console.error(err);
+      const errData = err.response?.data;
+      const errMsg =
+        typeof errData === 'string'
+          ? errData
+          : errData?.message || errData?.error || errData?.msg
+          ? String(errData?.message || errData?.error || errData?.msg)
+          : "Failed to update identity record.";
+      showSnack(errMsg, "error");
     } finally {
       setLoading(false);
     }
@@ -89,33 +122,24 @@ const ProfilePage = () => {
       setPwForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
       setChangingPassword(false);
     } catch (err) {
-      showSnack(err.response?.data?.error || "Failed to update security protocol.", "error");
+      console.error(err);
+      const errData = err.response?.data;
+      const errMsg =
+        typeof errData === 'string'
+          ? errData
+          : errData?.message || errData?.error || errData?.msg
+          ? String(errData?.message || errData?.error || errData?.msg)
+          : "Failed to update security protocol.";
+      showSnack(errMsg, "error");
     } finally {
       setLoading(false);
     }
   };
 
-  const SectionTitle = ({ children, subtitle }) => (
-    <Box sx={{ mb: 2 }}>
-      <Typography variant="subtitle2" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-0.5px" }}>{children}</Typography>
-      {subtitle && <Typography variant="caption" color="#a3aed0" fontWeight="700" sx={{ display: "block", fontSize: "10px" }}>{subtitle}</Typography>}
-      <Divider sx={{ mt: 1, borderColor: "#f1f4f9" }} />
-    </Box>
-  );
-
-  const StyledTextField = ({ label, value, onChange, type = "text", placeholder, disabled = false, endAdornment }) => (
-    <Box sx={{ mb: 2 }}>
-        <Typography variant="caption" fontWeight="900" color="#1b2559" sx={{ mb: 0.5, display: "block", textTransform: "uppercase", fontSize: "9px" }}>{label}</Typography>
-        <TextField fullWidth size="small" type={type} placeholder={placeholder} value={value} onChange={onChange} disabled={disabled}
-            InputProps={{ endAdornment, sx: { borderRadius: "10px", backgroundColor: disabled ? "#f4f7fe" : "#fcfdff", fontSize: "12px", fontWeight: "600" } }}
-            sx={{ "& .MuiOutlinedInput-root": { "& fieldset": { borderColor: "#e0e5f2" } } }} />
-    </Box>
-  );
-
   return (
     <Box sx={{ p: { xs: 2, md: 4 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Box><Typography variant="h6" fontWeight="900" color="#1b2559">Identity Hub</Typography><Typography variant="caption" color="#a3aed0" fontWeight="800">Operational Profile Synchronizer</Typography></Box>
+        <Box><Typography variant="h6" fontWeight="900" color="#1b2559">Profile</Typography><Typography variant="caption" color="#a3aed0" fontWeight="800">Manage your profile information</Typography></Box>
       </Box>
 
       <Grid container spacing={3}>
@@ -155,12 +179,12 @@ const ProfilePage = () => {
             {/* PERSONAL PROTOCOL */}
             <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", bgcolor: "#fff", boxShadow: "none" }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-                <SectionTitle subtitle="Manage core authentication markers.">Identity Markers</SectionTitle>
+                <SectionTitle subtitle="Manage your name and email.">Personal Information</SectionTitle>
                 {!editing ? (
                   <Button variant="contained" startIcon={<EditIcon sx={{ fontSize: 16 }} />} onClick={() => { setEditForm({ ...profile }); setEditing(true); }} sx={{ bgcolor: indigoPrimary, borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px" }}>Edit Profile</Button>
                 ) : (
                   <Stack direction="row" spacing={1}>
-                    <Button variant="contained" startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <SaveIcon sx={{ fontSize: 16 }} />} onClick={handleSaveProfile} disabled={loading} sx={{ bgcolor: "#00d26a", borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px", "&:hover": { bgcolor: "#00b25a" } }}>Sync Changes</Button>
+                    <Button variant="contained" startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <SaveIcon sx={{ fontSize: 16 }} />} onClick={handleSaveProfile} disabled={loading} sx={{ bgcolor: "#00d26a", borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px", "&:hover": { bgcolor: "#00b25a" } }}>Save Changes</Button>
                     <Button variant="outlined" startIcon={<CancelIcon sx={{ fontSize: 16 }} />} onClick={() => setEditing(false)} sx={{ borderColor: "#e0e5f2", color: "#707eae", borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px" }}>Cancel</Button>
                   </Stack>
                 )}
@@ -168,7 +192,7 @@ const ProfilePage = () => {
 
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}><StyledTextField label="Full Identity Name" value={editing ? editForm.name : profile.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} disabled={!editing} /></Grid>
-                <Grid item xs={12} md={6}><StyledTextField label="Primary Email Node" value={profile.email} disabled /></Grid>
+                <Grid item xs={12} md={6}><StyledTextField label="Primary Email Node" value={editing ? editForm.email : profile.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} disabled={!editing} /></Grid>
                 <Grid item xs={12} md={6}><StyledTextField label="Authority Role" value={profile.role} disabled /></Grid>
                 <Grid item xs={12} md={6}><StyledTextField label="Account Protocol" value="Management Console" disabled /></Grid>
               </Grid>
@@ -177,11 +201,11 @@ const ProfilePage = () => {
             {/* SECURITY PROTOCOL */}
             <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", bgcolor: "#fff", boxShadow: "none" }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-                <SectionTitle subtitle="Update encryption keys and credentials.">Security Keys</SectionTitle>
+                <SectionTitle subtitle="Update your account password.">Security</SectionTitle>
                 {!changingPassword ? (
                   <Button variant="contained" startIcon={<LockResetIcon sx={{ fontSize: 16 }} />} onClick={() => setChangingPassword(true)} sx={{ bgcolor: "#111c44", borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px" }}>Update Key</Button>
                 ) : (
-                  <Button variant="outlined" startIcon={<CancelIcon sx={{ fontSize: 16 }} />} onClick={() => { setChangingPassword(false); setPwForm({ oldPassword: "", newPassword: "", confirmPassword: "" }); }} sx={{ borderColor: "#e0e5f2", color: "#707eae", borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px" }}>Cancel Sync</Button>
+                  <Button variant="outlined" startIcon={<CancelIcon sx={{ fontSize: 16 }} />} onClick={() => { setChangingPassword(false); setPwForm({ oldPassword: "", newPassword: "", confirmPassword: "" }); }} sx={{ borderColor: "#e0e5f2", color: "#707eae", borderRadius: "10px", fontWeight: 900, textTransform: "none", fontSize: "12px" }}>Cancel</Button>
                 )}
               </Box>
 
@@ -201,14 +225,14 @@ const ProfilePage = () => {
                         <Grid item xs={12} md={6}><StyledTextField label="New Primary Key" type={showNewPw ? "text" : "password"} value={pwForm.newPassword} onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })} endAdornment={<InputAdornment position="end"><IconButton onClick={() => setShowNewPw(!showNewPw)} size="small">{showNewPw ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}</IconButton></InputAdornment>} /></Grid>
                         <Grid item xs={12} md={6}><StyledTextField label="Confirm New Key" type={showNewPw ? "text" : "password"} value={pwForm.confirmPassword} onChange={(e) => setPwForm({ ...pwForm, confirmPassword: e.target.value })} /></Grid>
                     </Grid>
-                    <Button variant="contained" fullWidth onClick={handleChangePassword} disabled={loading} startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <LockResetIcon />} sx={{ mt: 3, bgcolor: indigoPrimary, borderRadius: "12px", fontWeight: 900, py: 1.5, fontSize: "13px" }}>Commit Security Sync</Button>
+                    <Button variant="contained" fullWidth onClick={handleChangePassword} disabled={loading} startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <LockResetIcon />} sx={{ mt: 3, bgcolor: indigoPrimary, borderRadius: "12px", fontWeight: 900, py: 1.5, fontSize: "13px" }}>Update Password</Button>
                 </Box>
               )}
             </Paper>
 
             {/* SESSION CONTROL */}
             <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", bgcolor: "#fff", boxShadow: "none" }}>
-                <SectionTitle subtitle="Manage active authentication threads.">Session Control</SectionTitle>
+                <SectionTitle subtitle="Manage your active login session.">Account Session</SectionTitle>
                 <Box sx={{ p: 3, borderRadius: "20px", border: "1px solid #ffe0e0", bgcolor: "#fff8f8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Box><Typography variant="body2" fontWeight="900" color="#c62828">Global Session Termination</Typography><Typography variant="caption" fontWeight="800" color="#707eae">Instantly sever all active connection threads and purge session cache.</Typography></Box>
                     <Button variant="contained" startIcon={<LogoutIcon />} onClick={() => { localStorage.clear(); window.location.href = "/login"; }} sx={{ bgcolor: "#c62828", borderRadius: "10px", fontWeight: 900, textTransform: "none", px: 4, "&:hover": { bgcolor: "#a51d1d" } }}>Logout</Button>

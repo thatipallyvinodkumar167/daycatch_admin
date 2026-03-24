@@ -65,7 +65,7 @@ const DeliveryBoyCallbackRequests = () => {
   }, [requests, search]);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Mark this rider callback as RESOLVED and move to archives?")) {
+    if (window.confirm("Mark this callback request as resolved?")) {
       try {
         await genericApi.remove("deliveryboycallbackrequests", id);
         setRequests(prev => prev.filter(item => item.id !== id));
@@ -83,14 +83,14 @@ const DeliveryBoyCallbackRequests = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Fleet Dispatch Support
+                Driver Callback Requests
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Logistical callback and emergency assistance requests from the delivery fleet.
+                Manage callback requests from delivery drivers.
             </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
-            <Tooltip title="Instant Refresh">
+            <Tooltip title="Refresh Feed">
                 <IconButton 
                     onClick={fetchRequests} 
                     disabled={loading}
@@ -113,7 +113,7 @@ const DeliveryBoyCallbackRequests = () => {
                     boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                 }}
             >
-                Create Assistance Ticket
+                Add Request
             </Button>
         </Stack>
       </Box>
@@ -122,10 +122,10 @@ const DeliveryBoyCallbackRequests = () => {
         
         {/* Search Toolbar */}
         <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Field Assistance Pipeline</Typography>
+            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Callback Requests</Typography>
             <TextField
                 size="small"
-                placeholder="Search rider or mobile..."
+                placeholder="Search driver name or phone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 InputProps={{
@@ -146,10 +146,10 @@ const DeliveryBoyCallbackRequests = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
                 <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Rider Identity</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Direct Contact</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Reporter</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Operations</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>DRIVER NAME</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>PHONE NUMBER</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>ADDED BY</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>ACTIONS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -162,7 +162,7 @@ const DeliveryBoyCallbackRequests = () => {
               ) : filteredRequests.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
-                    <Typography color="#a3aed0" fontWeight="600">No active fleet assistance tickets reported.</Typography>
+                    <Typography color="#a3aed0" fontWeight="600">No callback requests found.</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -219,7 +219,7 @@ const DeliveryBoyCallbackRequests = () => {
                                 "&:hover": { borderColor: "#e03e3a", bgcolor: "#fff5f5" },
                             }}
                         >
-                            Resolve
+                            Mark Resolved
                         </Button>
                       </Stack>
                     </TableCell>

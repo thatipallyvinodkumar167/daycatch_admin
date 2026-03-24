@@ -45,7 +45,7 @@ const Roles = () => {
       
       const formattedData = results.map((role) => ({
         id: role._id,
-        name: role.name || "Unnamed Authority Role",
+        name: role.name || "Unnamed Role",
       }));
 
       setRoles(formattedData);
@@ -62,7 +62,7 @@ const Roles = () => {
   }, [fetchRoles]);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to decommission this authority tier?")) {
+    if (window.confirm("Are you sure you want to delete this role?")) {
       try {
         await genericApi.remove("roles", id);
         fetchRoles();
@@ -81,8 +81,8 @@ const Roles = () => {
   }, [roles, search]);
 
   const stats = useMemo(() => [
-    { label: "Authority Tiers", value: roles.length, icon: <SecurityIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
-    { label: "Governance Level", value: "Verified", icon: <AdminPanelSettingsIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+    { label: "Total Roles", value: roles.length, icon: <SecurityIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Level", value: "Verified", icon: <AdminPanelSettingsIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
   ], [roles]);
 
   return (
@@ -92,10 +92,10 @@ const Roles = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Governance Framework
+                Role Management
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Architect and deploy administrative authority tiers and permission hierarchies.
+                Manage user roles and their respective permissions.
             </Typography>
         </Box>
         <Stack direction="row" spacing={3} alignItems="center">
@@ -124,7 +124,7 @@ const Roles = () => {
                     "&:hover": { backgroundColor: "#3310cc" }
                 }}
             >
-                Add Tier
+                Add Role
             </Button>
         </Stack>
       </Box>
@@ -136,11 +136,11 @@ const Roles = () => {
           )}
           
           <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Authority Role Repository</Typography>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Role List</Typography>
               <Stack direction="row" spacing={2} alignItems="center">
                   <TextField
                       size="small"
-                      placeholder="Search Authority Tier..."
+                      placeholder="Search Roles..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       InputProps={{
@@ -148,7 +148,7 @@ const Roles = () => {
                       }}
                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#fff", width: "320px" } }}
                   />
-                  <Tooltip title="Synchronize Repository">
+                  <Tooltip title="Refresh">
                       <IconButton onClick={() => fetchRoles(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
                           <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
                       </IconButton>
@@ -166,20 +166,18 @@ const Roles = () => {
                   <TableHead>
                       <TableRow>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Tier UUID</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Governance Authority Label</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Tier Status</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Governance Actions</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Role Name</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Status</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
                       </TableRow>
                   </TableHead>
                   <TableBody>
                       {filteredRoles.length === 0 && !loading ? (
-                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>Zero authority tiers detected in active framework.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={4} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>No roles found.</TableCell></TableRow>
                       ) : (
                           filteredRoles.map((role, index) => (
                               <TableRow key={role.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
                                   <TableCell sx={{ color: "#1b2559", fontWeight: "800", pl: 4 }}>#{index + 1}</TableCell>
-                                  <TableCell sx={{ color: "#4318ff", fontWeight: "700", fontFamily: "monospace", fontSize: "12px" }}>{role.id}</TableCell>
                                   <TableCell>
                                       <Stack direction="row" spacing={1.5} alignItems="center">
                                           <Box sx={{ p: 1, borderRadius: "10px", bgcolor: "rgba(67, 24, 255, 0.05)" }}>
@@ -197,7 +195,7 @@ const Roles = () => {
                                   </TableCell>
                                   <TableCell align="right" sx={{ pr: 3 }}>
                                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                      <Tooltip title="Modify Tier">
+                                      <Tooltip title="Edit Role">
                                           <IconButton 
                                               onClick={() => navigate(`/roles/edit/${role.id}`)}
                                               sx={{ backgroundColor: "#00d26a", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(0, 210, 106, 0.2)", "&:hover": { backgroundColor: "#00b85c" } }}
@@ -205,7 +203,7 @@ const Roles = () => {
                                               <EditIcon sx={{ fontSize: 18 }} />
                                           </IconButton>
                                       </Tooltip>
-                                      <Tooltip title="Decommission Tier">
+                                      <Tooltip title="Delete Role">
                                           <IconButton 
                                               onClick={() => handleDelete(role.id)}
                                               sx={{ backgroundColor: "#ff4d49", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(255, 77, 73, 0.2)", "&:hover": { backgroundColor: "#d32f2f" } }}

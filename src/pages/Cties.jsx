@@ -86,7 +86,7 @@ const Cities = () => {
       } catch (error) {
         setCities([]);
         showSnackbar(
-          getErrorMessage(error, "Unable to synchronize regional data."),
+          getErrorMessage(error, "Unable to load city data."),
           "error"
         );
       } finally {
@@ -121,7 +121,7 @@ const Cities = () => {
 
   const handleSubmit = async () => {
     if (!formData.cityName.trim()) {
-      showSnackbar("City identifier narrative is required.", "error");
+      showSnackbar("City name is required.", "error");
       return;
     }
 
@@ -134,32 +134,32 @@ const Cities = () => {
           (payload) => updateCity(editingCity.backendId, payload),
           payloads
         );
-        showSnackbar("City footprint updated successfully.");
+        showSnackbar("City updated successfully.");
       } else {
         await runRequestWithPayloads((payload) => addCity(payload), payloads);
-        showSnackbar("New city domain registered.");
+        showSnackbar("New city added.");
       }
 
       resetModalState();
       await fetchCities(true);
     } catch (error) {
-      showSnackbar(getErrorMessage(error, "Operational Sync Error."), "error");
+      showSnackbar(getErrorMessage(error, "Failed to sync."), "error");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (city) => {
-    if (!window.confirm(`Permanently remove "${city.name}" from the regional logic?`)) {
+    if (!window.confirm(`Permanently delete "${city.name}"?`)) {
       return;
     }
 
     try {
       await deleteCity(city.backendId);
-      showSnackbar("City domain de-registered.");
+      showSnackbar("City deleted.");
       await fetchCities(true);
     } catch (error) {
-      showSnackbar(getErrorMessage(error, "Removal Failed."), "error");
+      showSnackbar(getErrorMessage(error, "Failed to delete city."), "error");
     }
   };
 
@@ -179,14 +179,14 @@ const Cities = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Regional Hubs
+                Cities
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Manage the metropolitan horizons where Daycatch logistical services are operational.
+                Manage the cities where Daycatch services are available.
             </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
-            <Tooltip title="Force Sync">
+            <Tooltip title="Refresh List">
                 <IconButton 
                     onClick={() => fetchCities(true)} 
                     disabled={refreshing || loading}
@@ -209,7 +209,7 @@ const Cities = () => {
                     boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                 }}
             >
-                Register City
+                Add City
             </Button>
         </Stack>
       </Box>
@@ -222,7 +222,7 @@ const Cities = () => {
           </Box>
           <Box>
             <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase" }}>
-              Operational Domain
+              Total Cities
             </Typography>
             <Typography variant="h4" fontWeight="800" color="#1b2559">
               {cities.length} Cities
@@ -236,10 +236,10 @@ const Cities = () => {
         
         {/* Search Toolbar */}
         <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Regional Directory</Typography>
+            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">City List</Typography>
             <TextField
                 size="small"
-                placeholder="Search metropolitan footprint..."
+                placeholder="Search cities..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 InputProps={{
@@ -260,9 +260,9 @@ const Cities = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
                 <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>City Logic ID</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Metropolitan Name</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Operations</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>City ID</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>City Name</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -275,7 +275,7 @@ const Cities = () => {
               ) : filteredCities.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
-                    <Typography color="#a3aed0" fontWeight="600">No operational cities found in the central ledger.</Typography>
+                    <Typography color="#a3aed0" fontWeight="600">No cities found.</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -289,7 +289,7 @@ const Cities = () => {
                     <TableCell sx={{ color: "#1b2559", fontWeight: "800", fontSize: "15px" }}>{city.name}</TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title="Modify Footprint">
+                        <Tooltip title="Edit City">
                           <IconButton
                             size="small"
                             onClick={() => handleOpenEdit(city)}
@@ -298,7 +298,7 @@ const Cities = () => {
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="De-register Domain">
+                        <Tooltip title="Delete City">
                           <IconButton
                             size="small"
                             onClick={() => handleDelete(city)}
@@ -321,14 +321,14 @@ const Cities = () => {
       <Modal open={open} onClose={() => !submitting && resetModalState()}>
         <Box sx={modalStyle}>
           <Typography variant="h5" fontWeight="800" sx={{ mb: 1 }} color="#1b2559">
-            {editingCity ? "Update Hub" : "Register Hub"}
+            {editingCity ? "Edit City" : "Add City"}
           </Typography>
           <Typography variant="body2" color="#a3aed0" fontWeight="600" sx={{ mb: 4 }}>
-            Establishing a metropolitan domain for logistical mapping.
+            Enter city details to manage locations.
           </Typography>
 
           <Box sx={{ mb: 5 }}>
-            <Typography variant="body2" fontWeight="800" color="#2b3674" sx={{ mb: 1, ml: 0.5 }}>METROPOLITAN NAME</Typography>
+            <Typography variant="body2" fontWeight="800" color="#2b3674" sx={{ mb: 1, ml: 0.5 }}>CITY NAME</Typography>
             <TextField
               fullWidth
               placeholder="e.g. Hyderabad, Mumbai..."
@@ -348,7 +348,7 @@ const Cities = () => {
               sx={{ textTransform: "none", color: "#a3aed0", fontWeight: "800" }}
               disabled={submitting}
             >
-              Discard
+              Cancel
             </Button>
             <Button
               variant="contained"
@@ -365,7 +365,7 @@ const Cities = () => {
                 boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
               }}
             >
-              {submitting ? "Synchronizing..." : editingCity ? "Confirm Update" : "Activate Hub"}
+              {submitting ? "Saving..." : editingCity ? "Update City" : "Add City"}
             </Button>
           </Stack>
         </Box>

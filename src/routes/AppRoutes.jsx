@@ -17,6 +17,8 @@ import Reports from "../pages/Reports";
 
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import ForgotPassword from "../pages/ForgotPassword";
+import ResetPassword from "../pages/ResetPassword";
 
 import Rejectedbystore from "../pages/Rejectedbystore";
 import AllOrders from "../pages/AllOrders";
@@ -102,7 +104,8 @@ import EditDeliveryBoyCallbackRequest from "../pages/EditDeliveryBoyCallbackRequ
 import SendNotificationUsers from "../pages/SendNotificationUsers";
 import ProfilePage from "../pages/Profile";
 import OrderDetails from "../pages/OrderDetails";
-
+import AddUser from "../pages/AddUser";
+import StoreDetails from "../pages/StoreDetails";
 
 
 
@@ -114,10 +117,12 @@ const AppRoutes = () => {
 
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-      {/* Admin Routes */}
+      {/* Admin Routes (Protected) */}
 
-      <Route path="/" element={<AdminLayout />}>
+      <Route path="/" element={localStorage.getItem("token") ? <AdminLayout /> : <Navigate to="/login" replace />}>
 
         <Route index element={<Dashboard />} />
 
@@ -179,6 +184,8 @@ const AppRoutes = () => {
         {/* Store Management */}
         <Route path="stores" element={<StoresList />}/>
         <Route path="stores/add" element={<AddStore />}/>
+        <Route path="stores/details/:id" element={<StoreDetails />}/>
+        <Route path="stores/edit/:id" element={<AddStore />}/>
 
         {/*Payout  */}
         <Route path="payout-requests" element={<PayoutRequests />}/>
@@ -257,6 +264,7 @@ const AppRoutes = () => {
         
         {/* users data */}
         <Route path="user-data" element={<UsersData />}/>
+        <Route path="user-data/add" element={<AddUser />}/>
         <Route path="wallet-history" element={<WalletHistory />}/>
 
         {/*Taxes  */}

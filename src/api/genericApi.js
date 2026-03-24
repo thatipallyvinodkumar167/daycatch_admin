@@ -19,6 +19,11 @@ export const genericApi = {
     return await api.post(`/collections/${collection}`, data);
   },
 
+  // Create multiple documents in the collection
+  bulkCreate: async (collection, data) => {
+    return await api.post(`/collections/${collection}/bulk`, data);
+  },
+
   // Update an existing document
   update: async (collection, id, data) => {
     return await api.put(`/collections/${collection}/${id}`, data);

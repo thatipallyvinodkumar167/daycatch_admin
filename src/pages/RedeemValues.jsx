@@ -35,7 +35,8 @@ const RedeemValues = () => {
       const formattedData = results.map((item) => ({
         id: item._id,
         rewardPoints: item["Reward Points"] || item.rewardPoints || 0,
-        redeemValue: item["Redeem Value"] || item.redeemValue || 0,
+        redeemValue:
+          item["Redeem Values"] || item["Redeem Value"] || item.redeemValue || 0,
       }));
       setRedeemValues(formattedData);
     } catch (error) {
@@ -58,7 +59,7 @@ const RedeemValues = () => {
     try {
       const payload = {
         "Reward Points": Number(newRule.points),
-        "Redeem Value": Number(newRule.value),
+        "Redeem Values": Number(newRule.value),
       };
       await genericApi.create("reedm value", payload);
       alert("Redemption rule added!");
@@ -88,10 +89,10 @@ const RedeemValues = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="700" color="#2b3674">
-                Hi, Day Catch Super Admin Panel.
+                Redemption Rules
             </Typography>
             <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-                Define the monetary value of reward points for customer redemptions.
+                Set the cash conversion value for customer reward points.
             </Typography>
         </Box>
       </Box>
@@ -111,7 +112,7 @@ const RedeemValues = () => {
         {/* Add Rule Form */}
         <Paper sx={{ p: 4, borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", minWidth: "320px", width: { xs: "100%", lg: "auto" } }}>
           <Typography variant="h6" fontWeight="700" color="#1b2559" sx={{ mb: 3 }}>
-            Add Redeem Entry
+            Create New Rule
           </Typography>
           <Stack spacing={3}>
             <Box>
@@ -125,7 +126,7 @@ const RedeemValues = () => {
               />
             </Box>
             <Box>
-              <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Redeem Value (₹)</Typography>
+              <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>Cash Value (₹)</Typography>
               <TextField
                 fullWidth
                 placeholder="e.g. 5.00"
@@ -164,7 +165,7 @@ const RedeemValues = () => {
             }}
           >
             <Typography variant="h6" fontWeight="700" color="#1b2559">
-              Redemption Configuration
+              Rule List
             </Typography>
             <TextField
               size="small"
@@ -184,7 +185,7 @@ const RedeemValues = () => {
                 <TableRow sx={{ backgroundColor: "#fafbfc" }}>
                   <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
                   <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>REWARD POINTS</TableCell>
-                  <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>EQUIVALENT CASH VALUE</TableCell>
+                  <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CASH VALUE</TableCell>
                   <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", pr: 4 }}>ACTIONS</TableCell>
                 </TableRow>
               </TableHead>

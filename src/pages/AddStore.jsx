@@ -2,51 +2,77 @@ import React, { useState, useEffect } from "react";
 import {
   Box, Typography, Paper, TextField, Button, Stack,
   Grid, Avatar, IconButton, Divider, MenuItem,
-  Select, FormControl, InputLabel,
+  Select, FormControl, InputLabel, Tooltip, OutlinedInput,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import SaveIcon from "@mui/icons-material/Save";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { genericApi } from "../api/genericApi";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import BadgeIcon from "@mui/icons-material/Badge";
+import MapIcon from "@mui/icons-material/Map";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import PersonIcon from "@mui/icons-material/Person";
+import PhoneIcon from "@mui/icons-material/Phone";
+import EmailIcon from "@mui/icons-material/Email";
+import LockIcon from "@mui/icons-material/Lock";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import RadarIcon from "@mui/icons-material/Radar";
+import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
+import PercentIcon from "@mui/icons-material/Percent";
 
 const ID_TYPES = ["Aadhar Card", "PAN Card", "Driving License", "Passport", "Voter ID"];
 
-const sectionLabel = (text) => (
-  <Typography variant="body2" fontWeight="700" color="#a3aed0"
-    sx={{ textTransform: "uppercase", letterSpacing: 1, mb: 1.5, mt: 0.5 }}>
-    {text}
+const sectionLabel = (text, Icon) => (
+  <Typography variant="subtitle2" fontWeight="900" color="#4318ff" 
+    sx={{ mb: 3, letterSpacing: "1px", display: "flex", alignItems: "center", gap: 1, textTransform: "uppercase" }}>
+    {Icon && <Icon fontSize="small" />} {text}
   </Typography>
 );
 
-const field = { "& .MuiOutlinedInput-root": { borderRadius: "10px", backgroundColor: "#fff" } };
+const fieldStyles = { 
+  "& .MuiOutlinedInput-root": { 
+    borderRadius: "14px", 
+    backgroundColor: "#f4f7fe",
+    "& fieldset": { borderColor: "transparent" },
+    "&:hover fieldset": { borderColor: "#e0e5f2" }
+  } 
+};
 
-const ImageUpload = ({ label, preview, onChange }) => (
+const ImageUpload = ({ label, preview, onChange, icon: Icon }) => (
   <Box>
-    <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-      {label}
-    </Typography>
+    <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>{label}</Typography>
     <Stack direction="row" alignItems="center" spacing={2}>
       <Button
         component="label"
         variant="outlined"
-        size="small"
-        startIcon={<CloudUploadIcon fontSize="small" />}
-        sx={{ borderRadius: "8px", textTransform: "none", borderColor: "#d1d5db", color: "#475467", fontWeight: "600" }}
+        startIcon={<CloudUploadIcon />}
+        sx={{ 
+          height: "56px",
+          borderRadius: "14px", 
+          textTransform: "none", 
+          borderColor: "#e0e5f2", 
+          color: preview ? "#24d164" : "#4b5563",
+          fontWeight: 700,
+          borderStyle: "dashed",
+          flex: 1
+        }}
       >
-        Choose file
+        {preview ? "File Ready" : "Upload Image"}
         <input type="file" accept="image/*" hidden onChange={onChange} />
       </Button>
-      {preview
-        ? <Avatar src={preview} sx={{ width: 52, height: 52, borderRadius: "10px", border: "2px solid #e0e5f2" }} />
-        : <Typography variant="caption" color="#a3aed0">No file chosen</Typography>
-      }
+      {preview && (
+        <Avatar src={preview} sx={{ width: 52, height: 52, borderRadius: "14px", border: "2px solid #e0e5f2" }} />
+      )}
     </Stack>
   </Box>
 );
 
 const AddStore = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
+
   const [cities, setCities] = useState([]);
   const [form, setForm] = useState({
     storeImagePreview: null, storeImage: null,
@@ -60,11 +86,42 @@ const AddStore = () => {
   });
 
   useEffect(() => {
+    // Fetch Cities
     genericApi.getAll("cities").then(res => {
       const results = res.data?.results || res.data || [];
       setCities(results.map(c => c["City Name"] || c.name || c.Name || ""));
     }).catch(() => {});
-  }, []);
+
+    // Fetch Store Data IF editing
+    if (isEdit) {
+        genericApi.getAll("storeList").then(res => {
+            const results = res.data?.results || res.data || [];
+            const store = results.find(s => s._id === id || s.id === id);
+            if (store) {
+                setForm(prev => ({
+                    ...prev,
+                    storeName: store["Store Name"] || store.name || "",
+                    employeeName: store["Employee Name"] || store.employeeName || "",
+                    storeNumber: store.Mobile || store.phone || "",
+                    email: store.Email || store.email || "",
+                    password: store.password || "",
+                    idType: store["ID Type"] || store.idType || "",
+                    idNumber: store["ID Number"] || store.idNumber || "",
+                    selectedCity: store.City || store.city || "",
+                    address: store.address || "",
+                    adminShare: store["admin share"] || store.adminShare || "",
+                    deliveryRange: store["Delivery Range"] || store.deliveryRange || "",
+                    ordersPerSlot: store["Orders Per Slot"] || store.ordersPerSlot || "",
+                    startTime: store["Start Time"] || store.startTime || "",
+                    endTime: store["End Time"] || store.endTime || "",
+                    slotInterval: store["Slot Interval"] || store.slotInterval || "",
+                    storeImagePreview: store["Profile Pic"] || store.logo || null,
+                    idImagePreview: store["ID Image"] || store.idImage || null,
+                }));
+            }
+        }).catch(err => console.error("Error fetching store:", err));
+    }
+  }, [id, isEdit]);
 
   const set = (key) => (e) => setForm(prev => ({ ...prev, [key]: e.target.value }));
 
@@ -98,156 +155,286 @@ const AddStore = () => {
         "Slot Interval": form.slotInterval,
         ...(form.storeImagePreview && { "Profile Pic": form.storeImagePreview }),
         ...(form.idImagePreview && { "ID Image": form.idImagePreview }),
-        status: "Pending",
+        status: isEdit ? undefined : "Pending",
       };
-      await genericApi.create("storeList", payload);
-      alert("Store added successfully! It is now pending approval.");
-      navigate("/store-approval");
+      
+      if (isEdit) {
+          await genericApi.update("storeList", id, payload);
+          alert("Store updated successfully!");
+          navigate("/stores-list");
+      } else {
+          await genericApi.create("storeList", payload);
+          alert("Store added successfully! It is now pending approval.");
+          navigate("/store-approval");
+      }
     } catch (error) {
-      console.error("Error adding store:", error);
-      alert("Failed to add store: " + (error.response?.data?.message || error.message));
+      console.error("Error saving store:", error);
+      alert("Failed to save store: " + (error.response?.data?.message || error.message));
     }
   };
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
-      {/* Header */}
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 4 }}>
-        <IconButton onClick={() => navigate("/stores")}
-          sx={{ backgroundColor: "#fff", borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-          <ArrowBackIcon />
-        </IconButton>
+      
+      {/* Premium Header */}
+      <Box sx={{ mb: 4, display: "flex", alignItems: "center", gap: 2 }}>
+        <Tooltip title="Go Back">
+          <IconButton 
+            onClick={() => navigate(-1)} 
+            sx={{ 
+              bgcolor: "#fff", 
+              color: "#4318ff",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              "&:hover": { bgcolor: "#4318ff", color: "#fff" }
+            }}
+          >
+            <ArrowBackIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <Box>
-          <Typography variant="h4" fontWeight="700" color="#2b3674">Add New Store</Typography>
-          <Typography variant="body2" color="textSecondary">Fill in the details below to register a new store.</Typography>
+          <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+            {isEdit ? "Edit Store" : "Add New Store"}
+          </Typography>
+          <Typography variant="body2" color="#a3aed0" fontWeight="600">
+            {isEdit ? "Update the details for this store." : "Fill in the details below to register a new store."}
+          </Typography>
         </Box>
-      </Stack>
+      </Box>
 
-      <Grid container spacing={3}>
-        {/* LEFT COLUMN */}
-        <Grid item xs={12} md={6}>
-
-          {/* Store Profile */}
-          <Paper sx={{ p: 3, borderRadius: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", mb: 3 }}>
-            {sectionLabel("Store Profile")}
-            <Stack spacing={2.5}>
+      <Paper sx={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2" }}>
+        <Box sx={{ p: 5 }}>
+          
+          {/* Section 1: Store Identity */}
+          {sectionLabel("Store Identity", StorefrontIcon)}
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
               <ImageUpload
-                label="Store Image (It Should Be Less Than 1000 KB)"
+                label="STORE LOGO (Should Be Less Than 1000 KB)"
                 preview={form.storeImagePreview}
                 onChange={handleImage("storeImage", "storeImagePreview")}
               />
-              <TextField fullWidth size="small" label="Store Name" value={form.storeName} onChange={set("storeName")} sx={field} />
-              <TextField fullWidth size="small" label="Employee Name" value={form.employeeName} onChange={set("employeeName")} sx={field} />
-              <TextField fullWidth size="small" label="Store Number" value={form.storeNumber} onChange={set("storeNumber")} sx={field} />
-              <TextField fullWidth size="small" label="Admin Share (%)" type="number" value={form.adminShare} onChange={set("adminShare")} sx={field} />
-              <TextField fullWidth size="small" label="Email" type="email" value={form.email} onChange={set("email")} sx={field} />
-              <TextField fullWidth size="small" label="Password" type="password" value={form.password} onChange={set("password")} sx={field} />
-            </Stack>
-          </Paper>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>STORE NAME</Typography>
+              <TextField 
+                fullWidth 
+                placeholder="e.g. Day Catch Hyderabad" 
+                value={form.storeName} 
+                onChange={set("storeName")} 
+                sx={fieldStyles} 
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>OWNER/EMPLOYEE NAME</Typography>
+              <TextField 
+                fullWidth 
+                placeholder="Full Name" 
+                value={form.employeeName} 
+                onChange={set("employeeName")} 
+                InputProps={{ startAdornment: <PersonIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
+                sx={fieldStyles} 
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>MOBILE NUMBER</Typography>
+              <TextField 
+                fullWidth 
+                placeholder="+91 XXXXX XXXXX" 
+                value={form.storeNumber} 
+                onChange={set("storeNumber")} 
+                InputProps={{ startAdornment: <PhoneIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
+                sx={fieldStyles} 
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>ADMIN SHARE (%)</Typography>
+              <TextField 
+                fullWidth 
+                type="number" 
+                placeholder="Commission percentage" 
+                value={form.adminShare} 
+                onChange={set("adminShare")} 
+                InputProps={{ startAdornment: <PercentIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
+                sx={fieldStyles} 
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>EMAIL ADDRESS</Typography>
+              <TextField 
+                fullWidth 
+                type="email" 
+                placeholder="store@domain.com" 
+                value={form.email} 
+                onChange={set("email")} 
+                InputProps={{ startAdornment: <EmailIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
+                sx={fieldStyles} 
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>ACCESS PASSWORD</Typography>
+              <TextField 
+                fullWidth 
+                type="password" 
+                placeholder="••••••••" 
+                value={form.password} 
+                onChange={set("password")} 
+                InputProps={{ startAdornment: <LockIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
+                sx={fieldStyles} 
+              />
+            </Grid>
+          </Grid>
 
-          {/* ID Verification */}
-          <Paper sx={{ p: 3, borderRadius: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-            {sectionLabel("ID Verification")}
-            <Stack spacing={2.5}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Select ID</InputLabel>
-                <Select value={form.idType} label="Select ID" onChange={set("idType")} sx={{ borderRadius: "10px", backgroundColor: "#fff" }}>
+          <Divider sx={{ my: 5, borderStyle: "dashed" }} />
+
+          {/* Section 2: Verification Documents */}
+          {sectionLabel("Documentation", BadgeIcon)}
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>ID TYPE</Typography>
+              <FormControl fullWidth>
+                <Select 
+                  value={form.idType} 
+                  displayEmpty
+                  onChange={set("idType")} 
+                  sx={{ borderRadius: "14px", backgroundColor: "#f4f7fe" }}
+                  input={<OutlinedInput />}
+                >
+                  <MenuItem value="" disabled>Select Document Type</MenuItem>
                   {ID_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
                 </Select>
               </FormControl>
-              <TextField fullWidth size="small" label="ID Number" value={form.idNumber} onChange={set("idNumber")} sx={field} />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>ID NUMBER</Typography>
+              <TextField 
+                fullWidth 
+                placeholder="Serial Number" 
+                value={form.idNumber} 
+                onChange={set("idNumber")} 
+                sx={fieldStyles} 
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
               <ImageUpload
-                label="ID Image (It Should Be Less Than 1000 KB)"
+                label="ID PROOF IMAGE (Should Be Less Than 1000 KB)"
                 preview={form.idImagePreview}
                 onChange={handleImage("idImage", "idImagePreview")}
               />
-            </Stack>
-          </Paper>
-        </Grid>
+            </Grid>
+          </Grid>
 
-        {/* RIGHT COLUMN */}
-        <Grid item xs={12} md={6}>
+          <Divider sx={{ my: 5, borderStyle: "dashed" }} />
 
-          {/* Location */}
-          <Paper sx={{ p: 3, borderRadius: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", mb: 3 }}>
-            {sectionLabel("Location")}
-            <Stack spacing={2.5}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Select City</InputLabel>
-                <Select value={form.selectedCity} label="Select City" onChange={set("selectedCity")} sx={{ borderRadius: "10px", backgroundColor: "#fff" }}>
+          {/* Section 3: Location & Logistics */}
+          {sectionLabel("Location & Logistics", MapIcon)}
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>OPERATIONAL CITY</Typography>
+              <FormControl fullWidth>
+                <Select 
+                  value={form.selectedCity} 
+                  displayEmpty
+                  onChange={set("selectedCity")} 
+                  sx={{ borderRadius: "14px", backgroundColor: "#f4f7fe" }}
+                  input={<OutlinedInput />}
+                  startAdornment={<LocationOnIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} />}
+                >
+                  <MenuItem value="" disabled>Select City</MenuItem>
                   {cities.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
                 </Select>
               </FormControl>
-              <TextField fullWidth size="small" label="City" value={form.selectedCity}
-                onChange={set("selectedCity")} placeholder="Or type city name" sx={field} />
-              <TextField fullWidth size="small" label="Delivery Range (KM)" placeholder="Delivery Range in KM"
-                type="number" value={form.deliveryRange} onChange={set("deliveryRange")} sx={field} />
-              <TextField fullWidth size="small" label="Store Address" placeholder="Enter a location"
-                value={form.address} onChange={set("address")} multiline rows={3} sx={field} />
-            </Stack>
-          </Paper>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>DELIVERY RANGE (KM)</Typography>
+              <TextField 
+                fullWidth 
+                type="number" 
+                placeholder="Coverage radius" 
+                value={form.deliveryRange} 
+                onChange={set("deliveryRange")} 
+                InputProps={{ startAdornment: <RadarIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
+                sx={fieldStyles} 
+              />
+            </Grid>
+            <Grid item xs={12} md={8}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>STORE PHYSICAL ADDRESS</Typography>
+              <TextField 
+                fullWidth 
+                placeholder="Full address details" 
+                value={form.address} 
+                onChange={set("address")} 
+                multiline 
+                rows={3} 
+                sx={fieldStyles} 
+              />
+            </Grid>
+          </Grid>
 
-          {/* Orders & Time Slot */}
-          <Paper sx={{ p: 3, borderRadius: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-            {sectionLabel("Orders")}
-            <Stack spacing={2.5}>
-              <TextField fullWidth size="small" label="Order Per Time Slot" type="number"
-                value={form.ordersPerSlot} onChange={set("ordersPerSlot")} sx={field} />
+          <Divider sx={{ my: 5, borderStyle: "dashed" }} />
 
-              <Divider />
-              {sectionLabel("Time Slot")}
-
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={4}>
-                  <TextField fullWidth size="small" label="Start Time" type="time"
-                    value={form.startTime} onChange={set("startTime")}
-                    InputLabelProps={{ shrink: true }} sx={field} />
+          {/* Section 4: Operational Settings */}
+          {sectionLabel("Operational Settings", AccessTimeIcon)}
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>ORDERS PER SLOT</Typography>
+              <TextField 
+                fullWidth 
+                type="number" 
+                placeholder="Max orders" 
+                value={form.ordersPerSlot} 
+                onChange={set("ordersPerSlot")} 
+                InputProps={{ startAdornment: <ShoppingBagIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
+                sx={fieldStyles} 
+              />
+            </Grid>
+            <Grid item xs={12} md={8}>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>SERVICE WINDOW & SLOTS</Typography>
+                <Grid container spacing={2}>
+                    <Grid item xs={4}>
+                        <TextField fullWidth type="time" value={form.startTime} onChange={set("startTime")} InputLabelProps={{ shrink: true }} sx={fieldStyles} />
+                        <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>START TIME</Typography>
+                    </Grid>
+                    <Grid item xs={4}>
+                        <TextField fullWidth type="time" value={form.endTime} onChange={set("endTime")} InputLabelProps={{ shrink: true }} sx={fieldStyles} />
+                        <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>END TIME</Typography>
+                    </Grid>
+                    <Grid item xs={4}>
+                        <TextField fullWidth type="number" placeholder="Min" value={form.slotInterval} onChange={set("slotInterval")} sx={fieldStyles} />
+                        <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>INTERVAL (MIN)</Typography>
+                    </Grid>
                 </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField fullWidth size="small" label="End Time" type="time"
-                    value={form.endTime} onChange={set("endTime")}
-                    InputLabelProps={{ shrink: true }} sx={field} />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField fullWidth size="small" label="Time Slot Interval" type="number"
-                    placeholder="e.g. 30 min" value={form.slotInterval} onChange={set("slotInterval")} sx={field} />
-                </Grid>
-              </Grid>
-            </Stack>
-          </Paper>
-        </Grid>
-      </Grid>
+            </Grid>
+          </Grid>
 
-      {/* Action Buttons */}
-      <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
-        <Button
-          variant="contained"
-          startIcon={<SaveIcon />}
-          onClick={handleSubmit}
-          sx={{
-            backgroundColor: "#4318ff",
-            "&:hover": { backgroundColor: "#3311cc" },
-            borderRadius: "12px",
-            textTransform: "none",
-            fontWeight: "700",
-            px: 5, py: 1.5,
-            boxShadow: "0 4px 12px rgba(67,24,255,0.3)",
-          }}
-        >
-          Add Store
-        </Button>
-        <Button
-          variant="outlined"
-          onClick={() => navigate("/stores")}
-          sx={{
-            borderRadius: "12px", textTransform: "none",
-            fontWeight: "700", px: 4,
-            borderColor: "#e0e5f2", color: "#1b2559",
-          }}
-        >
-          Cancel
-        </Button>
-      </Stack>
+          {/* Footer Actions */}
+          <Divider sx={{ my: 5 }} />
+          <Stack direction="row" spacing={2} justifyContent="flex-end">
+            <Button
+              variant="outlined"
+              onClick={() => navigate("/stores")}
+              sx={{ borderRadius: "16px", px: 5, py: 1.8, textTransform: "none", fontWeight: 800, borderColor: "#e0e5f2", color: "#2b3674" }}
+            >
+              Cancel Registration
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              sx={{ 
+                  backgroundColor: "#4318ff", 
+                  "&:hover": { backgroundColor: "#3311cc" },
+                  borderRadius: "16px",
+                  textTransform: "none",
+                  px: 6,
+                  py: 1.8,
+                  fontWeight: "800",
+                  boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)",
+              }}
+            >
+              {isEdit ? "Update Store" : "Add Store"}
+            </Button>
+          </Stack>
+        </Box>
+      </Paper>
     </Box>
   );
 };

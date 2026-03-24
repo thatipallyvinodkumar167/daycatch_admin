@@ -63,10 +63,10 @@ const UsersFeedback = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Consumer Sentiment
+                User Feedback
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Monitor and analyze direct feedback from your platform users.
+                Monitor and analyze direct feedback from customers.
             </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
@@ -89,7 +89,7 @@ const UsersFeedback = () => {
             <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Recent Feedback</Typography>
             <TextField
                 size="small"
-                placeholder="Search sentiment..."
+                placeholder="Search feedback..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 InputProps={{
@@ -110,9 +110,9 @@ const UsersFeedback = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
                 <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Consumer Name</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Sentiment & Message</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Timestamp</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>CUSTOMER NAME</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>FEEDBACK</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>DATE</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

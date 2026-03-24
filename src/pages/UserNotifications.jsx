@@ -45,8 +45,8 @@ const UserNotifications = () => {
         id: item._id || index,
         title: item.title || "System Broadcast",
         image: item.image || item.logo || null,
-        user: item.user || item.selectUsers || "Global Audience",
-        message: item.message || item.body || "Notification details scheduled for dispatch...",
+        user: item.user || item.selectUsers || "All Users",
+        message: item.message || item.body || "No message content available.",
         timestamp: item.createdAt || item.date || null
       }));
 
@@ -63,6 +63,17 @@ const UserNotifications = () => {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  const handleDelete = async (id) => {
+    if (window.confirm("Permanently delete this notification?")) {
+      try {
+        await genericApi.remove("user_notifications", id);
+        fetchNotifications();
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+      }
+    }
+  };
+
   const filtered = useMemo(() => {
     const query = search.toLowerCase().trim();
     if (!query) return notifications;
@@ -74,8 +85,8 @@ const UserNotifications = () => {
   }, [notifications, search]);
 
   const stats = useMemo(() => [
-    { label: "Dispatches", value: notifications.length, icon: <HistoryIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
-    { label: "Reach", value: "Verified", icon: <SendIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+    { label: "Total Sent", value: notifications.length, icon: <HistoryIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Status", value: "Verified", icon: <SendIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
   ], [notifications]);
 
   return (
@@ -85,10 +96,10 @@ const UserNotifications = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Consumer Alert Registry
+                User Notifications
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Archival repository of sent and scheduled push communications.
+                List of all push notifications sent to users.
             </Typography>
         </Box>
         <Stack direction="row" spacing={3} alignItems="center">
@@ -102,7 +113,7 @@ const UserNotifications = () => {
                 </Stack>
             ))}
             <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, alignSelf: "center" }} />
-            <Tooltip title="Refresh Dispatches">
+            <Tooltip title="Refresh List">
                 <IconButton 
                     onClick={() => fetchNotifications(true)} 
                     disabled={refreshing || loading}
@@ -121,10 +132,10 @@ const UserNotifications = () => {
           )}
           
           <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Dispatch Logs</Typography>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Notification History</Typography>
               <TextField
                   size="small"
-                  placeholder="Search Identity or Message..."
+                  placeholder="Search notifications..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   InputProps={{
@@ -150,11 +161,11 @@ const UserNotifications = () => {
                   <TableHead>
                       <TableRow>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Communication Asset</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Target Hub</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Manifest (Body)</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Notification</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Audience</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Message</TableCell>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Status</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Ops</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
                       </TableRow>
                   </TableHead>
                   <TableBody>
@@ -168,7 +179,7 @@ const UserNotifications = () => {
                                       </Avatar>
                                       <Box>
                                           <Typography variant="body2" fontWeight="800" color="#1b2559" noWrap sx={{ maxWidth: 150 }}>{item.title}</Typography>
-                                          <Typography variant="caption" color="#a3aed0" fontWeight="700">Dispatch ID: {String(item.id).slice(-6).toUpperCase()}</Typography>
+                                          <Typography variant="caption" color="#a3aed0" fontWeight="700">ID: {String(item.id).slice(-6).toUpperCase()}</Typography>
                                       </Box>
                                   </Stack>
                               </TableCell>
@@ -188,12 +199,12 @@ const UserNotifications = () => {
                               </TableCell>
                               <TableCell align="right" sx={{ pr: 3 }}>
                                   <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                                      <Tooltip title="Examine Payload">
+                                      <Tooltip title="View Details">
                                           <IconButton size="small" sx={{ color: "#4318ff", bgcolor: "#f4f7fe", borderRadius: "10px", "&:hover": { bgcolor: "#e0e5f2" } }}>
                                               <VisibilityIcon fontSize="small" />
                                           </IconButton>
                                       </Tooltip>
-                                      <IconButton size="small" sx={{ color: "#ff4d49", bgcolor: "rgba(255, 77, 73, 0.05)", borderRadius: "10px" }}>
+                                      <IconButton onClick={() => handleDelete(item.id)} size="small" sx={{ color: "#ff4d49", bgcolor: "rgba(255, 77, 73, 0.05)", borderRadius: "10px" }}>
                                           <DeleteOutlineIcon fontSize="small" />
                                       </IconButton>
                                   </Stack>

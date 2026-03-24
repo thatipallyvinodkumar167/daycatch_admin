@@ -8,8 +8,8 @@ import {
   Stack,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { genericApi } from "../api/genericApi";
 
 const AddReward = () => {
   const navigate = useNavigate();
@@ -32,7 +32,10 @@ const AddReward = () => {
 
     setIsSubmitting(true);
     try {
-      await axios.post("https://jsonplaceholder.typicode.com/posts", formData);
+      await genericApi.create("rewards", {
+        "Cart Value": Number(formData.cartValue),
+        "Reward Points": Number(formData.rewardPoints),
+      });
       alert("Reward points added successfully!");
       navigate("/rewards-list");
     } catch (error) {

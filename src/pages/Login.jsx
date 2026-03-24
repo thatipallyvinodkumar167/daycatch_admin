@@ -36,16 +36,31 @@ const LoginPage = () => {
       const { token, data } = response.data;
       const { user } = data;
 
+      // ✅ Block non-Super Admin users from accessing this panel
+      const role = user["role Name"] || user.roleName || user.role || '';
+      if (role !== 'Super Admin') {
+        alert('Access Denied! This panel is for Super Admins only.');
+        setLoading(false);
+        return;
+      }
+
       localStorage.setItem("token", token);
-      localStorage.setItem("user_role", user["role Name"]);
+      localStorage.setItem("user_role", role);
       localStorage.setItem("user_email", user.Email);
       localStorage.setItem("user_name", user.Name);
 
       navigate("/");
-      window.location.reload(); 
+      window.location.reload();
     } catch (error) {
       console.error('Login error:', error);
-      alert(error.response?.data?.error || 'Login failed. Please check your credentials.');
+      const errData = error.response?.data;
+      const errMsg =
+        typeof errData === 'string'
+          ? errData
+          : errData?.message || errData?.error || errData?.msg
+          ? String(errData?.message || errData?.error || errData?.msg)
+          : 'Login failed. Please check your credentials and try again.';
+      alert(errMsg);
     } finally {
       setLoading(false);
     }

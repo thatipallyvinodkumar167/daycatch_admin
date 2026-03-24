@@ -57,12 +57,12 @@ const Id = () => {
       const results = response.data.results || response.data || [];
       const formattedIds = results.map((item, index) => ({
         id: item._id,
-        name: item.name || item["ID Name"] || "Unnamed ID Protocol",
+        name: item.name || item["ID Name"] || "Unnamed ID",
         status: item.status || "Active",
       }));
       setIds(formattedIds);
     } catch (error) {
-      console.error("Error fetching ID configurations:", error);
+      console.error("Error fetching Identification settings:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -125,9 +125,9 @@ const Id = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to terminate this ID identity protocol?")) {
+    if (window.confirm("Are you sure you want to delete this ID type?")) {
       try {
-        await genericApi.delete("id", id);
+        await genericApi.remove("id", id);
         fetchIds();
       } catch (error) {
         console.error("Error deleting ID:", error);
@@ -145,8 +145,8 @@ const Id = () => {
   }, [ids, search]);
 
   const stats = useMemo(() => [
-    { label: "Identity Nodes", value: ids.length, icon: <FingerprintIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
-    { label: "Verification Tier", value: "Level-1", icon: <SecurityIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+    { label: "Total IDs", value: ids.length, icon: <FingerprintIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Status", value: "Level-1", icon: <SecurityIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
   ], [ids]);
 
   return (
@@ -156,10 +156,10 @@ const Id = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Identity Control Matrix
+                Identification Management
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Architect and configure identity document requirements and verification protocols.
+                Manage identity documents and verification settings.
             </Typography>
         </Box>
         <Stack direction="row" spacing={3} alignItems="center">
@@ -188,7 +188,7 @@ const Id = () => {
                     "&:hover": { backgroundColor: "#3310cc" }
                 }}
             >
-                Initialize Protocol
+                Add ID Type
             </Button>
         </Stack>
       </Box>
@@ -200,11 +200,11 @@ const Id = () => {
           )}
           
           <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Identity Protocol Repository</Typography>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">ID List</Typography>
               <Stack direction="row" spacing={2} alignItems="center">
                   <TextField
                       size="small"
-                      placeholder="Search Protocol ID or Name..."
+                      placeholder="Search ID Type..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       InputProps={{
@@ -212,7 +212,7 @@ const Id = () => {
                       }}
                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#fff", width: "320px" } }}
                   />
-                  <Tooltip title="Synchronize Repository">
+                  <Tooltip title="Refresh">
                       <IconButton onClick={() => fetchIds(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
                           <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
                       </IconButton>
@@ -230,20 +230,18 @@ const Id = () => {
                   <TableHead>
                       <TableRow>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Protocol UUID</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Identity Label</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Operational Status</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Protocol Deployment</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Document Name</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Status</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
                       </TableRow>
                   </TableHead>
                   <TableBody>
                       {filteredIds.length === 0 && !loading ? (
-                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>Zero identity protocols detected in current node.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={4} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>No identification types found.</TableCell></TableRow>
                       ) : (
                           filteredIds.map((item, index) => (
                               <TableRow key={item.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
                                   <TableCell sx={{ color: "#1b2559", fontWeight: "800", pl: 4 }}>#{index + 1}</TableCell>
-                                  <TableCell sx={{ color: "#4318ff", fontWeight: "700", fontFamily: "monospace", fontSize: "12px" }}>{item.id}</TableCell>
                                   <TableCell>
                                       <Stack direction="row" spacing={1.5} alignItems="center">
                                           <Box sx={{ p: 1, borderRadius: "10px", bgcolor: "rgba(67, 24, 255, 0.05)" }}>
@@ -268,7 +266,7 @@ const Id = () => {
                                   </TableCell>
                                   <TableCell align="right" sx={{ pr: 3 }}>
                                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                      <Tooltip title="Modify Protocol">
+                                      <Tooltip title="Edit ID Type">
                                           <IconButton 
                                               onClick={() => handleOpen(item)}
                                               sx={{ backgroundColor: "#00d26a", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(0, 210, 106, 0.2)", "&:hover": { backgroundColor: "#00b85c" } }}
@@ -276,7 +274,7 @@ const Id = () => {
                                               <EditIcon sx={{ fontSize: 18 }} />
                                           </IconButton>
                                       </Tooltip>
-                                      <Tooltip title="Terminate Protocol">
+                                      <Tooltip title="Delete ID Type">
                                           <IconButton 
                                               onClick={() => handleDelete(item.id)}
                                               sx={{ backgroundColor: "#ff4d49", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(255, 77, 73, 0.2)", "&:hover": { backgroundColor: "#d32f2f" } }}
@@ -303,23 +301,23 @@ const Id = () => {
         }}
       >
         <DialogTitle sx={{ fontWeight: "800", color: "#1b2559", pt: 3, pb: 1, letterSpacing: "-1px" }}>
-            {editMode ? "Modify Identity Protocol" : "Initialize Identity Protocol"}
+            {editMode ? "Edit ID Type" : "Add ID Type"}
         </DialogTitle>
         <DialogContent>
             <Stack spacing={3} sx={{ mt: 2 }}>
                 <Box>
-                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Identity Label</Typography>
+                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>ID Name</Typography>
                     <TextField
                         fullWidth
                         name="name"
-                        placeholder="e.g. Aadhar Secure Node"
+                        placeholder="e.g. Aadhaar Card"
                         value={formData.name}
                         onChange={handleInputChange}
                         sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
                     />
                 </Box>
                 <Box>
-                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Operational Status</Typography>
+                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Status</Typography>
                     <FormControl fullWidth>
                         <Select
                             name="status"
@@ -327,8 +325,8 @@ const Id = () => {
                             onChange={handleInputChange}
                             sx={{ borderRadius: "16px", bgcolor: "#fafbfc", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e5f2" } }}
                         >
-                            <MenuItem value="Active">Active Loop</MenuItem>
-                            <MenuItem value="Inactive">Dormant State</MenuItem>
+                            <MenuItem value="Active">Active</MenuItem>
+                            <MenuItem value="Inactive">Inactive</MenuItem>
                         </Select>
                     </FormControl>
                 </Box>
@@ -355,7 +353,7 @@ const Id = () => {
                     boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                 }}
             >
-                {editMode ? "Confirm Modification" : "Deploy Protocol"}
+                {editMode ? "Save Changes" : "Add ID Type"}
             </Button>
         </DialogActions>
       </Dialog>

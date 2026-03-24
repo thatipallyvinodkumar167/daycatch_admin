@@ -29,6 +29,7 @@ const EditSubAdmin = () => {
     email: "",
     roleName: "",
     password: "",
+    status: "",
     image: null,
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -66,6 +67,7 @@ const EditSubAdmin = () => {
           name: admin["Name"] || admin.name || "",
           email: admin["Email"] || admin["Email ID"] || admin.email || "",
           roleName: admin["role Name"] || admin.roleName || admin.role || "",
+          status: admin.status || admin.Status || "Active",
         }));
         setImagePreview(admin.Image || admin.image || admin.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(admin["Name"] || "Admin")}&background=random`);
       }
@@ -107,6 +109,7 @@ const EditSubAdmin = () => {
           "Name": formData.name,
           "Email": formData.email,
           "role Name": formData.roleName || "Manager",
+          "status": formData.status || "Active",
       };
       
       if (formData.password) {
@@ -265,6 +268,26 @@ const EditSubAdmin = () => {
                   ),
                 }}
               />
+            </Grid>
+
+            {/* Status Select */}
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" fontWeight="700" color="#1b2559" sx={{ mb: 1 }}>
+                Status
+              </Typography>
+              <FormControl fullWidth sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}>
+                <InputLabel id="status-select-label">Select Status</InputLabel>
+                <Select
+                  labelId="status-select-label"
+                  name="status"
+                  value={formData.status || "Active"}
+                  label="Select Status"
+                  onChange={handleInputChange}
+                >
+                  <MenuItem value="Active">Active</MenuItem>
+                  <MenuItem value="Inactive">Inactive</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
           </Grid>
 

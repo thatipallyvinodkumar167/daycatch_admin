@@ -297,14 +297,14 @@ function Sidebar({ open }) {
           </ListItem>
         )}
 
-        {/* ID`s */}
+        {/* Identification */}
         {hasPermission("Id") && (
           <ListItem disablePadding>
             <ListItemButton onClick={() => navigate("/id")} sx={activeMenu("/id")}>
               <ListItemIcon>
                 <BadgeIcon  />
               </ListItemIcon>
-              <ListItemText primary="ID`s" />
+              <ListItemText primary="Identification" />
             </ListItemButton>
           </ListItem>
         )}
@@ -479,10 +479,10 @@ function Sidebar({ open }) {
             <Collapse in={openMenu === "products"} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
                 <ListItemButton sx={subActiveMenu("/products")} onClick={() => navigate("/products")}>
-                  <ListItemText primary="Admin products" />
+                  <ListItemText primary="Admin Products" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/store-products")} onClick={() => navigate("/store-products")}>
-                  <ListItemText primary="Store products" />
+                  <ListItemText primary="Store Products" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/trending-search")} onClick={() => navigate("/trending-search")}>
                   <ListItemText primary="Trending Search" />
@@ -569,22 +569,22 @@ function Sidebar({ open }) {
             <Collapse in={openMenu === "orders"} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
                 <ListItemButton sx={subActiveMenu("/rejected-by-store")} onClick={() => navigate("/rejected-by-store")}>
-                  <ListItemText primary="Rejected By Store" />
+                  <ListItemText primary="Rejected Orders" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/all-orders")} onClick={() => navigate("/all-orders")}>
-                  <ListItemText primary="All Orders" />
+                  <ListItemText primary="Order History" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/pending-orders")} onClick={() => navigate("/pending-orders")}>
                   <ListItemText primary="Pending Orders" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/cancelled-orders")} onClick={() => navigate("/cancelled-orders")}>
-                  <ListItemText primary="Cancel Orders" />
+                  <ListItemText primary="Cancelled Orders" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/ongoing-orders")} onClick={() => navigate("/ongoing-orders")}>
                   <ListItemText primary="Ongoing Orders" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/out-of-delivery-orders")} onClick={() => navigate("/out-of-delivery-orders")}>
-                  <ListItemText primary="Out for Delivery Orders" />
+                  <ListItemText primary="Out for Delivery" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/payment-failed-orders")} onClick={() => navigate("/payment-failed-orders")}>
                   <ListItemText primary="Payment Failed Orders" />
@@ -593,7 +593,7 @@ function Sidebar({ open }) {
                   <ListItemText primary="Completed Orders" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/day-wise-orders")} onClick={() => navigate("/day-wise-orders")}>
-                  <ListItemText primary="Day Wise Orders" />
+                  <ListItemText primary="Daily Orders" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/missed-orders")} onClick={() => navigate("/missed-orders")}>
                   <ListItemText primary="Missed Orders" />
@@ -622,7 +622,7 @@ function Sidebar({ open }) {
                   <ListItemText primary="Payout Requests" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/payout-validation")} onClick={() => navigate("/payout-validation")}>
-                  <ListItemText primary="Payout Validation" />
+                  <ListItemText primary="Payout Audit" />
                 </ListItemButton>
               </List>
             </Collapse>
@@ -645,10 +645,10 @@ function Sidebar({ open }) {
             <Collapse in={openMenu === "rewards"} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
                 <ListItemButton sx={subActiveMenu("/rewards-list")} onClick={() => navigate("/rewards-list")}>
-                  <ListItemText primary="Rewards" />
+                  <ListItemText primary="Reward Rules" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/redeem-value")} onClick={() => navigate("/redeem-value")}>
-                  <ListItemText primary="Redeem Value" />
+                  <ListItemText primary="Redemption Rules" />
                 </ListItemButton>
               </List>
             </Collapse>
@@ -663,7 +663,7 @@ function Sidebar({ open }) {
                 <ListItemIcon>
                   <DeliveryDiningIcon  />
                 </ListItemIcon>
-                <ListItemText primary="Delivery Boy list" />
+                <ListItemText primary="Drivers" />
                 { openMenu === "delivery" ? <ExpandLess sx={{ color: openMenu === "delivery" ? theme.palette.primary.main : "#fff" }} /> : <ExpandMore />}
               </ListItemButton>
             </ListItem>
@@ -671,10 +671,10 @@ function Sidebar({ open }) {
             <Collapse in={openMenu === "delivery"} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
                 <ListItemButton sx={subActiveMenu("/delivery-boy-list")} onClick={() => navigate("/delivery-boy-list")}>
-                  <ListItemText primary="Delivery Boy list" />
+                  <ListItemText primary="Driver List" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/delivery-boy-incentive")} onClick={() => navigate("/delivery-boy-incentive")}>
-                  <ListItemText primary="Delivery Boy Incentive" />
+                  <ListItemText primary="Incentives" />
                 </ListItemButton>
               </List>
             </Collapse>
@@ -729,7 +729,7 @@ function Sidebar({ open }) {
                   <ListItemText primary="Store Feedback" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/delivery-boy-feedback")} onClick={() => navigate("/delivery-boy-feedback")}>
-                  <ListItemText primary="Delivery Boy Feedback" />
+                  <ListItemText primary="Driver Feedback" />
                 </ListItemButton>
               </List>
             </Collapse>
@@ -758,7 +758,7 @@ function Sidebar({ open }) {
                   <ListItemText primary="Store Callback Request" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/delivery-boy-callback-request")} onClick={() => navigate("/delivery-boy-callback-request")}>
-                  <ListItemText primary="Delivery Boy Callback Request" />
+                  <ListItemText primary="Driver Callback Request" />
                 </ListItemButton>
               </List>
             </Collapse>

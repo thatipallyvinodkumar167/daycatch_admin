@@ -14,14 +14,19 @@ import {
   Avatar,
   LinearProgress,
   Chip,
+  Button,
 } from "@mui/material";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import PaidIcon from "@mui/icons-material/Paid";
+import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import HourglassTopIcon from "@mui/icons-material/HourglassTop";
 import StorefrontIcon from "@mui/icons-material/Storefront";
+import HowToRegIcon from "@mui/icons-material/HowToReg";
 import { genericApi } from "../api/genericApi";
+import { useNavigate } from "react-router-dom";
 
 const StoreEarningPaments = () => {
+  const navigate = useNavigate();
   const [stores, setStores] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -69,26 +74,45 @@ const StoreEarningPaments = () => {
   const totalPaid = stores.reduce((sum, s) => sum + s.alreadyPaid, 0);
   const totalPending = stores.reduce((sum, s) => sum + s.pendingBalance, 0);
 
-  const fmt = (val) => `₹${Number(val).toLocaleString("en-IN")}`;
+  const fmt = (val) => `RS ${Number(val).toLocaleString("en-IN")}`;
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
 
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="700" color="#2b3674">
-          Hi, Day Catch Super Admin Panel.
-        </Typography>
-        <Typography variant="body1" color="textSecondary" sx={{ mt: 0.5 }}>
-          Track and manage store earnings, payouts, and pending balances.
-        </Typography>
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <Box>
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Store Earnings
+            </Typography>
+            <Typography variant="body1" color="textSecondary" sx={{ mt: 0.5 }}>
+                Monitor store revenue and payment status.
+            </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          onClick={() => navigate("/store-approval")}
+          startIcon={<HowToRegIcon />}
+          sx={{
+            backgroundColor: "#24d164",
+            "&:hover": { backgroundColor: "#1fb355" },
+            borderRadius: "16px",
+            textTransform: "none",
+            px: 4,
+            py: 1.5,
+            fontWeight: "800",
+            boxShadow: "0 10px 20px rgba(36, 209, 100, 0.2)",
+          }}
+        >
+          Store Approvals
+        </Button>
       </Box>
 
       {/* Summary Cards */}
       <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ mb: 4 }}>
         {[
           { label: "Total Revenue", value: fmt(totalRevenue), icon: <AccountBalanceWalletIcon />, color: "#4318ff", bg: "#e0e7ff" },
-          { label: "Already Paid", value: fmt(totalPaid), icon: <PaidIcon />, color: "#24d164", bg: "#e6f9ed" },
+          { label: "Already Paid", value: fmt(totalPaid), icon: <CurrencyRupeeIcon />, color: "#24d164", bg: "#e6f9ed" },
           { label: "Pending Balance", value: fmt(totalPending), icon: <HourglassTopIcon />, color: "#ff9500", bg: "#fff4e5" },
           { label: "Total Stores", value: stores.length, icon: <StorefrontIcon />, color: "#2d60ff", bg: "#e8eeff" },
         ].map((stat) => (
@@ -116,7 +140,6 @@ const StoreEarningPaments = () => {
             <Typography variant="caption" color="textSecondary">{filtered.length} stores</Typography>
           </Box>
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography variant="body2" color="#a3aed0" fontWeight="600">Search:</Typography>
             <TextField
               size="small"
               placeholder="Search by store or address..."
@@ -136,9 +159,9 @@ const StoreEarningPaments = () => {
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0", width: 60 }}>#</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>STORE</TableCell>
                 <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>ADDRESS</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>TOTAL REVENUE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>ALREADY PAID</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>PENDING BALANCE</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>REVENUE</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>PAID</TableCell>
+                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>BALANCE</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

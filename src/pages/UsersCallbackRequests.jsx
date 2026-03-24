@@ -79,7 +79,7 @@ const UsersCallbackRequests = () => {
   }, [requests, search]);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Acknowledge protocol: Mark this assistance request as resolved?")) {
+    if (window.confirm("Mark this callback request as resolved?")) {
       try {
         await genericApi.remove("usercallbackrequests", id);
         setRequests(prev => prev.filter(item => item.id !== id));
@@ -102,10 +102,10 @@ const UsersCallbackRequests = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1.5px" }}>
-                Consumer Assistance Console
+                User Callback Requests
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Auditing incoming request nodes for tactical consumer support.
+                Manage and respond to callback requests from customers.
             </Typography>
         </Box>
         <Stack direction="row" spacing={3} alignItems="center">
@@ -119,7 +119,7 @@ const UsersCallbackRequests = () => {
                 </Stack>
             ))}
             <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, alignSelf: "center" }} />
-            <Tooltip title="Synchronize Queue">
+            <Tooltip title="Refresh Feed">
                 <IconButton 
                     onClick={() => fetchRequests(true)} 
                     disabled={refreshing || loading}
@@ -142,7 +142,7 @@ const UsersCallbackRequests = () => {
                     boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                 }}
             >
-                Tactical Entry
+                Add Request
             </Button>
         </Stack>
       </Box>
@@ -155,10 +155,10 @@ const UsersCallbackRequests = () => {
           
           {/* Search Toolbar */}
           <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Pending Communications</Typography>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Pending Requests</Typography>
               <TextField
                   size="small"
-                  placeholder="ID or Node Identity..."
+                  placeholder="Search name or phone..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   InputProps={{
@@ -184,18 +184,18 @@ const UsersCallbackRequests = () => {
                   <TableHead>
                       <TableRow>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Assistance Identity</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Tactical Feed</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Assigned Node</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Condition</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Operations</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>CUSTOMER NAME</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>PHONE NUMBER</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>DEPARTMENT</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>STATUS</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>ACTIONS</TableCell>
                       </TableRow>
                   </TableHead>
                   <TableBody>
                       {filteredRequests.length === 0 ? (
                           <TableRow>
                               <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                                  <Typography color="#a3aed0" fontWeight="600">No active assistance nodes identified in the registry.</Typography>
+                                  <Typography color="#a3aed0" fontWeight="600">No active callback requests found in the system.</Typography>
                               </TableCell>
                           </TableRow>
                       ) : (
@@ -226,12 +226,12 @@ const UsersCallbackRequests = () => {
                                   </TableCell>
                                   <TableCell align="right" sx={{ pr: 3 }}>
                                       <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                                          <Tooltip title="Examine Node Request">
+                                          <Tooltip title="View Request">
                                               <IconButton size="small" sx={{ color: "#4318ff", bgcolor: "#f4f7fe", borderRadius: "10px", "&:hover": { bgcolor: "#e0e5f2" } }}>
                                                   <VisibilityIcon fontSize="small" />
                                               </IconButton>
                                           </Tooltip>
-                                          <Tooltip title="Resolve Protocol">
+                                          <Tooltip title="Mark as Resolved">
                                               <IconButton 
                                                   onClick={() => handleDelete(item.id)}
                                                   sx={{ color: "#00d26a", bgcolor: "rgba(0, 210, 106, 0.05)", borderRadius: "10px", "&:hover": { bgcolor: "rgba(0, 210, 106, 0.1)" } }}
@@ -239,7 +239,7 @@ const UsersCallbackRequests = () => {
                                                   <DoneIcon fontSize="small" />
                                               </IconButton>
                                           </Tooltip>
-                                          <Tooltip title="Edit Manifest">
+                                          <Tooltip title="Edit Request">
                                               <IconButton 
                                                   onClick={() => navigate(`/user-callback-request/edit/${item.id}`)}
                                                   sx={{ color: "#ffb547", bgcolor: "rgba(255, 181, 71, 0.05)", borderRadius: "10px", "&:hover": { bgcolor: "rgba(255, 181, 71, 0.1)" } }}

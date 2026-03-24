@@ -63,10 +63,10 @@ const StoreFeedback = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Partner Insights
+                Store Feedback
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Analyze and respond to operational feedback from your store network.
+                Analyze and respond to operational feedback from stores.
             </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
@@ -89,7 +89,7 @@ const StoreFeedback = () => {
             <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Recent Store Reports</Typography>
             <TextField
                 size="small"
-                placeholder="Search store or msg..."
+                placeholder="Search feedback..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 InputProps={{
@@ -109,10 +109,10 @@ const StoreFeedback = () => {
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Store Name</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Operational Feedback</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Reported On</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>ID</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>STORE NAME</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>FEEDBACK</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>DATE</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

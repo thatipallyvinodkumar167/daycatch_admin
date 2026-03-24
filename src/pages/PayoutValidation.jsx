@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -16,87 +16,186 @@ import {
   Tooltip,
   Chip,
   Grid,
+  CircularProgress,
 } from "@mui/material";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import ErrorIcon from "@mui/icons-material/Error";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import { useNavigate } from "react-router-dom";
 import { genericApi } from "../api/genericApi";
+import {
+  formatCurrency,
+  formatDate,
+  getCollectionResults,
+  normalizePayoutRequest,
+} from "../utils/payoutUtils";
+
+const defaultPayoutRules = {
+  minAmount: 500,
+  minDays: 7,
+  _id: null,
+};
+
+const getAuditStatusChip = (status) => {
+  const normalizedStatus = status.toLowerCase();
+
+  if (normalizedStatus === "verified") {
+    return (
+      <Chip
+        label="Verified"
+        size="small"
+        sx={{ backgroundColor: "#e6f9ed", color: "#24d164", fontWeight: "700" }}
+      />
+    );
+  }
+
+  if (normalizedStatus === "flagged") {
+    return (
+      <Chip
+        label="Flagged"
+        size="small"
+        sx={{ backgroundColor: "#fff8e6", color: "#ffb800", fontWeight: "700" }}
+      />
+    );
+  }
+
+  return (
+    <Chip
+      label="Pending Verification"
+      size="small"
+      sx={{ backgroundColor: "#eef2ff", color: "#4318ff", fontWeight: "700" }}
+    />
+  );
+};
 
 const PayoutValidation = () => {
+  const navigate = useNavigate();
   const [validations, setValidations] = useState([]);
   const [search, setSearch] = useState("");
-  const [payoutRules, setPayoutRules] = useState({
-    minAmount: 500,
-    minDays: 7,
-    _id: null
-  });
+  const [loading, setLoading] = useState(true);
+  const [savingRules, setSavingRules] = useState(false);
+  const [updatingAuditId, setUpdatingAuditId] = useState("");
+  const [updatingAuditAction, setUpdatingAuditAction] = useState("");
+  const [payoutRules, setPayoutRules] = useState(defaultPayoutRules);
 
-  // API Call
-  useEffect(() => {
-    fetchPayoutValidations();
-  }, []);
+  const fetchPayoutValidations = useCallback(async () => {
+    setLoading(true);
 
-  const fetchPayoutValidations = async () => {
     try {
-      const resp = await genericApi.getAll("payouts");
-      const rules = resp.data.results?.[0] || resp.data?.[0] || {};
+      const [rulesResponse, requestResponse] = await Promise.all([
+        genericApi.getAll("payouts", { limit: 25 }),
+        genericApi.getAll("payout requests", { limit: 500 }),
+      ]);
+
+      const payoutRuleRecords = getCollectionResults(rulesResponse);
+      const requestRecords = getCollectionResults(requestResponse);
+      const activeRules = payoutRuleRecords[0] || {};
+
       setPayoutRules({
-        minAmount: rules["Minimum Amount"] || 500,
-        minDays: rules["Minimum Days"] || 7,
-        _id: rules._id
+        minAmount: activeRules["Minimum Amount"] || defaultPayoutRules.minAmount,
+        minDays: activeRules["Minimum Days"] || defaultPayoutRules.minDays,
+        _id: activeRules._id || null,
       });
 
-      // Use approved payout requests as audit history
-      const reqResp = await genericApi.getAll("payout requests");
-      const requests = reqResp.data.results || reqResp.data || [];
-      
-      setValidations(requests.filter(r => r.Status === "Approved").map((item, index) => ({
-          id: item._id || index + 1,
-          storeName: item.Store || "N/A",
-          phone: item.Phone || item.Mobile || "N/A",
-          amount: `₹${item.Amount || 0}`,
-          method: item["Payment Method"] || "Bank Transfer",
-          referenceId: item["Reference ID"] || `REF-${index}`,
-          date: item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : "N/A",
-          status: "Validated"
-      })));
+      const auditedRequests = requestRecords
+        .map((item, index) => normalizePayoutRequest(item, index))
+        .filter((item) => item.status.toLowerCase() === "approved");
 
+      setValidations(auditedRequests);
     } catch (error) {
       console.error("Error fetching payout validations:", error);
+      alert("Failed to load payout audit data.");
+      setValidations([]);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const filteredValidations = React.useMemo(() => {
-    return validations.filter((item) =>
-      item.storeName?.toLowerCase().includes(search.toLowerCase().trim()) ||
-      item.referenceId?.toLowerCase().includes(search.toLowerCase().trim())
-    );
+  useEffect(() => {
+    fetchPayoutValidations();
+  }, [fetchPayoutValidations]);
+
+  const filteredValidations = useMemo(() => {
+    const query = search.toLowerCase().trim();
+
+    if (!query) {
+      return validations;
+    }
+
+    return validations.filter((item) => {
+      return (
+        item.storeName?.toLowerCase().includes(query) ||
+        item.referenceId?.toLowerCase().includes(query) ||
+        item.auditStatus?.toLowerCase().includes(query)
+      );
+    });
   }, [validations, search]);
 
-  const getStatusChip = (status) => {
-    return <Chip label={status} size="small" sx={{ backgroundColor: "#e6f9ed", color: "#24d164", fontWeight: "700" }} />;
-  };
-
-  const handleRuleChange = (e) => {
-    const { name, value } = e.target;
-    setPayoutRules(prev => ({ ...prev, [name]: value }));
+  const handleRuleChange = (event) => {
+    const { name, value } = event.target;
+    setPayoutRules((currentValue) => ({ ...currentValue, [name]: value }));
   };
 
   const handleSaveRules = async () => {
+    setSavingRules(true);
+
     try {
-        const payload = {
-            "Minimum Amount": Number(payoutRules.minAmount),
-            "Minimum Days": Number(payoutRules.minDays)
-        };
-        if (payoutRules._id) {
-            await genericApi.update("payouts", payoutRules._id, payload);
-        } else {
-            await genericApi.create("payouts", payload);
-        }
-        alert("Payout rules updated successfully!");
+      const payload = {
+        "Minimum Amount": Number(payoutRules.minAmount),
+        "Minimum Days": Number(payoutRules.minDays),
+      };
+
+      if (payoutRules._id) {
+        await genericApi.update("payouts", payoutRules._id, payload);
+      } else {
+        const response = await genericApi.create("payouts", payload);
+        setPayoutRules((currentValue) => ({
+          ...currentValue,
+          _id: response.data?._id || currentValue._id,
+        }));
+      }
+
+      alert("Payout rules updated successfully.");
     } catch (error) {
-        console.error("Error updating rules:", error);
-        alert("Failed to update rules.");
+      console.error("Error updating rules:", error);
+      alert("Failed to update payout rules.");
+    } finally {
+      setSavingRules(false);
+    }
+  };
+
+  const handleAuditStatus = async (item, auditStatus) => {
+    const timestamp = new Date().toISOString();
+    setUpdatingAuditId(item.id);
+    setUpdatingAuditAction(auditStatus);
+
+    try {
+      await genericApi.update("payout requests", item.id, {
+        "Audit Status": auditStatus,
+        "Audit Updated At": timestamp,
+        "Audit Updated By": "Super Admin",
+        ...(auditStatus === "Verified"
+          ? { "Verified At": timestamp }
+          : { "Flagged At": timestamp }),
+      });
+
+      setValidations((currentValue) =>
+        currentValue.map((entry) =>
+          entry.id === item.id
+            ? {
+                ...entry,
+                auditStatus,
+                updatedAt: timestamp,
+              }
+            : entry
+        )
+      );
+    } catch (error) {
+      console.error(`Error marking audit as ${auditStatus}:`, error);
+      alert(`Failed to mark payout as ${auditStatus}.`);
+    } finally {
+      setUpdatingAuditId("");
+      setUpdatingAuditAction("");
     }
   };
 
@@ -104,22 +203,28 @@ const PayoutValidation = () => {
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="700" color="#2b3674">
-          Payout Validation Audit
+          Payout Audit
         </Typography>
         <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-          Review and audit store payout history to ensure compliance.
+          Review and verify store payout history for compliance.
         </Typography>
       </Box>
 
-      {/* Rules Settings */}
-      <Paper sx={{ p: 4, borderRadius: "20px", mb: 4, boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+      <Paper
+        sx={{
+          p: 4,
+          borderRadius: "20px",
+          mb: 4,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+        }}
+      >
         <Typography variant="h6" fontWeight="700" color="#1b2559" sx={{ mb: 3 }}>
-          Payout Request Rules
+          Payout Policies
         </Typography>
         <Grid container spacing={3} alignItems="flex-end">
           <Grid item xs={12} md={4}>
             <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-              Minimum Payout Amount (₹)
+              Minimum Amount (₹)
             </Typography>
             <TextField
               fullWidth
@@ -132,7 +237,7 @@ const PayoutValidation = () => {
           </Grid>
           <Grid item xs={12} md={4}>
             <Typography variant="body2" fontWeight="600" color="#1b2559" sx={{ mb: 1 }}>
-              Minimum Days Gap Between Payouts
+              Payout Interval (Days)
             </Typography>
             <TextField
               fullWidth
@@ -147,6 +252,7 @@ const PayoutValidation = () => {
             <Button
               variant="contained"
               fullWidth
+              disabled={savingRules}
               onClick={handleSaveRules}
               sx={{
                 backgroundColor: "#2d60ff",
@@ -154,33 +260,36 @@ const PayoutValidation = () => {
                 borderRadius: "10px",
                 py: 1.5,
                 fontWeight: "700",
-                textTransform: "none"
+                textTransform: "none",
               }}
             >
-              Update Rules
+              {savingRules ? "Updating..." : "Update Rules"}
             </Button>
           </Grid>
         </Grid>
       </Paper>
 
-      <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-        
-        {/* Card Header */}
-        <Box 
-          sx={{ 
-            p: 3, 
-            display: "flex", 
-            justifyContent: "space-between", 
+      <Paper
+        sx={{
+          borderRadius: "15px",
+          overflow: "hidden",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+        }}
+      >
+        <Box
+          sx={{
+            p: 3,
+            display: "flex",
+            justifyContent: "space-between",
             alignItems: "center",
-            borderBottom: "1px solid #f1f1f1"
+            borderBottom: "1px solid #f1f1f1",
           }}
         >
           <Typography variant="h6" fontWeight="600" color="#1b2559">
-            Payout Validation Audit
+            Audit Logs
           </Typography>
         </Box>
 
-        {/* Toolbar (Search) */}
         <Stack
           direction="row"
           justifyContent="flex-end"
@@ -188,36 +297,106 @@ const PayoutValidation = () => {
           spacing={1}
           sx={{ p: 3 }}
         >
-          <Typography variant="body2" sx={{ mr: 1, fontWeight: "500" }}>Search:</Typography>
           <TextField
             size="small"
-            placeholder="Search by store or REF ID..."
+            placeholder="Search by store, reference ID, or audit status..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ 
+            onChange={(event) => setSearch(event.target.value)}
+            sx={{
               "& .MuiOutlinedInput-root": { borderRadius: "8px" },
-              width: "280px"
+              width: "320px",
             }}
           />
         </Stack>
 
-        {/* Table */}
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Store</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Ref ID</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Amount</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Method</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Date</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2" }}>Status</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "700", color: "#a3aed0", borderBottom: "2px solid #e0e5f2", pr: 4 }}>Action</TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "700",
+                    color: "#a3aed0",
+                    borderBottom: "2px solid #e0e5f2",
+                  }}
+                >
+                  #
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "700",
+                    color: "#a3aed0",
+                    borderBottom: "2px solid #e0e5f2",
+                  }}
+                >
+                  STORE
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "700",
+                    color: "#a3aed0",
+                    borderBottom: "2px solid #e0e5f2",
+                  }}
+                >
+                  REFERENCE ID
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "700",
+                    color: "#a3aed0",
+                    borderBottom: "2px solid #e0e5f2",
+                  }}
+                >
+                  AMOUNT
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "700",
+                    color: "#a3aed0",
+                    borderBottom: "2px solid #e0e5f2",
+                  }}
+                >
+                  METHOD
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "700",
+                    color: "#a3aed0",
+                    borderBottom: "2px solid #e0e5f2",
+                  }}
+                >
+                  DATE
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "700",
+                    color: "#a3aed0",
+                    borderBottom: "2px solid #e0e5f2",
+                  }}
+                >
+                  AUDIT STATUS
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{
+                    fontWeight: "700",
+                    color: "#a3aed0",
+                    borderBottom: "2px solid #e0e5f2",
+                    pr: 4,
+                  }}
+                >
+                  ACTIONS
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredValidations.length === 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
+                    <CircularProgress size={28} />
+                  </TableCell>
+                </TableRow>
+              ) : filteredValidations.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                     No audit records found
@@ -225,57 +404,101 @@ const PayoutValidation = () => {
                 </TableRow>
               ) : (
                 filteredValidations.map((item, index) => (
-                  <TableRow 
-                    key={item.id} 
+                  <TableRow
+                    key={item.id}
                     sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}
                   >
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>{index + 1}</TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="700" color="#1b2559">{item.storeName}</Typography>
-                      <Typography variant="caption" color="textSecondary">{item.phone}</Typography>
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "500" }}>
+                      {index + 1}
                     </TableCell>
-                    <TableCell sx={{ color: "#2d60ff", fontWeight: "600" }}>{item.referenceId}</TableCell>
-                    <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>{item.amount}</TableCell>
-                    <TableCell sx={{ color: "#475467" }}>{item.method}</TableCell>
-                    <TableCell sx={{ color: "#475467" }}>{item.date}</TableCell>
-                    <TableCell>{getStatusChip(item.status)}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="700" color="#1b2559">
+                        {item.storeName}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {item.phone}
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ color: "#2d60ff", fontWeight: "600" }}>
+                      {item.referenceId}
+                    </TableCell>
+                    <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>
+                      {formatCurrency(item.paidAmount || item.requestedAmount)}
+                    </TableCell>
+                    <TableCell sx={{ color: "#475467" }}>
+                      {item.paymentMethod}
+                    </TableCell>
+                    <TableCell sx={{ color: "#475467" }}>
+                      {formatDate(item.updatedAt || item.requestDate)}
+                    </TableCell>
+                    <TableCell>{getAuditStatusChip(item.auditStatus)}</TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <Tooltip title="Verify Transaction">
-                            <IconButton 
-                                sx={{ 
-                                    backgroundColor: "#e6f9ed", 
-                                    color: "#24d164",
-                                    borderRadius: "8px",
-                                    "&:hover": { backgroundColor: "#d1f5db" }
-                                }}
+                          <span>
+                            <IconButton
+                              onClick={() => handleAuditStatus(item, "Verified")}
+                              disabled={
+                                updatingAuditId === item.id ||
+                                item.auditStatus.toLowerCase() === "verified"
+                              }
+                              sx={{
+                                backgroundColor: "#e6f9ed",
+                                color: "#24d164",
+                                borderRadius: "8px",
+                                "&:hover": { backgroundColor: "#d1f5db" },
+                              }}
                             >
+                              {updatingAuditId === item.id &&
+                              updatingAuditAction === "Verified" ? (
+                                <CircularProgress size={18} sx={{ color: "#24d164" }} />
+                              ) : (
                                 <VerifiedIcon fontSize="small" />
+                              )}
                             </IconButton>
+                          </span>
                         </Tooltip>
                         <Tooltip title="View Receipt">
-                            <IconButton 
-                                sx={{ 
-                                    backgroundColor: "#e0e7ff", 
-                                    color: "#4318ff",
-                                    borderRadius: "8px",
-                                    "&:hover": { backgroundColor: "#ced4ff" }
-                                }}
+                          <span>
+                            <IconButton
+                              onClick={() =>
+                                navigate(`/payout-requests/details/${item.id}`)
+                              }
+                              disabled={updatingAuditId === item.id}
+                              sx={{
+                                backgroundColor: "#e0e7ff",
+                                color: "#4318ff",
+                                borderRadius: "8px",
+                                "&:hover": { backgroundColor: "#ced4ff" },
+                              }}
                             >
-                                <ReceiptLongIcon fontSize="small" />
+                              <ReceiptLongIcon fontSize="small" />
                             </IconButton>
+                          </span>
                         </Tooltip>
-                        <Tooltip title="Flag Issue">
-                            <IconButton 
-                                sx={{ 
-                                    backgroundColor: "#fff1f0", 
-                                    color: "#ff4d49",
-                                    borderRadius: "8px",
-                                    "&:hover": { backgroundColor: "#ffccc7" }
-                                }}
+                        <Tooltip title="Flag Error">
+                          <span>
+                            <IconButton
+                              onClick={() => handleAuditStatus(item, "Flagged")}
+                              disabled={
+                                updatingAuditId === item.id ||
+                                item.auditStatus.toLowerCase() === "flagged"
+                              }
+                              sx={{
+                                backgroundColor: "#fff1f0",
+                                color: "#ff4d49",
+                                borderRadius: "8px",
+                                "&:hover": { backgroundColor: "#ffccc7" },
+                              }}
                             >
+                              {updatingAuditId === item.id &&
+                              updatingAuditAction === "Flagged" ? (
+                                <CircularProgress size={18} sx={{ color: "#ff4d49" }} />
+                              ) : (
                                 <ErrorIcon fontSize="small" />
+                              )}
                             </IconButton>
+                          </span>
                         </Tooltip>
                       </Stack>
                     </TableCell>
@@ -285,7 +508,6 @@ const PayoutValidation = () => {
             </TableBody>
           </Table>
         </TableContainer>
-
       </Paper>
     </Box>
   );

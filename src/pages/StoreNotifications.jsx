@@ -46,8 +46,8 @@ const StoreNotifications = () => {
         id: item._id || index,
         title: item.title || "Admin Broadcast",
         image: item.image || item.logo || null,
-        store: item.store || item.selectStores || "Partner Network",
-        message: item.message || item.body || "Internal memorandum scheduled for dispatch...",
+        store: item.store || item.selectStores || "All Stores",
+        message: item.message || item.body || "No message content available.",
         timestamp: item.createdAt || item.date || null
       }));
 
@@ -64,6 +64,17 @@ const StoreNotifications = () => {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  const handleDelete = async (id) => {
+    if (window.confirm("Permanently delete this notification?")) {
+      try {
+        await genericApi.remove("store_notifications", id);
+        fetchNotifications();
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+      }
+    }
+  };
+
   const filtered = useMemo(() => {
     const query = search.toLowerCase().trim();
     if (!query) return notifications;
@@ -75,8 +86,8 @@ const StoreNotifications = () => {
   }, [notifications, search]);
 
   const stats = useMemo(() => [
-    { label: "B2B Bulletins", value: notifications.length, icon: <CampaignIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
-    { label: "ACK Status", value: "Verified", icon: <DoneAllIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+    { label: "Total Sent", value: notifications.length, icon: <CampaignIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Status", value: "Verified", icon: <DoneAllIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
   ], [notifications]);
 
   return (
@@ -86,10 +97,10 @@ const StoreNotifications = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Merchant Notification HQ
+                Store Notifications
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Auditing internal bulletins and policy updates for store partners.
+                List of all notifications sent to stores.
             </Typography>
         </Box>
         <Stack direction="row" spacing={3} alignItems="center">
@@ -103,7 +114,7 @@ const StoreNotifications = () => {
                 </Stack>
             ))}
             <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, alignSelf: "center" }} />
-            <Tooltip title="Synchronize Communications">
+            <Tooltip title="Refresh List">
                 <IconButton 
                     onClick={() => fetchNotifications(true)} 
                     disabled={refreshing || loading}
@@ -122,10 +133,10 @@ const StoreNotifications = () => {
           )}
           
           <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Bulletin Archives</Typography>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Notification History</Typography>
               <TextField
                   size="small"
-                  placeholder="Search Identity or Bulletin..."
+                  placeholder="Search notifications..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   InputProps={{
@@ -151,11 +162,11 @@ const StoreNotifications = () => {
                   <TableHead>
                       <TableRow>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Memo Asset</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Target Partner</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Memorandum Body</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Protocol</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Ops</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Notification</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Audience</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Message</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Type</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
                       </TableRow>
                   </TableHead>
                   <TableBody>
@@ -169,7 +180,7 @@ const StoreNotifications = () => {
                                       </Avatar>
                                       <Box>
                                           <Typography variant="body2" fontWeight="800" color="#1b2559" noWrap sx={{ maxWidth: 150 }}>{item.title}</Typography>
-                                          <Typography variant="caption" color="#a3aed0" fontWeight="700">Ref: ST-{String(item.id).slice(-4).toUpperCase()}</Typography>
+                                          <Typography variant="caption" color="#a3aed0" fontWeight="700">ID: ST-{String(item.id).slice(-4).toUpperCase()}</Typography>
                                       </Box>
                                   </Stack>
                               </TableCell>
@@ -182,16 +193,16 @@ const StoreNotifications = () => {
                                   </Typography>
                               </TableCell>
                               <TableCell>
-                                  <Chip label="B2B-LIVE" size="small" variant="outlined" sx={{ border: "1px dashed", borderColor: "#00d26a", color: "#00d26a", fontWeight: "900", fontSize: "10px" }} />
+                                  <Chip label="INTERNAL" size="small" variant="outlined" sx={{ border: "1px dashed", borderColor: "#00d26a", color: "#00d26a", fontWeight: "900", fontSize: "10px" }} />
                               </TableCell>
                               <TableCell align="right" sx={{ pr: 3 }}>
                                   <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                                      <Tooltip title="Examine Memorandum">
+                                      <Tooltip title="View Details">
                                           <IconButton size="small" sx={{ color: "#4318ff", bgcolor: "#f4f7fe", borderRadius: "10px", "&:hover": { bgcolor: "#e0e5f2" } }}>
                                               <VisibilityIcon fontSize="small" />
                                           </IconButton>
                                       </Tooltip>
-                                      <IconButton size="small" sx={{ color: "#ff4d49", bgcolor: "rgba(255, 77, 73, 0.05)", borderRadius: "10px" }}>
+                                      <IconButton onClick={() => handleDelete(item.id)} size="small" sx={{ color: "#ff4d49", bgcolor: "rgba(255, 77, 73, 0.05)", borderRadius: "10px" }}>
                                           <DeleteOutlineIcon fontSize="small" />
                                       </IconButton>
                                   </Stack>

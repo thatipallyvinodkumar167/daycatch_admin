@@ -84,10 +84,10 @@ const Rewards = () => {
       
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="700" color="#2b3674">
-            Hi, Day Catch Super Admin Panel.
+            Reward Rules
         </Typography>
         <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
-            Configure reward points based on customer purchase amounts.
+            Set up reward point distribution logic for customer purchases.
         </Typography>
       </Box>
 
@@ -97,7 +97,7 @@ const Rewards = () => {
               <CardGiftcardIcon />
           </Avatar>
           <Box>
-              <Typography variant="caption" color="textSecondary" fontWeight="600">ACTIVE RULES</Typography>
+              <Typography variant="caption" color="textSecondary" fontWeight="600">TOTAL RULES</Typography>
               <Typography variant="h5" fontWeight="800" color="#1b2559">{rewards.length}</Typography>
           </Box>
       </Paper>
@@ -106,7 +106,7 @@ const Rewards = () => {
         {/* Add Rule Form */}
         <Paper sx={{ p: 4, borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", minWidth: "320px", width: { xs: "100%", lg: "auto" } }}>
           <Typography variant="h6" fontWeight="700" color="#1b2559" sx={{ mb: 3 }}>
-            Add Reward Entry
+            Create New Rule
           </Typography>
           <Stack spacing={3}>
             <Box>
@@ -150,7 +150,7 @@ const Rewards = () => {
         {/* List Section */}
         <Paper sx={{ flex: 1, p: 4, borderRadius: "24px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", width: "100%" }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-            <Typography variant="h6" fontWeight="800" color="#1b2559">Reward Distribution</Typography>
+            <Typography variant="h6" fontWeight="800" color="#1b2559">Rule List</Typography>
             <TextField
               size="small"
               placeholder="Search by amount..."
@@ -167,7 +167,7 @@ const Rewards = () => {
                   <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", py: 2, pl: 4, borderBottom: "1px solid #e0e5f2" }}>#</TableCell>
                   <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>CART VALUE (₹)</TableCell>
                   <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>REWARD POINTS</TableCell>
-                  <TableCell align="right" sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", pr: 4, borderBottom: "1px solid #e0e5f2" }}>MANAGEMENT</TableCell>
+                  <TableCell align="right" sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", pr: 4, borderBottom: "1px solid #e0e5f2" }}>ACTIONS</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

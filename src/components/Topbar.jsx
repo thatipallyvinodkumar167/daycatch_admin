@@ -29,6 +29,14 @@ function Topbar({ toggleSidebar }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const indigoPrimary = "#4318ff";
 
+  // Fetch logged-in user details
+  const userName = localStorage.getItem("user_name") || "Administrator";
+  const userEmail = localStorage.getItem("user_email") || "admin@daycatch.in";
+  const userRole = localStorage.getItem("user_role") || "Admin";
+  
+  // Get initials for Avatar (first 2 letters, uppercase)
+  const initials = userName.substring(0, 2).toUpperCase() || "DC";
+
   const handleProfileClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
   const handleLogout = () => {
@@ -125,11 +133,11 @@ function Topbar({ toggleSidebar }) {
                         boxShadow: `0 4px 12px ${alpha(indigoPrimary, 0.2)}`
                     }}
                 >
-                    DC
+                    {initials}
                 </Avatar>
                 <Box sx={{ ml: 1.5, display: { xs: "none", md: "block" } }}>
-                    <Typography variant="caption" fontWeight="900" color="#1b2559" sx={{ display: "block", lineHeight: 1 }}>Administrator</Typography>
-                    <Typography variant="caption" fontWeight="700" color="#707eae" sx={{ fontSize: "10px" }}>Management Node</Typography>
+                    <Typography variant="caption" fontWeight="900" color="#1b2559" sx={{ display: "block", lineHeight: 1 }}>{userName}</Typography>
+                    <Typography variant="caption" fontWeight="700" color="#707eae" sx={{ fontSize: "10px" }}>{userRole}</Typography>
                 </Box>
                 <ExpandIcon sx={{ ml: 1, fontSize: 18, color: "#707eae" }} />
             </Box>
@@ -152,12 +160,12 @@ function Topbar({ toggleSidebar }) {
             }}
           >
             <Box sx={{ px: 2, py: 1.5 }}>
-                <Typography variant="subtitle2" fontWeight="900" color="#1b2559">Day Catch Admin</Typography>
-                <Typography variant="caption" fontWeight="700" color="#707eae">admin@daycatch.in</Typography>
+                <Typography variant="subtitle2" fontWeight="900" color="#1b2559">{userName}</Typography>
+                <Typography variant="caption" fontWeight="700" color="#707eae" sx={{ wordBreak: 'break-all' }}>{userEmail}</Typography>
             </Box>
             <Divider sx={{ my: 1, borderColor: "#f4f7fe" }} />
             <MenuItem onClick={() => { handleClose(); navigate("/profile"); }} sx={{ borderRadius: "10px", py: 1.2, fontWeight: 700, "&:hover": { bgcolor: alpha(indigoPrimary, 0.05), color: indigoPrimary } }}>
-                <ProfileIcon sx={{ mr: 1.5, fontSize: 18 }} /> Profile Sync
+                <ProfileIcon sx={{ mr: 1.5, fontSize: 18 }} /> Profile
             </MenuItem>
             <MenuItem onClick={handleLogout} sx={{ borderRadius: "10px", py: 1.2, fontWeight: 700, color: "#ff4d49", "&:hover": { bgcolor: alpha("#ff4d49", 0.05) } }}>
                 <LogoutIcon sx={{ mr: 1.5, fontSize: 18 }} /> Logout

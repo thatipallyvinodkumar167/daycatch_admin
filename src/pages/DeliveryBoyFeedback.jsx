@@ -63,10 +63,10 @@ const DeliveryBoyFeedback = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Fleet Logistics Feedback
+                Driver Feedback
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Performance insights and on-ground reports from your delivery fleet.
+                Review and analyze feedback from delivery drivers.
             </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
@@ -86,10 +86,10 @@ const DeliveryBoyFeedback = () => {
         
         {/* Search Toolbar */}
         <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Recent Field Reports</Typography>
+            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Recent Feedback</Typography>
             <TextField
                 size="small"
-                placeholder="Search rider/msg..."
+                placeholder="Search feedback..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 InputProps={{
@@ -109,10 +109,10 @@ const DeliveryBoyFeedback = () => {
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Rider Name</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Field Observations</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Reported At</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>ID</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>DRIVER NAME</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>FEEDBACK</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>DATE</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

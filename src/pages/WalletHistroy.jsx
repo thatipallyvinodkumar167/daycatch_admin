@@ -83,7 +83,7 @@ const WalletHistory = () => {
   const stats = useMemo(() => [
     { label: "Total Recharges", value: records.length, icon: <HistoryIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
     { label: "Success", value: records.filter((r) => r.status === "Success" || r.status === "Active").length, icon: <CheckCircleIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
-    { label: "Flow In", value: `₹${records.reduce((sum, r) => sum + r.rechargeAmount, 0).toLocaleString()}`, icon: <AccountBalanceWalletIcon sx={{ fontSize: 18 }} />, color: "#ffb800" },
+    { label: "Total Amount", value: `₹${records.reduce((sum, r) => sum + r.rechargeAmount, 0).toLocaleString()}`, icon: <AccountBalanceWalletIcon sx={{ fontSize: 18 }} />, color: "#ffb800" },
   ], [records]);
 
   const getStatusChipStyle = (status) => {
@@ -100,10 +100,10 @@ const WalletHistory = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Wallet Transaction Ledger
+                Wallet Recharge History
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Auditing institutional capital movement and consumer credit velocities.
+                View and manage all user wallet recharge transactions.
             </Typography>
         </Box>
         <Stack direction="row" spacing={3} alignItems="center">
@@ -117,7 +117,7 @@ const WalletHistory = () => {
                 </Stack>
             ))}
             <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, alignSelf: "center" }} />
-            <Tooltip title="Synchronize Ledger">
+            <Tooltip title="Refresh List">
                 <IconButton 
                     onClick={() => fetchRecords(true)} 
                     disabled={refreshing || loading}
@@ -137,10 +137,10 @@ const WalletHistory = () => {
           
           {/* Search Toolbar */}
           <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Recharge Ledger Hub</Typography>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Recharge History</Typography>
               <TextField
                   size="small"
-                  placeholder="Search Identity or Phone..."
+                  placeholder="Search history..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   InputProps={{
@@ -166,19 +166,19 @@ const WalletHistory = () => {
                   <TableHead>
                       <TableRow>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Consumer Identity</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Capital Inflow</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Timestamp & Medium</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Balance flow</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>User Info</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Amount</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Date & Method</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>New Balance</TableCell>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Status</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Details</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
                       </TableRow>
                   </TableHead>
                   <TableBody>
                       {filteredRecords.length === 0 ? (
                           <TableRow>
                               <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
-                                  <Typography color="#a3aed0" fontWeight="600">No capital movement identified in the selected period.</Typography>
+                                  <Typography color="#a3aed0" fontWeight="600">No recharge history found.</Typography>
                               </TableCell>
                           </TableRow>
                       ) : (
@@ -196,7 +196,7 @@ const WalletHistory = () => {
                                   </TableCell>
                                   <TableCell>
                                       <Typography variant="body2" fontWeight="900" color="#00d26a">RS {item.rechargeAmount.toLocaleString()}</Typography>
-                                      <Typography variant="caption" color="#a3aed0" fontWeight="700">Credit Velocity</Typography>
+                                      <Typography variant="caption" color="#a3aed0" fontWeight="700">Amount Added</Typography>
                                   </TableCell>
                                   <TableCell>
                                       <Typography variant="body2" fontWeight="800" color="#1b2559">{item.rechargeDate}</Typography>
@@ -204,7 +204,7 @@ const WalletHistory = () => {
                                   </TableCell>
                                   <TableCell>
                                       <Typography variant="body2" fontWeight="800" color="#1b2559">RS {item.currentBalance.toLocaleString()}</Typography>
-                                      <Typography variant="caption" color="#a3aed0" fontWeight="700">Net Account</Typography>
+                                      <Typography variant="caption" color="#a3aed0" fontWeight="700">Current Balance</Typography>
                                   </TableCell>
                                   <TableCell>
                                       <Chip 
@@ -214,7 +214,7 @@ const WalletHistory = () => {
                                       />
                                   </TableCell>
                                   <TableCell align="right" sx={{ pr: 3 }}>
-                                      <Tooltip title="Examine Receipt">
+                                      <Tooltip title="View Details">
                                           <IconButton sx={{ bgcolor: "#f4f7fe", color: "#4318ff", borderRadius: "10px", "&:hover": { bgcolor: "#e0e5f2" } }}>
                                               <VisibilityIcon fontSize="small" />
                                           </IconButton>

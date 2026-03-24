@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -18,39 +18,53 @@ import {
   Tooltip,
   IconButton,
   Collapse,
+  LinearProgress,
+  CircularProgress,
+  Grid,
 } from "@mui/material";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
-import EditIcon from "@mui/icons-material/Edit";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import PrintIcon from "@mui/icons-material/Print";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import ShoppingBasketIcon from "@mui/icons-material/ShoppingBasket";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import WarningIcon from "@mui/icons-material/Warning";
+import { useNavigate } from "react-router-dom";
 import { genericApi } from "../api/genericApi";
 import OrderDetailsDialog from "../components/OrderDetailsDialog";
+import {
+  buildOrderPayload,
+  moveOrderBetweenCollections,
+  syncOrderHistory,
+} from "../utils/orderLifecycle";
 
 const PendingOrders = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [openDetails, setOpenDetails] = useState(false);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(null); // Track which order is being updated
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await genericApi.getAll("pending orders");
-      const results = response.data.results || response.data || [];
+      const apiResults = response.data?.results || response.data?.data || response.data || [];
       
-      const formattedData = results.map((order, index) => ({
+      const formattedData = apiResults.map((order, index) => ({
         id: order._id || index + 1,
         cartId: order["Cart ID"] || order.cartId || order._id,
         cartPrice: parseFloat(order["Cart price"] || order.cartPrice || 0),
         userName: order["User"] || order.user || "N/A",
         userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
-        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toISOString().split('T')[0] : "N/A",
+        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : "N/A",
         timeSlot: order["Time Slot"] || order.timeSlot || "N/A",
         address: order.Address || order.address || order.Details?.address || "N/A",
         status: order["Status"] || order.status || "Pending",
@@ -65,14 +79,22 @@ const PendingOrders = () => {
             price: p.price || 0,
             total: p.total || 0,
             img: p.image || p.img || ""
-        }))
+        })),
+        raw: order,
       }));
 
       setOrders(formattedData);
     } catch (error) {
       console.error("Error fetching pending orders:", error);
+      setOrders([]);
+    } finally {
+        setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const toggleExpand = (id) => setExpandedOrderId(expandedOrderId === id ? null : id);
 
@@ -81,173 +103,371 @@ const PendingOrders = () => {
     setOpenDetails(true);
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const cid = (order.cartId || "").toString().toLowerCase();
-    const uname = (order.userName || "").toString().toLowerCase();
+  const handleUpdateStatus = async (order, newStatus) => {
+    setActionLoading(order.id);
+    try {
+        if (newStatus === "Accepted" || newStatus === "Processing") {
+            const ongoingStatus = newStatus === "Processing" ? "Processing" : "Ongoing";
+            const ongoingPayload = buildOrderPayload(order, {
+              Status: ongoingStatus,
+              status: ongoingStatus,
+            });
+
+            await moveOrderBetweenCollections({
+              sourceCollection: "pending orders",
+              targetCollection: "ongoingorders",
+              order,
+              payload: ongoingPayload,
+            });
+
+            setOrders(prev => prev.filter(o => o.id !== order.id));
+            return;
+        }
+
+        if (newStatus === "Cancelled") {
+            const cancellationReason =
+              order.raw?.["Cancelling Reason"] ||
+              order.raw?.reason ||
+              "Cancelled from Pending Orders";
+
+            const cancelledPayload = buildOrderPayload(order, {
+              Status: "Cancelled",
+              status: "Cancelled",
+              "Cancelling Reason": cancellationReason,
+              reason: cancellationReason,
+            });
+
+            await moveOrderBetweenCollections({
+              sourceCollection: "pending orders",
+              targetCollection: "cancelled orders",
+              order,
+              payload: cancelledPayload,
+            });
+
+            setOrders(prev => prev.filter(o => o.id !== order.id));
+            return;
+        }
+
+        await genericApi.update("pending orders", order.id, {
+          Status: newStatus,
+          status: newStatus,
+        });
+        await syncOrderHistory(
+          buildOrderPayload(order, {
+            Status: newStatus,
+            status: newStatus,
+          })
+        );
+
+        // Optimistic update for UI feel
+        setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
+
+        // Final refresh from server
+        setTimeout(() => fetchOrders(), 1000);
+    } catch (error) {
+        console.error("Failed to update order status:", error);
+        alert("Failed to update order status. Please try again after the API is available.");
+        fetchOrders();
+    } finally {
+        setActionLoading(null);
+    }
+  };
+
+  const filteredOrders = useMemo(() => {
     const s = search.toLowerCase().trim();
-    return cid.includes(s) || uname.includes(s);
-  });
+    if (!s) return orders;
+    return orders.filter((order) => {
+        const cid = (order.cartId || "").toString().toLowerCase();
+        const uname = (order.userName || "").toString().toLowerCase();
+        return cid.includes(s) || uname.includes(s);
+    });
+  }, [orders, search]);
+
+  const buildOrderDetailsPath = (orderId) =>
+    `/all-orders/details/${orderId}?collection=${encodeURIComponent("pending orders")}`;
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="700" color="#2b3674">
-          Hi, Day Catch Super Admin Panel.{" "}
-          <Box component="span" sx={{ fontSize: "16px", fontWeight: "400", color: "#a3aed0" }}>
-            Viewing orders awaiting confirmation.
-          </Box>
-        </Typography>
+      {/* Page Header */}
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box>
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Pending Orders
+            </Typography>
+            <Typography variant="body1" color="textSecondary" sx={{ fontWeight: "500" }}>
+                Accept, Reject, or Mark orders for preparation.
+            </Typography>
+        </Box>
       </Box>
 
-      {/* Stats Summary Section */}
-      <Stack direction="row" spacing={3} sx={{ mb: 4 }}>
-        <Paper sx={{ flex: 1, p: 3, borderRadius: "16px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-            <Stack direction="row" alignItems="center" spacing={2}>
-                <Box sx={{ p: 1.5, borderRadius: "12px", backgroundColor: "#fff8e6" }}>
-                    <PendingActionsIcon sx={{ color: "#ffb800" }} />
-                </Box>
-                <Box>
-                    <Typography variant="caption" color="textSecondary" fontWeight="600">AWAITING CONFIRMATION</Typography>
-                    <Typography variant="h3" fontWeight="800" color="#1b2559">{orders.length}</Typography>
-                </Box>
-            </Stack>
-        </Paper>
+      {/* Summary Cards Row (Matching AllOrders) */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {[
+            { label: "PENDING ORDERS", value: orders.length, icon: <PendingActionsIcon />, color: "#ffb800", bg: "#fff9e6" },
+            { label: "TO BE ACCEPTED", value: orders.filter(o => o.status.toLowerCase() === "pending").length, icon: <ShoppingBasketIcon />, color: "#4318ff", bg: "#eef2ff" },
+            { label: "URGENT ACTIONS", value: orders.filter(o => o.deliveryDate.includes("Today")).length, icon: <WarningIcon />, color: "#ff4d49", bg: "#fff1f0" },
+            { label: "EST. VALUE", value: "₹" + orders.reduce((sum, o) => sum + o.cartPrice, 0).toLocaleString(), icon: <TrendingUpIcon />, color: "#24d164", bg: "#e6f9ed" },
+        ].map((stat, i) => (
+            <Grid item xs={12} sm={6} md={3} key={i}>
+                <Paper sx={{ p: 2.5, borderRadius: "20px", display: "flex", alignItems: "center", gap: 2, border: "1px solid #e0e5f2", bgcolor: "#fff" }}>
+                    <Avatar sx={{ bgcolor: stat.bg, color: stat.color, width: 48, height: 48, borderRadius: "12px" }}>
+                        {stat.icon}
+                    </Avatar>
+                    <Box>
+                        <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ letterSpacing: "0.5px" }}>{stat.label}</Typography>
+                        <Typography variant="h5" fontWeight="800" color="#1b2559">{stat.value}</Typography>
+                    </Box>
+                </Paper>
+            </Grid>
+        ))}
+      </Grid>
+
+      {/* Utility Bar */}
+      <Stack direction="row" spacing={2} sx={{ mb: 3 }} justifyContent="space-between">
+        <Box sx={{ display: 'flex', gap: 2, flex: 1 }}>
+            <TextField
+                size="small"
+                placeholder="Search by cart ID or user..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                sx={{
+                    flex: 1,
+                    maxWidth: "500px",
+                    "& .MuiOutlinedInput-root": { 
+                        borderRadius: "16px", 
+                        backgroundColor: "#fff",
+                        "& fieldset": { borderColor: "#e0e5f2" } 
+                    }
+                }}
+            />
+        </Box>
+        <Stack direction="row" spacing={1.5}>
+            <Tooltip title="Print Manifest">
+                <IconButton onClick={() => window.print()} sx={{ backgroundColor: "#fff", border: "1px solid #e0e5f2", borderRadius: "12px" }}>
+                    <PrintIcon sx={{ color: "#2b3674" }} />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Download CSV">
+                <IconButton sx={{ backgroundColor: "#fff", border: "1px solid #e0e5f2", borderRadius: "12px" }}>
+                    <FileDownloadIcon sx={{ color: "#2b3674" }} />
+                </IconButton>
+            </Tooltip>
+        </Stack>
       </Stack>
 
-      <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-        <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Typography variant="h6" fontWeight="700" color="#1b2559">Pending Approvals List</Typography>
-          </Stack>
-
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="body2" color="#a3aed0" fontWeight="600">Search:</Typography>
-            <TextField
-              size="small"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" }, width: "200px" }}
-            />
-            <Button variant="outlined" sx={{ borderRadius: "8px", textTransform: "none", color: "#475467", borderColor: "#e0e5f2", fontWeight: "600" }}>Print</Button>
-            <Button variant="outlined" sx={{ borderRadius: "8px", textTransform: "none", color: "#475467", borderColor: "#e0e5f2", fontWeight: "600" }}>CSV</Button>
-          </Stack>
-        </Box>
-
+      <Paper
+        sx={{
+          borderRadius: "24px",
+          overflow: "hidden",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
+          border: "1px solid #e0e5f2",
+          background: "#fff",
+        }}
+      >
+        {loading && <LinearProgress sx={{ "& .MuiLinearProgress-bar": { bgcolor: "#4318ff" } }} />}
+        
         <TableContainer>
-          <Table>
+          <Table stickyHeader>
             <TableHead>
-              <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell width={80} sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell width={140} sx={{ fontWeight: "700", color: "#a3aed0" }}>CART ID</TableCell>
-                <TableCell width={120} sx={{ fontWeight: "700", color: "#a3aed0" }}>CART PRICE</TableCell>
-                <TableCell width={200} sx={{ fontWeight: "700", color: "#a3aed0" }}>USER</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>DELIVERY DATE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CART PRODUCTS</TableCell>
-                <TableCell align="center" sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="center" sx={{ fontWeight: "700", color: "#a3aed0" }}>DETAILS</TableCell>
+              <TableRow>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", py: 2, pl: 4, borderBottom: "1px solid #e0e5f2" }}>#</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>ORDER</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>CUSTOMER</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>PRICE</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>STATUS</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>DATE</TableCell>
+                <TableCell align="center" sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>DETAILS</TableCell>
+                <TableCell align="right" sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", pr: 4, borderBottom: "1px solid #e0e5f2" }}>ACTIONS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6 }}>No pending orders awaiting review.</TableCell>
+                  <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                    <Typography variant="body1" color="#a3aed0" fontWeight="600">
+                      No pending orders found
+                    </Typography>
+                  </TableCell>
                 </TableRow>
               ) : (
-                filteredOrders.map((order, index) => (
-                  <React.Fragment key={order.id}>
-                    <TableRow sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>
-                        <IconButton size="small" onClick={() => toggleExpand(order.id)} sx={{ color: "#a3aed0" }}>
-                          {expandedOrderId === order.id ? <RemoveCircleOutlineIcon fontSize="inherit" /> : <AddCircleOutlineIcon fontSize="inherit" />}
+                filteredOrders.map((order, index) => {
+                  const isExpanded = expandedOrderId === order.id;
+                  const isUpdating = actionLoading === order.id;
+
+                  return (
+                    <React.Fragment key={order.id}>
+                    <TableRow sx={{ "&:hover": { bgcolor: "#f4f7fe" }, transition: "0.2s", backgroundColor: isExpanded ? "#f4f7fe" : "inherit" }}>
+                      <TableCell sx={{ color: "#a3aed0", fontWeight: "800", pl: 4 }}>
+                        <IconButton size="small" onClick={() => toggleExpand(order.id)} sx={{ mr: 1, color: "#4318ff" }}>
+                          {isExpanded ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
                         </IconButton>
-                        <span style={{ marginLeft: "8px" }}>{index + 1}</span>
+                        {String(index + 1).padStart(2, '0')}
                       </TableCell>
-                      <TableCell sx={{ color: "#4318ff", fontWeight: "700" }}>{order.cartId || "N/A"}</TableCell>
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "800" }}>₹{order.cartPrice.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          <Avatar sx={{ bgcolor: "#eef2ff", color: "#4318ff", border: "2px solid #e0e5f2" }}>
+                            <ShoppingBasketIcon fontSize="small" />
+                          </Avatar>
+                          <Typography variant="body2" fontWeight="800" color="#1b2559">
+                            {order.cartId}
+                          </Typography>
+                        </Stack>
+                      </TableCell>
                       <TableCell>
                         <Box>
-                          <Typography variant="body2" fontWeight="700" color="#1b2559">{order.userName}</Typography>
-                          <Typography variant="caption" color="textSecondary">{order.userPhone}</Typography>
+                          <Typography variant="body2" fontWeight="800" color="#1b2559">{order.userName}</Typography>
+                          <Typography variant="caption" color="#a3aed0" fontWeight="600">{order.userPhone}</Typography>
                         </Box>
                       </TableCell>
-                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.deliveryDate}</TableCell>
+                      <TableCell sx={{ color: "#1b2559", fontWeight: "800" }}>₹{order.cartPrice.toLocaleString()}</TableCell>
                       <TableCell>
-                        <AvatarGroup max={3} sx={{ justifyContent: "flex-start", "& .MuiAvatar-root": { width: 34, height: 34, borderRadius: "8px" } }}>
-                          {order.products.map((p, i) => (
-                            <Tooltip key={i} title={p.name}>
-                              <Avatar src={p.img} alt={p.name} />
-                            </Tooltip>
-                          ))}
-                        </AvatarGroup>
-                      </TableCell>
-                      <TableCell align="center">
                         <Chip
-                          label={order.status || "Pending"}
+                          label={order.status.toUpperCase()}
                           size="small"
-                          sx={{ backgroundColor: "#fff8e6", color: "#ffb800", fontWeight: "800", fontSize: "10px", textTransform: "uppercase" }}
+                          sx={{
+                            bgcolor: order.status.toLowerCase() === "pending" ? "#fff8e6" : "#e6f9ed",
+                            color: order.status.toLowerCase() === "pending" ? "#ffb800" : "#24d164",
+                            fontWeight: "900",
+                            fontSize: "10px",
+                            borderRadius: "10px",
+                            px: 1.5,
+                            height: "26px",
+                            border: `1px solid ${order.status.toLowerCase() === "pending" ? "#ffccc7" : "#b7eb8f"}`
+                          }}
                         />
                       </TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "700" }}>{order.deliveryDate}</TableCell>
                       <TableCell align="center">
-                        <Button 
-                          variant="contained" 
+                        <Button
+                          variant="outlined"
+                          size="small"
                           onClick={() => handleOpenDetails(order)}
-                          sx={{ backgroundColor: "#4318ff", borderRadius: "8px", textTransform: "none", fontWeight: "700" }}
+                          sx={{
+                            borderRadius: "10px",
+                            textTransform: "none",
+                            fontWeight: "800",
+                            borderColor: "#e0e5f2",
+                            color: "#1b2559",
+                            "&:hover": { borderColor: "#4318ff", backgroundColor: "#eef2ff" }
+                          }}
                         >
-                          Details
+                          View Order
                         </Button>
                       </TableCell>
-                    </TableRow>
-
-                    <TableRow>
-                      <TableCell colSpan={8} sx={{ py: 0, border: "none" }}>
-                        <Collapse in={expandedOrderId === order.id} timeout="auto" unmountOnExit>
-                          <Box sx={{
-                            py: 3, px: 4,
-                            display: "flex", alignItems: "center", gap: 4,
-                            backgroundColor: "#f4f7fe",
-                            borderBottom: "1px solid #e0e5f2",
-                            borderLeft: "6px solid #4318ff",
-                          }}>
-                            <Typography variant="caption" fontWeight="900" color="#4318ff" sx={{ textTransform: "uppercase", letterSpacing: 2 }}>Order Approval Queue</Typography>
-                            <Stack direction="row" spacing={2}>
-                              <Tooltip title="Approve Order Now">
-                                <Button
-                                  variant="contained"
-                                  startIcon={<CheckCircleOutlineIcon sx={{ fontSize: "16px !important" }} />}
-                                  sx={{ backgroundColor: "#24d164", color: "#fff", borderRadius: "10px", px: 2, textTransform: "none", fontWeight: "700", boxShadow: "0 4px 12px rgba(36,209,100,0.2)", "&:hover": { backgroundColor: "#1eb856" } }}
-                                >
-                                  Confirm
-                                </Button>
-                              </Tooltip>
-
-                              <Tooltip title="View Order Insights">
-                                <Button
-                                  variant="contained"
-                                  startIcon={<VisibilityIcon sx={{ fontSize: "16px !important" }} />}
-                                  onClick={() => handleOpenDetails(order)}
-                                  sx={{ backgroundColor: "#1b2559", color: "#fff", borderRadius: "10px", px: 2, textTransform: "none", fontWeight: "700", boxShadow: "0 4px 12px rgba(27,37,89,0.2)", "&:hover": { backgroundColor: "#111a40" } }}
-                                >
-                                  Review
-                                </Button>
-                              </Tooltip>
-
-                              <Tooltip title="Edit Pending Order">
-                                <Button
-                                  variant="contained"
-                                  startIcon={<EditIcon sx={{ fontSize: "16px !important" }} />}
-                                  sx={{ backgroundColor: "#ffb800", color: "#fff", borderRadius: "10px", px: 2, textTransform: "none", fontWeight: "700", boxShadow: "0 4px 12px rgba(255,184,0,0.2)", "&:hover": { backgroundColor: "#e6a600" } }}
-                                >
-                                  Edit
-                                </Button>
-                              </Tooltip>
-                            </Stack>
-                          </Box>
-                        </Collapse>
+                      <TableCell align="right" sx={{ pr: 3 }}>
+                         <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            {isUpdating ? <CircularProgress size={24} sx={{ m: 1 }} /> : (
+                                <>
+                                    <Tooltip title="Track Record">
+                                        <IconButton 
+                                            size="small" 
+                                            onClick={() => navigate(buildOrderDetailsPath(order.id))}
+                                            sx={{ 
+                                                color: "#fff", 
+                                                bgcolor: "#1b2559", 
+                                                borderRadius: "12px", 
+                                                width: "36px", 
+                                                height: "36px", 
+                                                "&:hover": { bgcolor: "#0d1433", transform: "translateY(-1px)" },
+                                                boxShadow: "0 4px 10px rgba(27,37,89,0.2)",
+                                                transition: "0.2s"
+                                            }}
+                                        >
+                                            <VisibilityIcon sx={{ fontSize: "18px" }} />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Approve Order">
+                                        <IconButton 
+                                            size="small" 
+                                            onClick={() => handleUpdateStatus(order, "Accepted")}
+                                            sx={{ 
+                                                color: "#fff", 
+                                                bgcolor: "#24d164", 
+                                                borderRadius: "12px", 
+                                                width: "36px", 
+                                                height: "36px", 
+                                                "&:hover": { bgcolor: "#1fb355", transform: "translateY(-1px)" },
+                                                boxShadow: "0 4px 10px rgba(36,209,100,0.2)",
+                                                transition: "0.2s"
+                                            }}
+                                        >
+                                            <CheckCircleOutlineIcon sx={{ fontSize: "18px" }} />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Cancel Order">
+                                        <IconButton 
+                                            size="small" 
+                                            onClick={() => handleUpdateStatus(order, "Cancelled")}
+                                            sx={{ 
+                                                color: "#fff", 
+                                                bgcolor: "#ff4d49", 
+                                                borderRadius: "12px", 
+                                                width: "36px", 
+                                                height: "36px", 
+                                                "&:hover": { bgcolor: "#e03e3a", transform: "translateY(-1px)" },
+                                                boxShadow: "0 4px 10px rgba(255,77,73,0.2)",
+                                                transition: "0.2s"
+                                            }}
+                                        >
+                                            <CancelOutlinedIcon sx={{ fontSize: "18px" }} />
+                                        </IconButton>
+                                    </Tooltip>
+                                </>
+                            )}
+                        </Stack>
                       </TableCell>
                     </TableRow>
-                  </React.Fragment>
-                ))
+ 
+                    <TableRow>
+                        <TableCell colSpan={8} sx={{ py: 0, borderBottom: isExpanded ? "1px solid #e0e5f2" : "none" }}>
+                            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                                <Box sx={{ p: 4, backgroundColor: "#fafbfc" }}>
+                                    <Stack direction="row" spacing={4} alignItems="flex-start">
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="subtitle2" fontWeight="800" gutterBottom color="#2b3674">DELIVERY ADDRESS</Typography>
+                                            <Typography variant="body2" color="#475467" fontWeight="600">{order.address}</Typography>
+                                            <Typography variant="body2" color="#a3aed0" sx={{ mt: 1 }}>Time Slot: {order.timeSlot}</Typography>
+                                        </Box>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="subtitle2" fontWeight="800" gutterBottom color="#2b3674">PRODUCTS</Typography>
+                                            <AvatarGroup max={5} sx={{ justifyContent: "flex-start", "& .MuiAvatar-root": { width: 40, height: 40, borderRadius: "12px", border: "2px solid #fff" } }}>
+                                                {order.products.map((p, i) => (
+                                                    <Tooltip key={i} title={p.name}>
+                                                        <Avatar src={p.img} alt={p.name} />
+                                                    </Tooltip>
+                                                ))}
+                                            </AvatarGroup>
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="subtitle2" fontWeight="800" gutterBottom color="#2b3674">QUICK ACTIONS</Typography>
+                                            <Button 
+                                              variant="contained" 
+                                              size="small" 
+                                              disabled={isUpdating}
+                                              onClick={() => handleUpdateStatus(order, "Processing")}
+                                              sx={{ 
+                                                bgcolor: "#4318ff", 
+                                                borderRadius: "12px", 
+                                                textTransform: "none", 
+                                                px: 3,
+                                                py: 1,
+                                                fontWeight: "800",
+                                                boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)",
+                                                "&:hover": { bgcolor: "#3311cc" } 
+                                              }}
+                                            >
+                                                {isUpdating ? "Processing..." : "Start Processing"}
+                                            </Button>
+                                        </Box>
+                                    </Stack>
+                                </Box>
+                            </Collapse>
+                        </TableCell>
+                    </TableRow>
+                    </React.Fragment>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -259,7 +479,6 @@ const PendingOrders = () => {
         onClose={() => setOpenDetails(false)} 
         order={selectedOrder} 
       />
-
     </Box>
   );
 };

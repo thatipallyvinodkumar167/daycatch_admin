@@ -35,6 +35,7 @@ import {
   formatDeliveryBoyStatus,
   isDeliveryBoyOffDuty,
 } from "../utils/deliveryBoyUtils";
+import DriverOrdersDialog from "../components/DriverOrdersDialog";
 
 const DeliveryBoy = () => {
   const navigate = useNavigate();
@@ -42,6 +43,8 @@ const DeliveryBoy = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [expandedRow, setExpandedRow] = useState(null);
+  const [selectedDriver, setSelectedDriver] = useState(null);
+  const [openJobsModal, setOpenJobsModal] = useState(false);
 
   useEffect(() => {
     fetchDeliveryBoys();
@@ -64,6 +67,9 @@ const DeliveryBoy = () => {
         boyPassword: item.boyPassword || item.password || item["Boy Password"] || "••••••",
         status: item.status || item.Status || "Off duty",
         orders: item.orders || item.Orders || 0,
+        city: ((item.Details && item.Details.City) || (item.details && item.details.City) || item.City || item.city || "Not Assigned") === "city_hyd_001" ? "Hyderabad" : 
+              ((item.Details && item.Details.City) || (item.details && item.details.City) || item.City || item.city || "Not Assigned") === "city_kurn_002" ? "Kurnool" : 
+              ((item.Details && item.Details.City) || (item.details && item.details.City) || item.City || item.city || "Not Assigned"),
       }));
 
       setDeliveryBoys(normalizedList);
@@ -104,6 +110,40 @@ const DeliveryBoy = () => {
     setExpandedRow(expandedRow === id ? null : id);
   };
 
+  const handleDownloadCSV = () => {
+    if (filteredBoys.length === 0) {
+      alert("No data available to download.");
+      return;
+    }
+
+    const headers = ["Driver ID", "Driver Name", "Contact Number", "Password", "Duty Status", "Total Deliveries", "Base City"];
+    const csvRows = [headers.join(",")];
+
+    filteredBoys.forEach(boy => {
+      const row = [
+        boy._id || boy.id || "N/A",
+        `"${String(boy.boyName || boy.name || "").replace(/"/g, '""')}"`,
+        `"${String(boy.boyMobile || boy.phone || "").replace(/"/g, '""')}"`,
+        `"${String(boy.boyPassword || boy.password || "").replace(/"/g, '""')}"`,
+        `"${String(boy.status || "").toUpperCase()}"`,
+        boy.orders || 0,
+        `"${String(boy.city || "").replace(/"/g, '""')}"`
+      ];
+      csvRows.push(row.join(","));
+    });
+
+    const csvData = csvRows.join("\n");
+    const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", "DayCatch_Driver_List.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
@@ -111,10 +151,10 @@ const DeliveryBoy = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
           <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-            Fleet Management Control
+            Driver List
           </Typography>
           <Typography variant="body1" color="textSecondary" sx={{ fontWeight: "500" }}>
-            Super Admin View: Monitoring all personnel and field operations.
+            Manage and monitor active delivery drivers.
           </Typography>
         </Box>
         <Button
@@ -132,7 +172,7 @@ const DeliveryBoy = () => {
             boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)",
           }}
         >
-          Register New Boy
+          Register New Driver
         </Button>
       </Box>
 
@@ -143,7 +183,7 @@ const DeliveryBoy = () => {
             <DeliveryDiningIcon fontSize="large" />
           </Avatar>
           <Box>
-            <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ letterSpacing: "1px" }}>TOTAL PERSONNEL</Typography>
+            <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ letterSpacing: "1px" }}>TOTAL DRIVERS</Typography>
             <Typography variant="h4" fontWeight="800" color="#1b2559">{deliveryBoys.length}</Typography>
           </Box>
         </Paper>
@@ -165,7 +205,7 @@ const DeliveryBoy = () => {
         <Box sx={{ display: 'flex', gap: 2, flex: 1 }}>
             <TextField
                 size="small"
-                placeholder="Global search by name, mobile or ID..."
+                placeholder="Search by name, mobile or ID..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 sx={{
@@ -181,12 +221,12 @@ const DeliveryBoy = () => {
         </Box>
         <Stack direction="row" spacing={1.5}>
             <Tooltip title="Print List">
-                <IconButton sx={{ backgroundColor: "#fff", border: "1px solid #e0e5f2", borderRadius: "12px" }}>
+                <IconButton onClick={() => window.print()} sx={{ backgroundColor: "#fff", border: "1px solid #e0e5f2", borderRadius: "12px" }}>
                     <PrintIcon sx={{ color: "#2b3674" }} />
                 </IconButton>
             </Tooltip>
             <Tooltip title="Download CSV">
-                <IconButton sx={{ backgroundColor: "#fff", border: "1px solid #e0e5f2", borderRadius: "12px" }}>
+                <IconButton onClick={handleDownloadCSV} sx={{ backgroundColor: "#fff", border: "1px solid #e0e5f2", borderRadius: "12px" }}>
                     <FileDownloadIcon sx={{ color: "#2b3674" }} />
                 </IconButton>
             </Tooltip>
@@ -209,11 +249,11 @@ const DeliveryBoy = () => {
             <TableHead>
               <TableRow>
                 <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", py: 2, pl: 4, borderBottom: "1px solid #e0e5f2" }}>#</TableCell>
-                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>PERSONNEL</TableCell>
-                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>CONTACT INFO</TableCell>
-                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>ACCESS KEY</TableCell>
-                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>DUTY STATUS</TableCell>
-                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>ALL TIME TASKS</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>DRIVER</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>CONTACT</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>PASSWORD</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>STATUS</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>TOTAL DELIVERIES</TableCell>
                 <TableCell align="center" sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>DETAILS</TableCell>
                 <TableCell align="right" sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", pr: 4, borderBottom: "1px solid #e0e5f2" }}>ACTIONS</TableCell>
               </TableRow>
@@ -223,7 +263,7 @@ const DeliveryBoy = () => {
                 <TableRow>
                   <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
                     <Typography variant="body1" color="#a3aed0" fontWeight="600">
-                      No Records in Fleet Database
+                      No drivers found
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -294,20 +334,31 @@ const DeliveryBoy = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ 
-                            display: "inline-flex", 
-                            alignItems: "center", 
-                            gap: 1,
-                            bgcolor: "#f4f7fe", 
-                            px: 2, 
-                            py: 0.8, 
-                            borderRadius: "12px",
-                            border: "1px solid #e0e5f2"
-                          }}>
-                          <Typography fontWeight="900" color="#4318ff" variant="subtitle2">
-                            {item.orders ?? 0} <span style={{ color: "#a3aed0", fontSize: "10px", fontWeight: "600" }}>JOBS</span>
-                          </Typography>
-                        </Box>
+                        <Tooltip title="View All Jobs Assigned to this Driver">
+                            <Box 
+                                onClick={() => {
+                                    setSelectedDriver(item.boyName || item.name);
+                                    setOpenJobsModal(true);
+                                }}
+                                sx={{ 
+                                    display: "inline-flex", 
+                                    alignItems: "center", 
+                                    gap: 1,
+                                    bgcolor: "#f4f7fe", 
+                                    px: 2, 
+                                    py: 0.8, 
+                                    borderRadius: "12px",
+                                    border: "1px solid #e0e5f2",
+                                    cursor: "pointer",
+                                    transition: "0.2s",
+                                    "&:hover": { bgcolor: "#eef2ff", borderColor: "#4318ff", transform: "translateY(-1px)" }
+                                }}
+                            >
+                            <Typography fontWeight="900" color="#4318ff" variant="subtitle2">
+                                {item.orders ?? 0} <span style={{ color: "#a3aed0", fontSize: "10px", fontWeight: "600" }}>JOBS</span>
+                            </Typography>
+                            </Box>
+                        </Tooltip>
                       </TableCell>
                       <TableCell align="center">
                         <Button
@@ -373,14 +424,14 @@ const DeliveryBoy = () => {
                                 <Box sx={{ p: 4, backgroundColor: "#fafbfc" }}>
                                     <Grid container spacing={4}>
                                         <Grid item xs={12} md={4}>
-                                            <Typography variant="subtitle2" fontWeight="800" gutterBottom color="#2b3674">TACTICAL FLEET OVERVIEW</Typography>
-                                            <Typography variant="body2" color="#a3aed0">This personnel is part of the central delivery fleet. You can monitor live tracking, incentive history, and performance metrics from the detailed profile view.</Typography>
+                                            <Typography variant="subtitle2" fontWeight="800" gutterBottom color="#2b3674">DRIVER OVERVIEW</Typography>
+                                            <Typography variant="body2" color="#a3aed0">This driver is part of the delivery fleet. You can monitor their location, incentive history, and performance metrics from the detailed profile view.</Typography>
                                         </Grid>
                                         <Grid item xs={12} md={8}>
                                             <Stack direction="row" spacing={3}>
                                                 <Paper sx={{ p: 2, flex: 1, borderRadius: "16px", border: "1px dashed #e0e5f2", textAlign: 'center' }}>
-                                                    <Typography variant="caption" color="#a3aed0" fontWeight="700">CURRENT REGION</Typography>
-                                                    <Typography variant="body2" fontWeight="800" color="#1b2559">{item.City || "Not Assigned"}</Typography>
+                                                    <Typography variant="caption" color="#a3aed0" fontWeight="700">CITY</Typography>
+                                                    <Typography variant="body2" fontWeight="800" color="#1b2559">{item.city}</Typography>
                                                 </Paper>
                                                 <Paper sx={{ p: 2, flex: 1, borderRadius: "16px", border: "1px dashed #e0e5f2", textAlign: 'center' }}>
                                                   <Button 
@@ -411,6 +462,11 @@ const DeliveryBoy = () => {
           </Table>
         </TableContainer>
       </Paper>
+      <DriverOrdersDialog 
+        open={openJobsModal}
+        onClose={() => setOpenJobsModal(false)}
+        driverName={selectedDriver}
+      />
     </Box>
   );
 };

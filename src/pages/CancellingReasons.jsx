@@ -59,13 +59,13 @@ const CancellingReasons = () => {
   );
 
   const handleDelete = async (id) => {
-    if (window.confirm("Permanently remove this cancellation reason from the platform?")) {
+    if (window.confirm("Delete this cancellation reason?")) {
       try {
         await genericApi.remove("cancelling reason", id);
         setReasons(prev => prev.filter(item => item.id !== id));
       } catch (error) {
         console.error("Delete failed:", error);
-        alert("Platform Sync Error: Navigation rejected.");
+        alert("Action failed. Please try again.");
       }
     }
   };
@@ -77,14 +77,14 @@ const CancellingReasons = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Operational Cancel Logic
+                Cancellation Reasons
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
                 Manage pre-defined reasons for order cancellations by consumers and delivery fleet.
             </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
-            <Tooltip title="Force Refresh">
+            <Tooltip title="Refresh Feed">
                 <IconButton 
                     onClick={fetchReasons} 
                     disabled={loading}
@@ -107,7 +107,7 @@ const CancellingReasons = () => {
                     boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                 }}
             >
-                Define New Reason
+                Add Reason
             </Button>
         </Stack>
       </Box>
@@ -116,10 +116,10 @@ const CancellingReasons = () => {
         
         {/* Search Toolbar */}
         <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">System Cancel Reasons</Typography>
+            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Cancellation Reasons</Typography>
             <TextField
                 size="small"
-                placeholder="Search logic..."
+                placeholder="Search reason..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 InputProps={{
@@ -139,9 +139,9 @@ const CancellingReasons = () => {
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>Reason Narrative</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>Control Actions</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4 }}>ID</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px" }}>REASON</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4 }}>ACTIONS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -154,7 +154,7 @@ const CancellingReasons = () => {
               ) : filteredReasons.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
-                    <Typography color="#a3aed0" fontWeight="600">No cancellation reasons defined in the core logic.</Typography>
+                    <Typography color="#a3aed0" fontWeight="600">No cancellation reasons found.</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -171,7 +171,7 @@ const CancellingReasons = () => {
                     </TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title="Edit Narrative">
+                        <Tooltip title="Edit Reason">
                             <IconButton 
                                 onClick={() => navigate(`/cancelling-reasons/edit/${item.id}`)}
                                 sx={{ 
@@ -185,7 +185,7 @@ const CancellingReasons = () => {
                                 <EditIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
-                        <Tooltip title="Deactivate">
+                        <Tooltip title="Delete Reason">
                             <IconButton 
                                 onClick={() => handleDelete(item.id)}
                                 sx={{ 

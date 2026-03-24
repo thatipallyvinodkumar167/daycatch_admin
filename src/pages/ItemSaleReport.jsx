@@ -40,10 +40,10 @@ const ItemSaleReport = () => {
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item, index) => ({
         id: item._id || index + 1,
-        productName: item["Product Name"] || item.productName || "Unknown Asset",
-        variantSize: item["Variant Size"] || item.variantSize || item.Variant || "N/A",
-        quantity: Number(item["Quantity"] || item.quantity || item.Stock || 0),
-        totalWeight: item["Total Weight"] || item.totalWeight || "0",
+        productName: item["Product Name"] || item.productName || "Unknown Product",
+        variantSize: item["Variant Size"] || item.variantSize || item.Variant || item.variant || item.size || item.Size || item.variation || "N/A",
+        quantity: Number(item["Quantity"] || item.quantity || item.qty || item.Stock || 0),
+        totalWeight: item["Total Weight"] || item.totalWeight || item.weight || item.Weight || item.total_weight || "0",
       }));
       setSales(formattedData);
     } catch (error) {
@@ -67,9 +67,38 @@ const ItemSaleReport = () => {
   }, [sales, search]);
 
   const stats = useMemo(() => [
-    { label: "Total Sold Units", value: sales.reduce((acc, curr) => acc + curr.quantity, 0), icon: <AssessmentIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
-    { label: "Growth Status", value: "Optimal", icon: <TrendingUpIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+    { label: "Total Units Sold", value: sales.reduce((acc, curr) => acc + curr.quantity, 0), icon: <AssessmentIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Status", value: "Optimal", icon: <TrendingUpIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
   ], [sales]);
+
+  const handleExport = () => {
+    if (filteredSales.length === 0) {
+      alert("No data available to export.");
+      return;
+    }
+    const csvRows = [];
+    const headers = ["#", "Product Name", "Variant", "Quantity Sold", "Total Weight"];
+    csvRows.push(headers.join(","));
+    filteredSales.forEach((item, index) => {
+      const row = [
+        index + 1,
+        `"${(item.productName || "").replace(/"/g, '""')}"`,
+        `"${(item.variantSize || "").replace(/"/g, '""')}"`,
+        item.quantity,
+        `"${String(item.totalWeight || "").replace(/"/g, '""')}"`
+      ];
+      csvRows.push(row.join(","));
+    });
+    const csvData = csvRows.join("\n");
+    const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `Item_Sales_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
@@ -78,10 +107,10 @@ const ItemSaleReport = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Sales Velocity Report
+                Item Sales Report
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Tracking and analyzing total item sales performance over the active 30-day interval.
+                Monitor total item sales and growth performance over the last 30 days.
             </Typography>
         </Box>
         <Stack direction="row" spacing={3} alignItems="center">
@@ -98,6 +127,7 @@ const ItemSaleReport = () => {
             <Button 
                 variant="contained" 
                 startIcon={<FileDownloadIcon />} 
+                onClick={handleExport}
                 sx={{ 
                     backgroundColor: "#4318ff", 
                     borderRadius: "14px", 
@@ -121,11 +151,11 @@ const ItemSaleReport = () => {
           )}
           
           <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Asset Sales Matrix (Rolling 30 Days)</Typography>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Item Sales List (Last 30 Days)</Typography>
               <Stack direction="row" spacing={2} alignItems="center">
                   <TextField
                       size="small"
-                      placeholder="Search Procurement Asset..."
+                      placeholder="Search Product..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       InputProps={{
@@ -139,7 +169,7 @@ const ItemSaleReport = () => {
                           } 
                       }}
                   />
-                  <Tooltip title="Synchronize Records">
+                  <Tooltip title="Refresh">
                       <IconButton onClick={() => fetchSalesReport(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
                           <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
                       </IconButton>
@@ -157,15 +187,15 @@ const ItemSaleReport = () => {
                   <TableHead>
                       <TableRow>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Product Asset Identity</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Variant Mapping</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Dispatch Quantity</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Net Weight Protocol</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Product Name</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Variant</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Quantity Sold</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Total Weight</TableCell>
                       </TableRow>
                   </TableHead>
                   <TableBody>
                       {filteredSales.length === 0 && !loading ? (
-                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "600" }}>Zero sales velocity detected for current interval.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "600" }}>No sales data found.</TableCell></TableRow>
                       ) : (
                           filteredSales.map((item, index) => (
                               <TableRow key={item.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>

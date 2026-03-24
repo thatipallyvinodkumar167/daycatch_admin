@@ -213,8 +213,8 @@ const EditDeliveryBoy = () => {
           </IconButton>
         </Tooltip>
         <Box>
-          <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>Modify Personnel</Typography>
-          <Typography variant="body2" color="#a3aed0" fontWeight="600">Updating system records for <span style={{ color: "#4318ff" }}>{formData.name}</span></Typography>
+          <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>Edit Delivery Boy</Typography>
+          <Typography variant="body2" color="#a3aed0" fontWeight="600">Edit delivery boy information for <span style={{ color: "#4318ff" }}>{formData.name}</span></Typography>
         </Box>
       </Box>
 
@@ -225,7 +225,7 @@ const EditDeliveryBoy = () => {
             
             {/* Section 1: Personal Background */}
             <Typography variant="subtitle2" fontWeight="900" color="#4318ff" sx={{ mb: 3, letterSpacing: "1px", display: "flex", alignItems: "center", gap: 1 }}>
-                <PersonIcon fontSize="small" /> PRIMARY IDENTITY & ACCESS
+                <PersonIcon fontSize="small" /> PERSONAL DETAILS
             </Typography>
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
@@ -263,7 +263,7 @@ const EditDeliveryBoy = () => {
                 />
               </Grid>
               <Grid item xs={12} md={4}>
-                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>ACCESS PASSWORD</Typography>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>PASSWORD</Typography>
                 <TextField
                   fullWidth
                   name="password"
@@ -280,11 +280,11 @@ const EditDeliveryBoy = () => {
 
             {/* Section 2: Fleet Documentation */}
             <Typography variant="subtitle2" fontWeight="900" color="#4318ff" sx={{ mb: 3, letterSpacing: "1px", display: "flex", alignItems: "center", gap: 1 }}>
-                <BadgeIcon fontSize="small" /> DOCUMENTATION & RESIDENCY
+                <BadgeIcon fontSize="small" /> DOCUMENT DETAILS
             </Typography>
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
-                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>OPERATIONAL REGION</Typography>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>SELECT CITY</Typography>
                 <FormControl fullWidth>
                   <Select
                     name="city"
@@ -340,7 +340,7 @@ const EditDeliveryBoy = () => {
                 />
               </Grid>
               <Grid item xs={12} md={4}>
-                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>MODERATED ID IMAGE</Typography>
+                <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>UPLOAD ID IMAGE</Typography>
                 <Button
                   component="label"
                   fullWidth
@@ -366,7 +366,7 @@ const EditDeliveryBoy = () => {
 
             {/* Section 3: Operational Context */}
             <Typography variant="subtitle2" fontWeight="900" color="#4318ff" sx={{ mb: 3, letterSpacing: "1px", display: "flex", alignItems: "center", gap: 1 }}>
-                <MapIcon fontSize="small" /> PERFORMANCE & CORE OPS
+                <MapIcon fontSize="small" /> OTHER DETAILS
             </Typography>
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
@@ -456,7 +456,7 @@ const EditDeliveryBoy = () => {
                         boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)",
                     }}
                 >
-                    {isSubmitting ? "Syncing Updates..." : "Save Personnel Changes"}
+                    {isSubmitting ? "Saving..." : "Save Changes"}
                 </Button>
             </Stack>
           </form>

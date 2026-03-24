@@ -48,7 +48,7 @@ const ParentCategories = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 1000 * 1024) {
-        alert("Persistence Error: Payload exceeds 1000 KB limitation.");
+        alert("Image size exceeds 1MB.");
         return;
       }
       setSelectedImage(file);
@@ -151,7 +151,7 @@ const ParentCategories = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Permanently de-register this root category domain?")) {
+    if (window.confirm("Permanently delete this category?")) {
       try {
         await deleteParentCategory(id);
         fetchCategories();
@@ -171,10 +171,10 @@ const ParentCategories = () => {
       {/* Premium Header Container */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-            Taxonomic Hierarchy
+            Parent Categories
         </Typography>
         <Typography variant="body2" color="#a3aed0" fontWeight="600">
-            Defining root-level categorical domains for the synchronized product catalog.
+            Manage main product categories and their settings.
         </Typography>
       </Box>
 
@@ -184,12 +184,12 @@ const ParentCategories = () => {
         <Grid item xs={12} md={4} sx={{ width: "100%", maxWidth: { md: 400 } }}>
             <Paper sx={{ p: 4, borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", bgcolor: "#fff" }}>
                 <Typography variant="h6" fontWeight="800" color="#1b2559" sx={{ mb: 3 }}>
-                    {isEditing ? "Modify Root Domain" : "Register Root Domain"}
+                    {isEditing ? "Edit Category" : "Add Category"}
                 </Typography>
                 
                 <Stack spacing={3}>
                     <Box>
-                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>DOMAIN IDENTIFIER (CAT ID)</Typography>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>CATEGORY ID</Typography>
                         <TextField
                             fullWidth
                             placeholder="e.g. CAT-500"
@@ -200,7 +200,7 @@ const ParentCategories = () => {
                     </Box>
 
                     <Box>
-                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>CATEGORY LABEL (TITLE)</Typography>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>CATEGORY NAME</Typography>
                         <TextField
                             fullWidth
                             placeholder="e.g. Premium Seafood"
@@ -212,7 +212,7 @@ const ParentCategories = () => {
 
                     <Stack direction="row" spacing={2}>
                         <Box sx={{ flex: 1 }}>
-                            <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>TAX POLICY</Typography>
+                            <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>TAX TYPE</Typography>
                             <Select
                                 fullWidth
                                 value={formData.taxType}
@@ -226,7 +226,7 @@ const ParentCategories = () => {
                             </Select>
                         </Box>
                         <Box sx={{ flex: 1 }}>
-                            <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>TAX TYPE</Typography>
+                            <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>TAX NAME</Typography>
                             <Select
                                 fullWidth
                                 value={formData.taxName}
@@ -246,7 +246,7 @@ const ParentCategories = () => {
                     </Stack>
 
                     <Box>
-                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>PERCENTAGE LOAD (%)</Typography>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>TAX PERCENTAGE (%)</Typography>
                         <TextField
                             fullWidth
                             type="number"
@@ -262,7 +262,7 @@ const ParentCategories = () => {
                             fullWidth
                             multiline
                             rows={3}
-                            placeholder="Define the scope of this domain..."
+                            placeholder="Enter category description..."
                             value={formData.description}
                             onChange={(e) => setFormData({...formData, description: e.target.value})}
                             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#f4f7fe", border: "none" }, "& .MuiOutlinedInput-notchedOutline": { border: "none" } }}
@@ -270,7 +270,7 @@ const ParentCategories = () => {
                     </Box>
 
                     <Box>
-                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>VISUAL ASSET</Typography>
+                        <Typography variant="caption" fontWeight="800" color="#1b2559" sx={{ mb: 1, display: "block", ml: 0.5 }}>CATEGORY IMAGE</Typography>
                         <Box 
                             component="label" 
                             sx={{ 
@@ -281,7 +281,7 @@ const ParentCategories = () => {
                             <input type="file" hidden accept="image/*" onChange={handleImageChange} />
                             <CloudUploadIcon sx={{ color: "#a3aed0" }} />
                             <Typography variant="body2" color="#1b2559" fontWeight="700" sx={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {selectedImage ? selectedImage.name : "Select Asset"}
+                                {selectedImage ? selectedImage.name : "Select Image"}
                             </Typography>
                         </Box>
                     </Box>
@@ -295,7 +295,7 @@ const ParentCategories = () => {
                             boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                         }}
                     >
-                        {isEditing ? "Update Domain" : "Activate Domain"}
+                        {isEditing ? "Update Category" : "Save Category"}
                     </Button>
 
                     {isEditing && (
@@ -309,7 +309,7 @@ const ParentCategories = () => {
                             }}
                             sx={{ color: "#a3aed0", fontWeight: "800", textTransform: "none" }}
                         >
-                            Discard Modifications
+                            Cancel
                         </Button>
                     )}
                 </Stack>
@@ -324,10 +324,10 @@ const ParentCategories = () => {
                 )}
                 
                 <Box sx={{ p: 4, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc", borderBottom: "1px solid #e0e5f2" }}>
-                    <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Root Registry</Typography>
+                    <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Category List</Typography>
                     <TextField
                         size="small"
-                        placeholder="Search domains..."
+                        placeholder="Search categories..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         InputProps={{ startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} /> }}
@@ -340,17 +340,17 @@ const ParentCategories = () => {
                         <TableHead>
                             <TableRow>
                                 <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Asset</TableCell>
-                                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Title</TableCell>
-                                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Cat ID</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4, bgcolor: "#f4f7fe" }}>Operations</TableCell>
+                                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Image</TableCell>
+                                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Name</TableCell>
+                                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>ID</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {filtered.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
-                                        <Typography color="#a3aed0" fontWeight="600">No Root domains identified in the hierarchy.</Typography>
+                                        <Typography color="#a3aed0" fontWeight="600">No categories found.</Typography>
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -366,12 +366,12 @@ const ParentCategories = () => {
                                         <TableCell sx={{ color: "#4318ff", fontWeight: "800" }}>{item.categoryID}</TableCell>
                                         <TableCell align="right" sx={{ pr: 3 }}>
                                             <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                                <Tooltip title="Modify Domain">
+                                                <Tooltip title="Edit Category">
                                                     <IconButton onClick={() => handleEdit(item)} sx={{ backgroundColor: "#f4f7fe", color: "#4318ff", borderRadius: "10px", "&:hover": { backgroundColor: "#e0e5f2" } }}>
                                                         <EditIcon fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
-                                                <Tooltip title="De-register Domain">
+                                                <Tooltip title="Delete Category">
                                                     <IconButton onClick={() => handleDelete(item.id)} sx={{ backgroundColor: "#fff5f5", color: "#ff4d49", borderRadius: "10px", "&:hover": { backgroundColor: "#ffebeb" } }}>
                                                         <DeleteIcon fontSize="small" />
                                                     </IconButton>

@@ -61,7 +61,12 @@ const DeliveryBoyDetails = () => {
             status: normalizeDeliveryBoyStatus(found["Status"] || found.status || found.dutyStatus),
             
             // Geographic Info
-            city: details.City || details.city || found["City"] || found.city || "Hyderabad", // Fallback to Hyderabad as per system defaults
+            city: (() => {
+                const c = details.City || details.city || found["City"] || found.city || "Hyderabad";
+                if (c === "city_hyd_001") return "Hyderabad";
+                if (c === "city_kurn_002") return "Kurnool";
+                return c;
+            })(),
             addressLine: details["Boy Address"] || details.address || details.boyAddress || found["Boy Address"] || found.address || found.boyAddress || "Street Address Not Provided",
             
             // Identification Info
@@ -72,7 +77,11 @@ const DeliveryBoyDetails = () => {
             stores: (() => {
                const st = details.Store || details.store || details.stores || found["Store"] || found.store || found.stores || [];
                const stArray = Array.isArray(st) ? st : [st];
-               return stArray.filter(s => s && s !== "");
+               return stArray.filter(s => s && s !== "").map(s => {
+                   if (s === "store_hyd_101") return "Hyderabad Store";
+                   if (s === "store_vj_102") return "Vijayawada Store";
+                   return s;
+               });
             })(),
             idImage: details["ID Image"] || details.idImage || found["ID Image"] || found.idImage || "",
             orders: found["Orders"] || found.orders || 0,
@@ -138,8 +147,20 @@ const DeliveryBoyDetails = () => {
             </Box>
         </Box>
         <Stack direction="row" spacing={2}>
-            <Button variant="outlined" sx={{ borderRadius: "12px", textTransform: 'none', fontWeight: 700, borderColor: '#e0e5f2', color: '#2b3674' }}>Print ID Card</Button>
-            <Button variant="contained" sx={{ borderRadius: "12px", textTransform: 'none', fontWeight: 700, bgcolor: '#4318ff', '&:hover': { bgcolor: '#3311cc' } }}>Edit Profile</Button>
+            <Button 
+                variant="outlined" 
+                onClick={() => window.print()}
+                sx={{ borderRadius: "12px", textTransform: 'none', fontWeight: 700, borderColor: '#e0e5f2', color: '#2b3674' }}
+            >
+                Print ID Card
+            </Button>
+            <Button 
+                variant="contained" 
+                onClick={() => navigate(`/delivery-boy-list/edit/${boy.id}`)}
+                sx={{ borderRadius: "12px", textTransform: 'none', fontWeight: 700, bgcolor: '#4318ff', '&:hover': { bgcolor: '#3311cc' } }}
+            >
+                Edit Profile
+            </Button>
         </Stack>
       </Box>
 
@@ -290,19 +311,28 @@ const DeliveryBoyDetails = () => {
                             width: "100%", 
                             height: 140, 
                             borderRadius: "16px", 
-                            backgroundColor: "#f4f7fe", 
+                            backgroundColor: boy.idImage ? "transparent" : "#f4f7fe", 
                             display: "flex", 
                             flexDirection: "column",
                             justifyContent: "center", 
                             alignItems: "center",
-                            border: "2px dashed #e0e5f2",
+                            border: boy.idImage ? "none" : "2px dashed #e0e5f2",
                             cursor: "pointer",
-                            "&:hover": { borderColor: "#4318ff" },
+                            overflow: "hidden",
+                            "&:hover": { borderColor: "#4318ff", opacity: 0.9 },
                             transition: "0.3s"
                         }}
                     >
                         {boy.idImage ? (
-                             <Typography variant="caption" color="#4318ff" fontWeight="800">IMAGE UPLOADED</Typography>
+                             <img 
+                                src={boy.idImage.startsWith("http") || boy.idImage.startsWith("data:") ? boy.idImage : `http://localhost:5001/uploads/${boy.idImage}`} 
+                                alt="ID Document" 
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                                onError={(e) => { 
+                                    e.target.onerror = null; 
+                                    e.target.src = `https://picsum.photos/seed/${boy.id}/400/200`; 
+                                }}
+                             />
                         ) : (
                             <>
                                 <Box sx={{ opacity: 0.5, mb: 1 }}>[ Document Icon ]</Box>

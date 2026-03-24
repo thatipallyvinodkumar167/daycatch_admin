@@ -76,13 +76,13 @@ const AdminProducts = () => {
   }, [products, search]);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Permanently de-list this product from the central catalog?")) {
+    if (window.confirm("Permanently delete this product?")) {
       try {
         await productApi.deleteProduct(id);
         setProducts(prev => prev.filter(item => item.id !== id));
       } catch (error) {
         console.error("Error deleting product:", error);
-        alert("Persistence Sync Error: Deletion rejected.");
+        alert("Failed to delete product.");
       }
     }
   };
@@ -94,14 +94,14 @@ const AdminProducts = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Product Core Repository
+                Admin Products
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Centralized master catalog for all verified inventory across the Daycatch ecosystem.
+                Manage all products and inventory in the store.
             </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
-            <Tooltip title="Synchronize Catalog">
+            <Tooltip title="Refresh List">
                 <IconButton 
                     onClick={() => fetchProducts(true)} 
                     disabled={refreshing || loading}
@@ -124,7 +124,7 @@ const AdminProducts = () => {
                     boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                 }}
             >
-                Add Inventory
+                Add Product
             </Button>
         </Stack>
       </Box>
@@ -137,7 +137,7 @@ const AdminProducts = () => {
           </Box>
           <Box>
             <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase" }}>
-              Total SKU Count
+              Total Products
             </Typography>
             <Typography variant="h4" fontWeight="800" color="#1b2559">
               {products.length} Items
@@ -151,10 +151,10 @@ const AdminProducts = () => {
         
         {/* Search Toolbar */}
         <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">SKU Master Sheet</Typography>
+            <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Product List</Typography>
             <TextField
                 size="small"
-                placeholder="Search by SKU, Name or Category..."
+                placeholder="Search products..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 InputProps={{
@@ -180,25 +180,26 @@ const AdminProducts = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f4f7fe" }}>
                 <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Visual</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Product Name</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>SKU ID</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Image</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Name</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>ID</TableCell>
                 <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Category</TableCell>
-                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Visibility</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4, bgcolor: "#f4f7fe" }}>Operations</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Type</TableCell>
+                <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Status</TableCell>
+                <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
                     <CircularProgress sx={{ color: "#4318ff" }} />
                   </TableCell>
                 </TableRow>
               ) : filteredProducts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
-                    <Typography color="#a3aed0" fontWeight="600">No SKUs identified in the central repository.</Typography>
+                  <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                    <Typography color="#a3aed0" fontWeight="600">No products found.</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -232,6 +233,13 @@ const AdminProducts = () => {
                     </TableCell>
                     <TableCell>
                         <Chip 
+                            label={item.type && item.type !== "N/A" && item.type.trim() !== "" ? item.type : "General"} 
+                            size="small"
+                            sx={{ bgcolor: "#eef2ff", color: "#4318ff", fontWeight: "700", border: "1px solid #d0d7ff", borderRadius: "8px" }}
+                        />
+                    </TableCell>
+                    <TableCell>
+                        <Chip 
                             label={item.hide ? "Archived" : "Live"} 
                             size="small"
                             sx={{ 
@@ -244,7 +252,7 @@ const AdminProducts = () => {
                     </TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title="Edit Specifications">
+                        <Tooltip title="Edit Product">
                             <IconButton 
                                 onClick={() => navigate(`/products/edit/${item.id}`)}
                                 sx={{ backgroundColor: "#f4f7fe", color: "#4318ff", borderRadius: "12px", "&:hover": { backgroundColor: "#e0e5f2" }, p: 1 }}
@@ -252,7 +260,7 @@ const AdminProducts = () => {
                                 <EditIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
-                        <Tooltip title="Expunge SKU">
+                        <Tooltip title="Delete Product">
                             <IconButton 
                                 onClick={() => handleDelete(item.id)}
                                 sx={{ backgroundColor: "#fff5f5", color: "#ff4d49", borderRadius: "12px", "&:hover": { backgroundColor: "#ffebeb" }, p: 1 }}

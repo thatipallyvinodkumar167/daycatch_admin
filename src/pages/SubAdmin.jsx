@@ -47,10 +47,10 @@ const SubAdmin = () => {
       
       const formattedData = results.map((user, index) => ({
         id: user._id || index,
-        name: user["Name"] || user.name || "Unknown Fleet Officer",
+        name: user["Name"] || user.name || "Unknown Admin",
         email: user["Email"] || user["Email ID"] || user.email || "protocol@daycatch.com",
         phone: user["Mobile Number"] || user.phone || "N/A",
-        role: user["role Name"] || user.roleName || user.role || "Officer",
+        role: user["role Name"] || user.roleName || user.role || "Admin",
         status: user.Status || user.status || "Active",
         image: user.Image || user.image || user.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user["Name"] || "Admin")}&background=4318ff&color=fff`
       }));
@@ -69,7 +69,7 @@ const SubAdmin = () => {
   }, [fetchAdmins]);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to decommission this administrative node?")) {
+    if (window.confirm("Are you sure you want to delete this sub-admin account?")) {
       try {
         await genericApi.remove("sub-admin", id);
         fetchAdmins();
@@ -89,8 +89,8 @@ const SubAdmin = () => {
   }, [admins, search]);
 
   const stats = useMemo(() => [
-    { label: "Admin Nodes", value: admins.length, icon: <AdminPanelSettingsIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
-    { label: "Node Visibility", value: "Verified", icon: <ManageAccountsIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+    { label: "Total Admins", value: admins.length, icon: <AdminPanelSettingsIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Status", value: "Verified", icon: <ManageAccountsIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
   ], [admins]);
 
   return (
@@ -100,10 +100,10 @@ const SubAdmin = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Administrative Matrix
+                Sub-Admin Management
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Manage high-velocity sub-admin nodes and audit authorized access levels.
+                Manage sub-admin accounts and their access levels.
             </Typography>
         </Box>
         <Stack direction="row" spacing={3} alignItems="center">
@@ -132,7 +132,7 @@ const SubAdmin = () => {
                     "&:hover": { backgroundColor: "#3310cc" }
                 }}
             >
-                Initialize Node
+                Add Sub-Admin
             </Button>
         </Stack>
       </Box>
@@ -144,11 +144,11 @@ const SubAdmin = () => {
           )}
           
           <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Administrative Console</Typography>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Sub-Admin List</Typography>
               <Stack direction="row" spacing={2} alignItems="center">
                   <TextField
                       size="small"
-                      placeholder="Search Node Identity..."
+                      placeholder="Search Sub-Admin..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       InputProps={{
@@ -156,7 +156,7 @@ const SubAdmin = () => {
                       }}
                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#fff", width: "320px" } }}
                   />
-                  <Tooltip title="Synchronize Repository">
+                  <Tooltip title="Refresh">
                       <IconButton onClick={() => fetchAdmins(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
                           <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
                       </IconButton>
@@ -174,15 +174,15 @@ const SubAdmin = () => {
                   <TableHead>
                       <TableRow>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Administrative Identity</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Access Tier (Role)</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Node Status</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Deployment Actions</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Sub-Admin</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Role</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Status</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
                       </TableRow>
                   </TableHead>
                   <TableBody>
                       {filteredAdmins.length === 0 && !loading ? (
-                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>Zero administrative nodes detected in active matrix.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>No sub-admins found.</TableCell></TableRow>
                       ) : (
                           filteredAdmins.map((admin, index) => (
                               <TableRow key={admin.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
@@ -221,7 +221,7 @@ const SubAdmin = () => {
                                   </TableCell>
                                   <TableCell align="right" sx={{ pr: 3 }}>
                                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                      <Tooltip title="Modify Access">
+                                      <Tooltip title="Edit Admin">
                                           <IconButton 
                                               onClick={() => navigate(`/sub-admin/edit/${admin.id}`)}
                                               sx={{ backgroundColor: "#00d26a", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(0, 210, 106, 0.2)", "&:hover": { backgroundColor: "#00b85c" } }}
@@ -229,7 +229,7 @@ const SubAdmin = () => {
                                               <EditIcon sx={{ fontSize: 18 }} />
                                           </IconButton>
                                       </Tooltip>
-                                      <Tooltip title="Decommission Node">
+                                      <Tooltip title="Delete Admin">
                                           <IconButton 
                                               onClick={() => handleDelete(admin.id)}
                                               sx={{ backgroundColor: "#ff4d49", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(255, 77, 73, 0.2)", "&:hover": { backgroundColor: "#d32f2f" } }}

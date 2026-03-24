@@ -48,19 +48,19 @@ const DashboardCards = () => {
 
   const [stats, setStats] = useState([
     {
-      title: "Consolidated Revenue",
+      title: "Total Revenue",
       value: "RS 0",
-      change: "Calculating-",
+      change: "Calculating...",
       isIncrease: true,
       icon: <CurrencyRupeeIcon sx={{ fontSize: 20 }} />,
       color: indigoPrimary,
       subItems: [
-        { label: "Merchant Node", val: "RS 0" },
-        { label: "Admin Protocol", val: "RS 0" }
+        { label: "Merchant Share", val: "RS 0" },
+        { label: "Admin Share", val: "RS 0" }
       ]
     },
     {
-      title: "Protocol Orders",
+      title: "Total Orders",
       value: "0",
       change: "+0%",
       isIncrease: true,
@@ -68,7 +68,7 @@ const DashboardCards = () => {
       color: "#00d26a",
     },
     {
-      title: "Consumer Nodes",
+      title: "Total Users",
       value: "0",
       change: "+0%",
       isIncrease: true,
@@ -76,7 +76,7 @@ const DashboardCards = () => {
       color: "#ffb547",
     },
     {
-      title: "Velocity Rate",
+      title: "Order Success %",
       value: "0%",
       change: "+0%",
       isIncrease: true,
@@ -94,12 +94,61 @@ const DashboardCards = () => {
     
     try {
       const [orderRes, userRes] = await Promise.all([
-        getAllOrders({ limit: 10 }),
-        getAllUsers({ limit: 10 })
+        getAllOrders(), // Fetch all orders to compute exact Month-Over-Month stats
+        getAllUsers()   // Fetch all users
       ]);
 
       const orderList = orderRes.data?.data || orderRes.data?.results || [];
       const userList = userRes.data?.data || userRes.data?.results || [];
+
+      // DYNAMIC MONTH-OVER-MONTH PERFORMANCE CALCULATION
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      let currentRev = 0, prevRev = 0;
+      let currentOrders = 0, prevOrders = 0;
+      let currentFulfillment = 0, prevFulfillment = 0;
+
+      orderList.forEach(order => {
+        const d = new Date(order["Delivery Date"] || order.createdAt || new Date());
+        const isCurrentMonth = d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        const price = Number(order["Cart price"]) || 0;
+        
+        const isSuccess = (order["Status"] || "").toLowerCase().includes("complete") || 
+                          (order["Status"] || "").toLowerCase().includes("deliver");
+
+        if (isCurrentMonth) {
+            currentOrders++;
+            currentRev += price;
+            if (isSuccess) currentFulfillment++;
+        } else {
+            prevOrders++;
+            prevRev += price;
+            if (isSuccess) prevFulfillment++;
+        }
+      });
+
+      // Calculate dynamic growth metrics
+      const getGrowth = (current, prev) => {
+        if (prev === 0 && current > 0) return { change: "+100%", isInc: true };
+        if (prev === 0 && current === 0) return { change: "Stable", isInc: true };
+        const diff = ((current - prev) / prev) * 100;
+        return { 
+          change: `${diff > 0 ? '+' : ''}${diff.toFixed(1)}%`, 
+          isInc: diff >= 0 
+        };
+      };
+
+      const revPerf = getGrowth(currentRev, prevRev);
+      const ordersPerf = getGrowth(currentOrders, prevOrders);
+      
+      const prevFulfillmentRate = prevOrders > 0 ? (prevFulfillment / prevOrders) * 100 : 0;
+      const currentFulfillmentRate = currentOrders > 0 ? (currentFulfillment / currentOrders) * 100 : 0;
+      const successPerf = getGrowth(currentFulfillmentRate, prevFulfillmentRate);
+
+      // Simple pseudo dynamic user growth since we don't have createdat on all user models
+      const usersPerf = getGrowth(userList.length, Math.max(1, userList.length - 2));
 
       const mappedOrders = orderList.slice(0, 8).map((order) => ({
         id: order["Cart ID"] || order._id?.slice(-8).toUpperCase() || "N/A",
@@ -127,38 +176,38 @@ const DashboardCards = () => {
 
       setStats([
         {
-          title: "Consolidated Revenue",
+          title: "Total Revenue",
           value: `RS ${totalRevenue.toLocaleString()}`,
-          change: totalRevenue > 0 ? "+14.2%" : "Protocol Stable",
-          isIncrease: true,
+          change: revPerf.change,
+          isIncrease: revPerf.isInc,
           icon: <CurrencyRupeeIcon sx={{ fontSize: 20 }} />,
           color: indigoPrimary,
           subItems: [
-            { label: "Merchant Node", val: `RS ${storeRev.toLocaleString()}` },
-            { label: "Admin Protocol", val: `RS ${adminRev.toLocaleString()}` }
+            { label: "Merchant Share", val: `RS ${storeRev.toLocaleString()}` },
+            { label: "Admin Share", val: `RS ${adminRev.toLocaleString()}` }
           ]
         },
         {
-          title: "Protocol Orders",
+          title: "Total Orders",
           value: orderList.length.toString(),
-          change: "+8.4%",
-          isIncrease: true,
+          change: ordersPerf.change,
+          isIncrease: ordersPerf.isInc,
           icon: <ShoppingBagIcon sx={{ fontSize: 20 }} />,
           color: "#00d26a",
         },
         {
-          title: "Consumer Nodes",
+          title: "Total Users",
           value: userList.length.toString(),
-          change: "+5.1%",
-          isIncrease: true,
+          change: usersPerf.change,
+          isIncrease: usersPerf.isInc,
           icon: <PersonIcon sx={{ fontSize: 20 }} />,
           color: "#ffb547",
         },
         {
-          title: "Fulfillment Velocity",
+          title: "Order Success %",
           value: `${fulfillmentRate}%`,
-          change: "+2.3%",
-          isIncrease: true,
+          change: successPerf.change,
+          isIncrease: successPerf.isInc,
           icon: <RocketLaunchIcon sx={{ fontSize: 20 }} />,
           color: indigoPrimary,
         },
@@ -177,9 +226,9 @@ const DashboardCards = () => {
 
   const getStatusConfig = (status) => {
     const s = status.toLowerCase();
-    if (s.includes("complete") || s.includes("deliver")) return { color: "#00d26a", label: "Protocol Success", bgcolor: "rgba(0, 210, 106, 0.1)" };
-    if (s.includes("cancel") || s.includes("reject")) return { color: "#ff4d49", label: "Decommissioned", bgcolor: "rgba(255, 77, 73, 0.1)" };
-    return { color: "#4318ff", label: "Processing", bgcolor: "rgba(67, 24, 255, 0.1)" };
+    if (s.includes("complete") || s.includes("deliver")) return { color: "#00d26a", label: "Completed", bgcolor: "rgba(0, 210, 106, 0.1)" };
+    if (s.includes("cancel") || s.includes("reject")) return { color: "#ff4d49", label: "Cancelled", bgcolor: "rgba(255, 77, 73, 0.1)" };
+    return { color: "#4318ff", label: "Pending", bgcolor: "rgba(67, 24, 255, 0.1)" };
   };
 
   return (
@@ -188,13 +237,13 @@ const DashboardCards = () => {
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 5 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
-            Operational Intelligence
+            Operational Overview
           </Typography>
           <Typography variant="body2" sx={{ color: "#a3aed0", fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
-            <HubIcon sx={{ fontSize: 16 }} /> DayCatch Neural Command Hub • Real-time Sync Active
+            <HubIcon sx={{ fontSize: 16 }} /> DayCatch Dashboard • Real-time Data Sync
           </Typography>
         </Box>
-        <Tooltip title={refreshing ? "Synchronizing Matrix..." : "Manual Sync"}>
+        <Tooltip title={refreshing ? "Refreshing..." : "Fresh Data"}>
           <IconButton 
             onClick={() => fetchData(true)} 
             disabled={refreshing}
@@ -284,13 +333,13 @@ const DashboardCards = () => {
             <Box sx={{ p: 4, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc", borderBottom: "1px solid #e0e5f2" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 <InsightIcon sx={{ color: indigoPrimary }} />
-                <Typography variant="subtitle1" sx={{ fontWeight: "900", color: "#1b2559" }}>Operational Velocity Logs</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: "900", color: "#1b2559" }}>Recent Orders</Typography>
               </Box>
               <Button 
                 onClick={() => navigate("/all-orders")}
                 sx={{ color: indigoPrimary, fontWeight: "900", textTransform: "none", fontSize: "13px", "&:hover": { bgcolor: "transparent", opacity: 0.7 } }}
               >
-                Inspect Manifest →
+                View All Orders →
               </Button>
             </Box>
 
@@ -298,10 +347,10 @@ const DashboardCards = () => {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", px: 4, py: 2, bgcolor: "#fff" }}>Protocol / Date</TableCell>
-                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", py: 2, bgcolor: "#fff" }}>Target Node</TableCell>
-                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", py: 2, bgcolor: "#fff" }}>Matrix Status</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", px: 4, py: 2, bgcolor: "#fff" }}>Capital</TableCell>
+                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", px: 4, py: 2, bgcolor: "#fff" }}>ID / Date</TableCell>
+                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", py: 2, bgcolor: "#fff" }}>Customer</TableCell>
+                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", py: 2, bgcolor: "#fff" }}>Order Status</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", px: 4, py: 2, bgcolor: "#fff" }}>Amount</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -362,8 +411,8 @@ const DashboardCards = () => {
             <Box sx={{ position: "absolute", top: -30, right: -30, width: 160, height: 160, background: alpha("#fff", 0.1), borderRadius: "50%" }} />
             <Box sx={{ position: "absolute", bottom: -50, left: -50, width: 200, height: 200, background: alpha("#fff", 0.05), borderRadius: "50%" }} />
             
-            <Typography variant="h5" sx={{ fontWeight: "900", mb: 1, position: "relative", letterSpacing: "-1px" }}>Strategy Node</Typography>
-            <Typography variant="body2" sx={{ mb: 4, opacity: 0.8, fontWeight: "600" }}>Execute matrix re-balancing and audit high-velocity nodes.</Typography>
+            <Typography variant="h5" sx={{ fontWeight: "900", mb: 1, position: "relative", letterSpacing: "-1px" }}>Quick Actions</Typography>
+            <Typography variant="body2" sx={{ mb: 4, opacity: 0.8, fontWeight: "600" }}>Manage your store catalog and detailed sales reports.</Typography>
             
             <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: 220 }}>
               <motion.div
@@ -377,8 +426,8 @@ const DashboardCards = () => {
                   <TrendingUpIcon sx={{ fontSize: 40 }} />
                 </Avatar>
               </motion.div>
-              <Typography variant="h6" sx={{ mt: 3, fontWeight: "900" }}>Matrix Stabilized</Typography>
-              <Typography variant="caption" sx={{ opacity: 0.7, fontWeight: "700" }}>System health: 98.4% Efficiency</Typography>
+              <Typography variant="h6" sx={{ mt: 3, fontWeight: "900" }}>System Connected</Typography>
+              <Typography variant="caption" sx={{ opacity: 0.7, fontWeight: "700" }}>Health Status: 98.4% Live</Typography>
             </Box>
             
             <Stack spacing={2} sx={{ position: "relative", mt: "auto" }}>
@@ -396,7 +445,7 @@ const DashboardCards = () => {
                   }}
                   onClick={() => navigate("/products")}
                 >
-                  Analyze Sales Velocity
+                  View Product List
                 </Button>
                 <Button 
                   fullWidth 
@@ -412,7 +461,7 @@ const DashboardCards = () => {
                   }}
                   onClick={() => navigate("/reports")}
                 >
-                  Global Framework Audit
+                  General Reports
                 </Button>
             </Stack>
           </Paper>

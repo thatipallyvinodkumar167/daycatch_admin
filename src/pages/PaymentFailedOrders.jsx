@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -18,12 +18,18 @@ import {
   Tooltip,
   IconButton,
   Collapse,
+  LinearProgress,
 } from "@mui/material";
 import PaymentIcon from "@mui/icons-material/Payment";
+import ShoppingBasketIcon from "@mui/icons-material/ShoppingBasket";
+import PrintIcon from "@mui/icons-material/Print";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ReplayIcon from "@mui/icons-material/Replay";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import WarningIcon from "@mui/icons-material/Warning";
+import EditIcon from "@mui/icons-material/Edit";
 import { genericApi } from "../api/genericApi";
 import OrderDetailsDialog from "../components/OrderDetailsDialog";
 
@@ -33,24 +39,22 @@ const PaymentFailedOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [openDetails, setOpenDetails] = useState(false);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await genericApi.getAll("payment failed orders");
-      const results = response.data.results || response.data || [];
+      const apiResults = response.data?.results || response.data?.data || response.data || [];
       
-      const formattedData = results.map((order, index) => ({
+      const formattedData = apiResults.map((order, index) => ({
         id: order._id || index + 1,
         cartId: order["Cart ID"] || order.cartId || order._id,
         cartPrice: parseFloat(order["Cart price"] || order.cartPrice || 0),
         userName: order["User"] || order.user || "N/A",
         userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
-        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toISOString().split('T')[0] : "N/A",
-        status: order["Status"] || order.status || "Failed",
+        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : "N/A",
+        status: (order["Status"] || order.status || "Payment Failed").toUpperCase(),
         address: order.Address || order.address || order.Details?.address || "N/A",
         timeSlot: order["Time Slot"] || order.timeSlot || "N/A",
         products: (order.Products || order.products || []).map(p => ({
@@ -70,8 +74,15 @@ const PaymentFailedOrders = () => {
       setOrders(formattedData);
     } catch (error) {
       console.error("Error fetching failed payment orders:", error);
+      setOrders([]);
+    } finally {
+        setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const toggleExpand = (id) => setExpandedOrderId(expandedOrderId === id ? null : id);
 
@@ -80,164 +91,244 @@ const PaymentFailedOrders = () => {
     setOpenDetails(true);
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const cid = (order.cartId || "").toString().toLowerCase();
-    const uname = (order.userName || "").toString().toLowerCase();
+  const filteredOrders = useMemo(() => {
     const s = search.toLowerCase().trim();
-    return cid.includes(s) || uname.includes(s);
-  });
+    if (!s) return orders;
+    return orders.filter((order) => {
+        const cid = (order.cartId || "").toString().toLowerCase();
+        const uname = (order.userName || "").toString().toLowerCase();
+        return cid.includes(s) || uname.includes(s);
+    });
+  }, [orders, search]);
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="700" color="#2b3674">
-          Hi, Day Catch Super Admin Panel.{" "}
-          <Box component="span" sx={{ fontSize: "16px", fontWeight: "400", color: "#a3aed0" }}>
-            Investigating transaction failures on the platform.
-          </Box>
-        </Typography>
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box>
+            <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
+                Payment Failures
+            </Typography>
+            <Typography variant="body1" color="textSecondary" sx={{ fontWeight: "500" }}>
+                Monitor and investigate orders with declined or interrupted payment transactions.
+            </Typography>
+        </Box>
       </Box>
 
       {/* Stats Summary Section */}
       <Stack direction="row" spacing={3} sx={{ mb: 4 }}>
-        <Paper sx={{ flex: 1, p: 3, borderRadius: "16px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-            <Stack direction="row" alignItems="center" spacing={2}>
-                <Box sx={{ p: 1.5, borderRadius: "12px", backgroundColor: "#fff1f0" }}>
-                    <PaymentIcon sx={{ color: "#ff4d49" }} />
-                </Box>
-                <Box>
-                    <Typography variant="caption" color="textSecondary" fontWeight="600">FAILED TRANSACTIONS</Typography>
-                    <Typography variant="h3" fontWeight="800" color="#1b2559">{orders.length}</Typography>
-                </Box>
-            </Stack>
+        <Paper sx={{ p: 3, flex: 1, borderRadius: "24px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: 2, backgroundColor: "#fff" }}>
+          <Avatar sx={{ bgcolor: "#fff1f0", color: "#ff4d49", width: 56, height: 56 }}>
+            <PaymentIcon fontSize="large" />
+          </Avatar>
+          <Box>
+            <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ letterSpacing: "1px" }}>FAILED TRANSACTIONS</Typography>
+            <Typography variant="h4" fontWeight="800" color="#1b2559">{orders.length}</Typography>
+          </Box>
         </Paper>
       </Stack>
 
-      <Paper sx={{ borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-        
-        <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f1f1" }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Typography variant="h6" fontWeight="700" color="#1b2559">Payment Failure Audit</Typography>
-          </Stack>
-
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="body2" color="#a3aed0" fontWeight="600">Search:</Typography>
+      <Stack direction="row" spacing={2} sx={{ mb: 3 }} justifyContent="space-between">
+        <Box sx={{ display: 'flex', gap: 2, flex: 1 }}>
             <TextField
-              size="small"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" }, width: "200px" }}
+                size="small"
+                placeholder="Search cart or customer..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                sx={{
+                    flex: 1,
+                    maxWidth: "500px",
+                    "& .MuiOutlinedInput-root": { 
+                        borderRadius: "16px", 
+                        backgroundColor: "#fff",
+                        "& fieldset": { borderColor: "#e0e5f2" } 
+                    }
+                }}
             />
-            <Button variant="outlined" sx={{ borderRadius: "8px", textTransform: "none", color: "#475467", borderColor: "#e0e5f2", fontWeight: "600" }}>Print</Button>
-            <Button variant="outlined" sx={{ borderRadius: "8px", textTransform: "none", color: "#475467", borderColor: "#e0e5f2", fontWeight: "600" }}>CSV</Button>
-          </Stack>
         </Box>
+        <Stack direction="row" spacing={1.5}>
+            <Tooltip title="Print Log">
+                <IconButton onClick={() => window.print()} sx={{ backgroundColor: "#fff", border: "1px solid #e0e5f2", borderRadius: "12px" }}>
+                    <PrintIcon sx={{ color: "#2b3674" }} />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Download CSV">
+                <IconButton sx={{ backgroundColor: "#fff", border: "1px solid #e0e5f2", borderRadius: "12px" }}>
+                    <FileDownloadIcon sx={{ color: "#2b3674" }} />
+                </IconButton>
+            </Tooltip>
+        </Stack>
+      </Stack>
 
+      <Paper
+        sx={{
+          borderRadius: "24px",
+          overflow: "hidden",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
+          border: "1px solid #e0e5f2",
+          background: "#fff",
+        }}
+      >
+        {loading && <LinearProgress sx={{ "& .MuiLinearProgress-bar": { bgcolor: "#ff4d49" } }} />}
+        
         <TableContainer>
-          <Table>
+          <Table stickyHeader>
             <TableHead>
-              <TableRow sx={{ backgroundColor: "#fafbfc" }}>
-                <TableCell width={80} sx={{ fontWeight: "700", color: "#a3aed0" }}>#</TableCell>
-                <TableCell width={140} sx={{ fontWeight: "700", color: "#a3aed0" }}>CART ID</TableCell>
-                <TableCell width={120} sx={{ fontWeight: "700", color: "#a3aed0" }}>CART PRICE</TableCell>
-                <TableCell width={200} sx={{ fontWeight: "700", color: "#a3aed0" }}>USER</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>ATTEMPT DATE</TableCell>
-                <TableCell sx={{ fontWeight: "700", color: "#a3aed0" }}>CART PRODUCTS</TableCell>
-                <TableCell align="center" sx={{ fontWeight: "700", color: "#a3aed0" }}>STATUS</TableCell>
-                <TableCell align="center" sx={{ fontWeight: "700", color: "#a3aed0" }}>DETAILS</TableCell>
+              <TableRow>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", py: 2, pl: 4, borderBottom: "1px solid #e0e5f2" }}>#</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>ORDER</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>CUSTOMER</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>PRICE</TableCell>
+                <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>ATTEMPT DATE</TableCell>
+                <TableCell align="center" sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", borderBottom: "1px solid #e0e5f2" }}>DETAILS</TableCell>
+                <TableCell align="right" sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", pr: 4, borderBottom: "1px solid #e0e5f2" }}>ACTIONS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6 }}>No payment failure logs detected.</TableCell>
+                  <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                    <Typography variant="body1" color="#a3aed0" fontWeight="600">
+                      No payment failures recorded
+                    </Typography>
+                  </TableCell>
                 </TableRow>
               ) : (
-                filteredOrders.map((order, index) => (
-                  <React.Fragment key={order.id}>
-                    <TableRow sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}>
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "600" }}>
-                        <IconButton size="small" onClick={() => toggleExpand(order.id)} sx={{ color: "#a3aed0" }}>
-                          {expandedOrderId === order.id ? <RemoveCircleOutlineIcon fontSize="inherit" /> : <AddCircleOutlineIcon fontSize="inherit" />}
+                filteredOrders.map((order, index) => {
+                  const isExpanded = expandedOrderId === order.id;
+
+                  return (
+                    <React.Fragment key={order.id}>
+                    <TableRow sx={{ "&:hover": { bgcolor: "#f4f7fe" }, transition: "0.2s", backgroundColor: isExpanded ? "#f4f7fe" : "inherit" }}>
+                      <TableCell sx={{ color: "#a3aed0", fontWeight: "800", pl: 4 }}>
+                        <IconButton size="small" onClick={() => toggleExpand(order.id)} sx={{ mr: 1, color: "#ff4d49" }}>
+                          {isExpanded ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
                         </IconButton>
-                        <span style={{ marginLeft: "8px" }}>{index + 1}</span>
+                        {String(index + 1).padStart(2, '0')}
                       </TableCell>
-                      <TableCell sx={{ color: "#ff4d49", fontWeight: "700" }}>{order.cartId || "N/A"}</TableCell>
-                      <TableCell sx={{ color: "#1b2559", fontWeight: "800" }}>₹{order.cartPrice.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          <Avatar sx={{ bgcolor: "#fff1f0", color: "#ff4d49", border: "2px solid #e0e5f2" }}>
+                            <ShoppingBasketIcon fontSize="small" />
+                          </Avatar>
+                          <Typography variant="body2" fontWeight="800" color="#1b2559">
+                            {order.cartId}
+                          </Typography>
+                        </Stack>
+                      </TableCell>
                       <TableCell>
                         <Box>
-                          <Typography variant="body2" fontWeight="700" color="#1b2559">{order.userName}</Typography>
-                          <Typography variant="caption" color="textSecondary">{order.userPhone}</Typography>
+                          <Typography variant="body2" fontWeight="800" color="#1b2559">{order.userName}</Typography>
+                          <Typography variant="caption" color="#a3aed0" fontWeight="600">{order.userPhone}</Typography>
                         </Box>
                       </TableCell>
-                      <TableCell sx={{ color: "#475467", fontWeight: "600" }}>{order.deliveryDate}</TableCell>
-                      <TableCell>
-                        <AvatarGroup max={3} sx={{ justifyContent: "flex-start", "& .MuiAvatar-root": { width: 34, height: 34, borderRadius: "8px" } }}>
-                          {order.products.map((p, i) => (
-                            <Tooltip key={i} title={p.name}>
-                              <Avatar src={p.img} alt={p.name} />
-                            </Tooltip>
-                          ))}
-                        </AvatarGroup>
-                      </TableCell>
+                      <TableCell sx={{ color: "#1b2559", fontWeight: "800" }}>₹{order.cartPrice.toLocaleString()}</TableCell>
+                      <TableCell sx={{ color: "#475467", fontWeight: "700" }}>{order.deliveryDate}</TableCell>
                       <TableCell align="center">
-                        <Chip
-                          label={order.status || "Failed"}
+                        <Button
+                          variant="outlined"
                           size="small"
-                          sx={{ backgroundColor: "#fff1f0", color: "#ff4d49", fontWeight: "800", fontSize: "10px", textTransform: "uppercase" }}
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        <Button 
-                          variant="contained" 
                           onClick={() => handleOpenDetails(order)}
-                          sx={{ backgroundColor: "#4318ff", borderRadius: "8px", textTransform: "none", fontWeight: "700" }}
+                          sx={{
+                            borderRadius: "10px",
+                            textTransform: "none",
+                            fontWeight: "700",
+                            borderColor: "#e0e5f2",
+                            color: "#1b2559",
+                            "&:hover": { borderColor: "#ff4d49", backgroundColor: "#fff1f0" }
+                          }}
                         >
-                          Details
+                          View Order
                         </Button>
+                      </TableCell>
+                      <TableCell align="right" sx={{ pr: 3 }}>
+                         <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            <Tooltip title="Retry Payment Hook">
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => alert("Re-sending payment retry hook (Simulated)")}
+                                  sx={{ 
+                                    color: "#fff", 
+                                    bgcolor: "#2d60ff", 
+                                    borderRadius: "12px", 
+                                    width: "36px", 
+                                    height: "36px", 
+                                    "&:hover": { bgcolor: "#1e4de6", transform: "translateY(-1px)" },
+                                    boxShadow: "0 4px 10px rgba(45,96,255,0.2)",
+                                    transition: "0.2s"
+                                  }}
+                                >
+                                    <ReplayIcon sx={{ fontSize: "18px" }} />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Edit History">
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => handleOpenDetails(order)}
+                                  sx={{ 
+                                    color: "#fff", 
+                                    bgcolor: "#1b2559", 
+                                    borderRadius: "12px", 
+                                    width: "36px", 
+                                    height: "36px", 
+                                    "&:hover": { bgcolor: "#0d1433", transform: "translateY(-1px)" },
+                                    boxShadow: "0 4px 10px rgba(27,37,89,0.2)",
+                                    transition: "0.2s"
+                                  }}
+                                >
+                                    <EditIcon sx={{ fontSize: "18px" }} />
+                                </IconButton>
+                            </Tooltip>
+                        </Stack>
                       </TableCell>
                     </TableRow>
 
                     <TableRow>
-                      <TableCell colSpan={8} sx={{ py: 0, border: "none" }}>
-                        <Collapse in={expandedOrderId === order.id} timeout="auto" unmountOnExit>
-                          <Box sx={{
-                            py: 3, px: 4,
-                            display: "flex", alignItems: "center", gap: 4,
-                            backgroundColor: "#f4f7fe",
-                            borderBottom: "1px solid #e0e5f2",
-                            borderLeft: "6px solid #ff4d49",
-                          }}>
-                            <Typography variant="caption" fontWeight="900" color="#ff4d49" sx={{ textTransform: "uppercase", letterSpacing: 2 }}>Recovery Management</Typography>
-                            <Stack direction="row" spacing={2}>
-                              <Tooltip title="Send Payment Retry Link">
-                                <Button
-                                  variant="contained"
-                                  startIcon={<ReplayIcon sx={{ fontSize: "16px !important" }} />}
-                                  sx={{ backgroundColor: "#2d60ff", color: "#fff", borderRadius: "10px", px: 2, textTransform: "none", fontWeight: "700", boxShadow: "0 4px 12px rgba(45,96,255,0.2)", "&:hover": { backgroundColor: "#1e4de6" } }}
-                                >
-                                  Retry Link
-                                </Button>
-                              </Tooltip>
-
-                              <Tooltip title="View Transaction Errors">
-                                <Button
-                                  variant="contained"
-                                  startIcon={<VisibilityIcon sx={{ fontSize: "16px !important" }} />}
-                                  onClick={() => handleOpenDetails(order)}
-                                  sx={{ backgroundColor: "#1b2559", color: "#fff", borderRadius: "10px", px: 2, textTransform: "none", fontWeight: "700", boxShadow: "0 4px 12px rgba(27,37,89,0.2)", "&:hover": { backgroundColor: "#111a40" } }}
-                                >
-                                  Inspect Failure
-                                </Button>
-                              </Tooltip>
-                            </Stack>
-                          </Box>
-                        </Collapse>
-                      </TableCell>
+                        <TableCell colSpan={7} sx={{ py: 0, borderBottom: isExpanded ? "1px solid #e0e5f2" : "none" }}>
+                            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                                <Box sx={{ p: 4, backgroundColor: "#fafbfc" }}>
+                                    <Stack direction="row" spacing={4} alignItems="flex-start">
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="subtitle2" fontWeight="800" gutterBottom color="#2b3674">PAYMENT CONTEXT</Typography>
+                                            <Typography variant="body2" color="#475467" fontWeight="600">Issue: Transaction Interrupted</Typography>
+                                            <Typography variant="body2" color="#a3aed0" sx={{ mt: 1 }}>Address: {order.address}</Typography>
+                                        </Box>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="subtitle2" fontWeight="800" gutterBottom color="#2b3674">ITEMS IN ORDER</Typography>
+                                            <AvatarGroup max={5} sx={{ justifyContent: "flex-start", "& .MuiAvatar-root": { width: 40, height: 40, borderRadius: "12px", border: "2px solid #fff" } }}>
+                                                {order.products.map((p, i) => (
+                                                    <Tooltip key={i} title={p.name}>
+                                                        <Avatar src={p.img} alt={p.name} />
+                                                    </Tooltip>
+                                                ))}
+                                            </AvatarGroup>
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="subtitle2" fontWeight="800" gutterBottom color="#2b3674">INVESTIGATION</Typography>
+                                            <Button 
+                                              variant="contained" 
+                                              size="small" 
+                                              startIcon={<ReplayIcon fontSize="small" />} 
+                                              onClick={() => alert("Re-initiating session (Simulated)")}
+                                              sx={{ 
+                                                bgcolor: "#1b2559", 
+                                                borderRadius: "12px", 
+                                                textTransform: "none", 
+                                                fontWeight: "800",
+                                                boxShadow: "0 10px 20px rgba(27,37,89,0.2)"
+                                              }}
+                                            >
+                                                Send Retry Hook
+                                            </Button>
+                                        </Box>
+                                    </Stack>
+                                </Box>
+                            </Collapse>
+                        </TableCell>
                     </TableRow>
-                  </React.Fragment>
-                ))
+                    </React.Fragment>
+                  );
+                })
               )}
             </TableBody>
           </Table>

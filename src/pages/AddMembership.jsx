@@ -219,37 +219,56 @@ const AddMembership = () => {
                   cursor: "pointer",
                   "&:hover": { borderColor: "#2d60ff", bgcolor: "#f1f4ff" }
                 }}
-                onClick={() => document.getElementById("image-upload").click()}
+                onClick={() => document.getElementById("add-image-upload").click()}
               >
                 <input
                   type="file"
-                  id="image-upload"
+                  id="add-image-upload"
                   hidden
                   accept="image/*"
                   onChange={handleFileChange}
                 />
-                <Stack direction="row" spacing={2} alignItems="center" justifyContent="center">
-                  <Box sx={{ p: 1, bgcolor: "#f4f7fe", borderRadius: "10px" }}>
-                    <ImageIcon sx={{ color: "#2d60ff" }} />
-                  </Box>
-                  <Box sx={{ textAlign: "left" }}>
-                    <Typography variant="body2" fontWeight="700" color="#1b2559">
-                      {formData.image ? "Change Image" : "Choose File"}
-                    </Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      Click to choose file · PNG, JPG, WEBP
-                    </Typography>
-                  </Box>
-                  <Button variant="outlined" size="small" sx={{ ml: "auto", borderRadius: "8px", textTransform: "none" }}>
-                    Choose File
-                  </Button>
-                </Stack>
+                {formData.image ? (
+                  <Stack direction="row" spacing={3} alignItems="center" justifyContent="center">
+                    <Box sx={{ width: 80, height: 80, borderRadius: "10px", overflow: "hidden", border: "1px solid #E0E5F2" }}>
+                      <img src={formData.image} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </Box>
+                    <Box sx={{ textAlign: "left" }}>
+                      <Typography variant="body2" fontWeight="700" color="#2d60ff">
+                        Change Image
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        Click to choose file · PNG, JPG, WEBP
+                      </Typography>
+                    </Box>
+                    <Button 
+                      variant="outlined" 
+                      size="small" 
+                      sx={{ ml: "auto", borderRadius: "8px", textTransform: "none", color: "#ff4d49", borderColor: "#ff4d49", "&:hover": { bgcolor: "#fff5f5", borderColor: "#ff4d49" } }} 
+                      onClick={(e) => { e.stopPropagation(); setFormData({...formData, image: ""}); }}
+                    >
+                      Remove
+                    </Button>
+                  </Stack>
+                ) : (
+                  <Stack direction="row" spacing={2} alignItems="center" justifyContent="center">
+                    <Box sx={{ p: 1, bgcolor: "#f4f7fe", borderRadius: "10px" }}>
+                      <ImageIcon sx={{ color: "#2d60ff" }} />
+                    </Box>
+                    <Box sx={{ textAlign: "left" }}>
+                      <Typography variant="body2" fontWeight="700" color="#1b2559">
+                        Choose File
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        Click to choose file · PNG, JPG, WEBP
+                      </Typography>
+                    </Box>
+                    <Button variant="outlined" size="small" sx={{ ml: "auto", borderRadius: "8px", textTransform: "none" }}>
+                      Choose File
+                    </Button>
+                  </Stack>
+                )}
               </Box>
-              {formData.image && (
-                <Box sx={{ mt: 2, position: "relative", width: 100, height: 100, borderRadius: "12px", overflow: "hidden", border: "1px solid #E0E5F2" }}>
-                  <img src={formData.image} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                </Box>
-              )}
             </Grid>
 
             {/* Description with Styles */}

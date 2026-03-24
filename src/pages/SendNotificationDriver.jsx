@@ -45,7 +45,7 @@ const SendNotificationDriver = () => {
 
     const maxSize = 1000 * 1024; // 1000 KB
     if (file.size > maxSize) {
-      setSnackbar({ open: true, message: "Fleet asset payload exceeds 1000 KB threshold.", severity: "error" });
+      setSnackbar({ open: true, message: "Image size exceeds 1MB.", severity: "error" });
       e.target.value = "";
       return;
     }
@@ -65,7 +65,7 @@ const SendNotificationDriver = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.message) {
-      setSnackbar({ open: true, message: "Fleet Headline and Operational manifest are required.", severity: "error" });
+      setSnackbar({ open: true, message: "Subject and Message are required.", severity: "error" });
       return;
     }
 
@@ -75,12 +75,12 @@ const SendNotificationDriver = () => {
         ...formData,
         image: imageFile ? imageFile.name : null,
       });
-      setSnackbar({ open: true, message: "Operational Alert broadcasted to fleet successfully!", severity: "success" });
+      setSnackbar({ open: true, message: "Notification sent successfully!", severity: "success" });
       setFormData({ selectDeliveryBoys: "all", title: "", message: "" });
       removeImage();
     } catch (error) {
       console.error("Error sending driver notification:", error);
-      setSnackbar({ open: true, message: "Transmission failure identified.", severity: "error" });
+      setSnackbar({ open: true, message: "Failed to send notification.", severity: "error" });
     } finally {
       setIsSubmitting(false);
     }
@@ -93,16 +93,16 @@ const SendNotificationDriver = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Fleet Alert Dispatch
+                Send Driver Notification
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Broadcast operational updates, safety alerts, and deployment notices to the delivery fleet.
+                Create and send notifications to all registered delivery partners.
             </Typography>
         </Box>
         <Stack direction="row" spacing={2} alignItems="center">
             <Box sx={{ px: 2, py: 1, borderRadius: "12px", bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
-                <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ display: "block", lineHeight: 1 }}>CLUSTER</Typography>
-                <Typography variant="subtitle2" fontWeight="800" color="#4318ff">FLEET-SEND</Typography>
+                <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ display: "block", lineHeight: 1 }}>STATUS</Typography>
+                <Typography variant="subtitle2" fontWeight="800" color="#4318ff">Active</Typography>
             </Box>
         </Stack>
       </Box>
@@ -117,7 +117,7 @@ const SendNotificationDriver = () => {
                         <SpeedIcon sx={{ color: "#4318ff" }} />
                     </Box>
                     <Typography variant="h6" fontWeight="800" color="#1b2559">
-                        Operational Alert Manifest
+                        Create Notification
                     </Typography>
                 </Stack>
 
@@ -127,7 +127,7 @@ const SendNotificationDriver = () => {
                         {/* Select Deployment Group */}
                         <Box>
                             <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                                Select Deployment Group
+                                Target Drivers
                             </Typography>
                             <FormControl fullWidth>
                                 <Select
@@ -140,9 +140,9 @@ const SendNotificationDriver = () => {
                                         "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e5f2" }
                                     }}
                                 >
-                                    <MenuItem value="all">Global Delivery Fleet</MenuItem>
-                                    <MenuItem value="active">Active/On-Duty Hub</MenuItem>
-                                    <MenuItem value="inactive">Dormant Operations</MenuItem>
+                                    <MenuItem value="all">All Drivers</MenuItem>
+                                    <MenuItem value="active">Active/On-Duty</MenuItem>
+                                    <MenuItem value="inactive">Inactive Drivers</MenuItem>
                                 </Select>
                             </FormControl>
                         </Box>
@@ -150,12 +150,12 @@ const SendNotificationDriver = () => {
                         {/* Title */}
                         <Box>
                             <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                                Operational Headline
+                                Notification Subject
                             </Typography>
                             <TextField
                                 fullWidth
                                 name="title"
-                                placeholder="Formal headline (e.g. Safety Alert)"
+                                placeholder="Enter notification subject (e.g., Safety Update)..."
                                 value={formData.title}
                                 onChange={handleChange}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
@@ -165,14 +165,14 @@ const SendNotificationDriver = () => {
                         {/* Message Manifest */}
                         <Box>
                             <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                                Fleet Execution Directive
+                                Notification Message
                             </Typography>
                             <TextField
                                 fullWidth
                                 multiline
                                 rows={4}
                                 name="message"
-                                placeholder="Enter operational instructions or safety directives..."
+                                placeholder="Enter notification message..."
                                 value={formData.message}
                                 onChange={handleChange}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
@@ -182,7 +182,7 @@ const SendNotificationDriver = () => {
                         {/* Situational Image Asset */}
                         <Box>
                           <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                            Situational Asset (Optional)
+                            Notification Image (Optional)
                           </Typography>
 
                           <Box
@@ -213,7 +213,7 @@ const SendNotificationDriver = () => {
                             </Box>
                             <Box sx={{ flex: 1 }}>
                               <Typography variant="body2" fontWeight="800" color="#1b2559">
-                                {imageFile ? imageFile.name : "Map or Asset Node"}
+                                {imageFile ? imageFile.name : "Select Image"}
                               </Typography>
                               <Typography variant="caption" color="#a3aed0" fontWeight="600">
                                 {imageFile
@@ -287,7 +287,7 @@ const SendNotificationDriver = () => {
                                 boxShadow: "0 10px 25px rgba(67, 24, 255, 0.25)"
                             }}
                         >
-                            {isSubmitting ? "Initiating Dispatch..." : "Execute Fleet Broadcast"}
+                            {isSubmitting ? "Sending..." : "Send Notification"}
                         </Button>
                     </Stack>
                 </form>
@@ -298,7 +298,7 @@ const SendNotificationDriver = () => {
         <Grid item xs={12} md={5}>
             <Box sx={{ position: "sticky", top: 20 }}>
                 <Typography variant="h6" fontWeight="800" color="#1b2559" sx={{ mb: 3, px: 1 }}>
-                    Operational View Preview
+                    Notification Preview
                 </Typography>
                 
                 <Paper sx={{ p: 4, borderRadius: "28px", backgroundColor: "#000", color: "#fff", position: "relative", overflow: "hidden", minHeight: "520px" }}>
@@ -309,8 +309,8 @@ const SendNotificationDriver = () => {
                             <DeliveryDiningIcon sx={{ color: "#4318ff" }} />
                         </Box>
                         <Box>
-                            <Typography variant="subtitle2" fontWeight="900" sx={{ color: "#fff" }}>FLEET INTERFACE</Typography>
-                            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.4)", fontWeight: "700" }}>PROTOCOL: OPS-SECURE-ALPHA</Typography>
+                            <Typography variant="subtitle2" fontWeight="900" sx={{ color: "#fff" }}>DRIVER APP</Typography>
+                            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.4)", fontWeight: "700" }}>TYPE: OPERATIONAL</Typography>
                         </Box>
                     </Stack>
                     
@@ -325,7 +325,7 @@ const SendNotificationDriver = () => {
                             <Box>
                                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
                                     <CampaignIcon sx={{ color: "#ff4d49", fontSize: "20px" }} />
-                                    <Typography variant="caption" fontWeight="900" sx={{ color: "#ff4d49", letterSpacing: "2px" }}>CRITICAL OPERATIONAL ALERT</Typography>
+                                    <Typography variant="caption" fontWeight="900" sx={{ color: "#ff4d49", letterSpacing: "2px" }}>OPERATIONAL NOTIFICATION</Typography>
                                 </Stack>
                                 
                                 {imagePreview && (
@@ -344,10 +344,10 @@ const SendNotificationDriver = () => {
                                 )}
                                 
                                 <Typography variant="h6" fontWeight="800" sx={{ mb: 1, color: "#fff" }}>
-                                    {formData.title || "Safety Update Manifest"}
+                                    {formData.title || "Notification Subject"}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", lineHeight: "1.6", fontSize: "14px", fontWeight: "500" }}>
-                                    {formData.message || "Operational instructions or dispatch node directives will appear here for the fleet..."}
+                                    {formData.message || "Enter notification message to see a preview of how it will appear on the driver app."}
                                 </Typography>
                             </Box>
                         </Fade>

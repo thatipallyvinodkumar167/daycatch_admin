@@ -58,7 +58,7 @@ const Taxes = () => {
       const results = response.data.results || response.data || [];
       const formattedTaxes = results.map((tax, index) => ({
         id: tax._id,
-        name: tax.name || tax["Tax Type name"] || tax["Tax Name"] || "Unnamed Fiscal Node",
+        name: tax.name || tax["Tax Type name"] || tax["Tax Name"] || "Unnamed Tax",
         rate: tax.rate || tax["Tax percentage"] || tax["Tax Rate"] || 0,
         status: tax.status || "Active",
       }));
@@ -130,9 +130,9 @@ const Taxes = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to terminate this fiscal tier?")) {
+    if (window.confirm("Are you sure you want to delete this tax?")) {
       try {
-        await genericApi.delete("tax", id);
+        await genericApi.remove("tax", id);
         fetchTaxes();
       } catch (error) {
         console.error("Error deleting tax:", error);
@@ -149,8 +149,8 @@ const Taxes = () => {
   }, [taxes, search]);
 
   const stats = useMemo(() => [
-    { label: "Fiscal Tiers", value: taxes.length, icon: <AccountBalanceIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
-    { label: "Audit Level", value: "Verified", icon: <CurrencyRupeeIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+    { label: "Total Taxes", value: taxes.length, icon: <AccountBalanceIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Status", value: "Verified", icon: <CurrencyRupeeIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
   ], [taxes]);
 
   return (
@@ -160,10 +160,10 @@ const Taxes = () => {
       <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
             <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                Fiscal Tier Management
+                Tax Management
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                Architect and audit fiscal percentage rates for products and administrative services.
+                Manage tax rates for products and services.
             </Typography>
         </Box>
         <Stack direction="row" spacing={3} alignItems="center">
@@ -192,7 +192,7 @@ const Taxes = () => {
                     "&:hover": { backgroundColor: "#3310cc" }
                 }}
             >
-                Add Tier
+                Add Tax
             </Button>
         </Stack>
       </Box>
@@ -204,11 +204,11 @@ const Taxes = () => {
           )}
           
           <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Fiscal Compliance Ledger</Typography>
+              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Tax List</Typography>
               <Stack direction="row" spacing={2} alignItems="center">
                   <TextField
                       size="small"
-                      placeholder="Search Fiscal Tier..."
+                      placeholder="Search Taxes..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       InputProps={{
@@ -216,7 +216,7 @@ const Taxes = () => {
                       }}
                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "#fff", width: "320px" } }}
                   />
-                  <Tooltip title="Synchronize Repository">
+                  <Tooltip title="Refresh">
                       <IconButton onClick={() => fetchTaxes(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
                           <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
                       </IconButton>
@@ -234,15 +234,15 @@ const Taxes = () => {
                   <TableHead>
                       <TableRow>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Fiscal Asset Label</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Percentage Protocol</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Compliance Status</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Fiscal Actions</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Tax Name</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Percentage (%)</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Status</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
                       </TableRow>
                   </TableHead>
                   <TableBody>
                       {filteredTaxes.length === 0 && !loading ? (
-                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>Zero fiscal tiers detected in current node.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "800" }}>No taxes found.</TableCell></TableRow>
                       ) : (
                           filteredTaxes.map((tax, index) => (
                               <TableRow key={tax.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
@@ -277,7 +277,7 @@ const Taxes = () => {
                                   </TableCell>
                                   <TableCell align="right" sx={{ pr: 3 }}>
                                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                      <Tooltip title="Modify Tier">
+                                      <Tooltip title="Edit Tax">
                                           <IconButton 
                                               onClick={() => handleOpen(tax)}
                                               sx={{ backgroundColor: "#00d26a", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(0, 210, 106, 0.2)", "&:hover": { backgroundColor: "#00b85c" } }}
@@ -285,7 +285,7 @@ const Taxes = () => {
                                               <EditIcon sx={{ fontSize: 18 }} />
                                           </IconButton>
                                       </Tooltip>
-                                      <Tooltip title="Terminate Tier">
+                                      <Tooltip title="Delete Tax">
                                           <IconButton 
                                               onClick={() => handleDelete(tax.id)}
                                               sx={{ backgroundColor: "#ff4d49", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(255, 77, 73, 0.2)", "&:hover": { backgroundColor: "#d32f2f" } }}
@@ -312,12 +312,12 @@ const Taxes = () => {
         }}
       >
         <DialogTitle sx={{ fontWeight: "800", color: "#1b2559", pt: 3, pb: 1, letterSpacing: "-1px" }}>
-            {editMode ? "Modify Fiscal Tier" : "Initialize Fiscal Tier"}
+            {editMode ? "Edit Tax" : "Add Tax"}
         </DialogTitle>
         <DialogContent>
             <Stack spacing={3} sx={{ mt: 2 }}>
                 <Box>
-                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Fiscal Asset Label</Typography>
+                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Tax Name</Typography>
                     <TextField
                         fullWidth
                         name="name"
@@ -328,7 +328,7 @@ const Taxes = () => {
                     />
                 </Box>
                 <Box>
-                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Percentage Rate (%)</Typography>
+                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Rate (%)</Typography>
                     <TextField
                         fullWidth
                         name="rate"
@@ -340,7 +340,7 @@ const Taxes = () => {
                     />
                 </Box>
                 <Box>
-                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Compliance Status</Typography>
+                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Status</Typography>
                     <FormControl fullWidth>
                         <Select
                             name="status"
@@ -348,8 +348,8 @@ const Taxes = () => {
                             onChange={handleInputChange}
                             sx={{ borderRadius: "16px", bgcolor: "#fafbfc", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e5f2" } }}
                         >
-                            <MenuItem value="Active">Active Compliance</MenuItem>
-                            <MenuItem value="Inactive">Dormant Fiscal</MenuItem>
+                            <MenuItem value="Active">Active</MenuItem>
+                            <MenuItem value="Inactive">Inactive</MenuItem>
                         </Select>
                     </FormControl>
                 </Box>
@@ -376,7 +376,7 @@ const Taxes = () => {
                     boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
                 }}
             >
-                {editMode ? "Confirm Modification" : "Deploy Fiscal Tier"}
+                {editMode ? "Save Changes" : "Add Tax"}
             </Button>
         </DialogActions>
       </Dialog>

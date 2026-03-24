@@ -49,8 +49,8 @@ const ItemRequirement = () => {
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item, index) => ({
         id: item._id || index + 1,
-        storeName: item["Store Name"] || item.storeName || "Unknown Partner Hub",
-        city: item["City"] || item.city || "Operational Area",
+        storeName: item["Store Name"] || item.storeName || "Unknown Store",
+        city: item["City"] || item.city || "City",
         mobile: item["Mobile"] || item.mobile || "N/A",
         email: item["Email"] || item.email || "N/A",
       }));
@@ -77,9 +77,44 @@ const ItemRequirement = () => {
   }, [requirements, search]);
 
   const stats = useMemo(() => [
-    { label: "Active Hubs", value: requirements.length, icon: <StorefrontIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
-    { label: "Audit Date", value: "Daily Sync", icon: <EventNoteIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+    { label: "Total Stores", value: requirements.length, icon: <StorefrontIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
+    { label: "Sync Type", value: "Daily Sync", icon: <EventNoteIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
   ], [requirements]);
+
+  const handleExport = () => {
+    if (filteredRequirements.length === 0) {
+      alert("No data available to export.");
+      return;
+    }
+
+    // CSV Header
+    const csvRows = [];
+    const headers = ["#", "Store Name", "City", "Mobile", "Email"];
+    csvRows.push(headers.join(","));
+
+    // CSV Data Rows
+    filteredRequirements.forEach((item, index) => {
+      const row = [
+        index + 1,
+        `"${(item.storeName || "").replace(/"/g, '""')}"`,
+        `"${(item.city || "").replace(/"/g, '""')}"`,
+        `"${(item.mobile || "").replace(/"/g, '""')}"`,
+        `"${(item.email || "").replace(/"/g, '""')}"`
+      ];
+      csvRows.push(row.join(","));
+    });
+
+    const csvData = csvRows.join("\n");
+    const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `Item_Requirements_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const renderListView = () => (
     <Fade in={true}>
@@ -88,10 +123,10 @@ const ItemRequirement = () => {
         <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Box>
               <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-                  Procurement Hub Matrix
+                  Item Requirements
               </Typography>
               <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                  Analyze and audit inventory requirements based on active order velocity across merchant nodes.
+                  View and manage item requirement reports based on store orders.
               </Typography>
           </Box>
           <Stack direction="row" spacing={3} alignItems="center">
@@ -108,6 +143,7 @@ const ItemRequirement = () => {
               <Button 
                   variant="contained" 
                   startIcon={<FileDownloadIcon />}
+                  onClick={handleExport}
                   sx={{ 
                       backgroundColor: "#4318ff", 
                       borderRadius: "14px",
@@ -131,11 +167,11 @@ const ItemRequirement = () => {
             )}
             
             <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc" }}>
-                <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Merchant Requirement Ledger</Typography>
+                <Typography variant="subtitle1" fontWeight="800" color="#1b2559">Store Requirements List</Typography>
                 <Stack direction="row" spacing={2} alignItems="center">
                     <TextField
                         size="small"
-                        placeholder="Search Partner Hub..."
+                        placeholder="Search Store..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         InputProps={{
@@ -149,7 +185,7 @@ const ItemRequirement = () => {
                             } 
                         }}
                     />
-                    <Tooltip title="Synchronize Data">
+                    <Tooltip title="Refresh">
                         <IconButton onClick={() => fetchRequirements(true)} disabled={refreshing} sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
                             <RefreshIcon sx={{ color: "#4318ff", fontSize: 20 }} className={refreshing ? "spin-animation" : ""} />
                         </IconButton>
@@ -167,16 +203,16 @@ const ItemRequirement = () => {
                     <TableHead>
                         <TableRow>
                             <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Partner Hub Identity</TableCell>
-                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Hub Location</TableCell>
-                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Contact Manifest</TableCell>
-                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Secure Email</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Analysis Protocols</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Store Name</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>City</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Mobile</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Email</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {filteredRequirements.length === 0 && !loading ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "600" }}>Zero hub requirements detected for current interval.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: "600" }}>No requirements found.</TableCell></TableRow>
                         ) : (
                             filteredRequirements.map((item, index) => (
                                 <TableRow key={item.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
@@ -198,7 +234,7 @@ const ItemRequirement = () => {
                                             onClick={() => navigate("/sales-report")}
                                             sx={{ color: "#4318ff", fontWeight: "800", textTransform: "none", py: 1, px: 2, borderRadius: "10px", "&:hover": { bgcolor: "rgba(67, 24, 255, 0.05)" } }}
                                         >
-                                            View Sales Matrix
+                                            View Report
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -221,16 +257,16 @@ const ItemRequirement = () => {
             </IconButton>
             <Box>
                 <Typography variant="h4" fontWeight="800" color="#1b2559" sx={{ letterSpacing: "-1px" }}>
-                    Manifest Log: {selectedDate}
+                    Requirement Report: {selectedDate}
                 </Typography>
-                <Typography variant="body2" color="#a3aed0" fontWeight="600">Inventory requirements for partner: {selectedStore?.storeName}</Typography>
+                <Typography variant="body2" color="#a3aed0" fontWeight="600">Item requirements for store: {selectedStore?.storeName}</Typography>
             </Box>
         </Stack>
 
         <Paper sx={{ p: 4, borderRadius: "28px", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", mb: 4, border: "1px solid #e0e5f2" }}>
             <Stack direction="row" spacing={3} alignItems="flex-end" sx={{ mb: 4 }}>
                 <Box>
-                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Analysis Interval</Typography>
+                    <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Date Select</Typography>
                     <TextField
                         type="date"
                         size="small"
@@ -246,8 +282,8 @@ const ItemRequirement = () => {
                     <TableHead sx={{ bgcolor: "#f4f7fe" }}>
                         <TableRow>
                             <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", py: 2 }}>#</TableCell>
-                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", py: 2 }}>Procurement Asset</TableCell>
-                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", py: 2 }}>Quantity Payload</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", py: 2 }}>Item Name</TableCell>
+                            <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", py: 2 }}>Quantity</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -257,7 +293,7 @@ const ItemRequirement = () => {
                                     <Box sx={{ opacity: 0.1, mb: 1 }}>
                                         <EventNoteIcon sx={{ fontSize: 60, color: "#4318ff" }} />
                                     </Box>
-                                    <Typography variant="subtitle1" fontWeight="800" color="#a3aed0">No manifest data found for this node.</Typography>
+                                    <Typography variant="subtitle1" fontWeight="800" color="#a3aed0">No requirements found for this store.</Typography>
                                 </TableCell>
                             </TableRow>
                         ) : (
