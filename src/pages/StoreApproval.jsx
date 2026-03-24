@@ -15,7 +15,6 @@ import {
   Avatar,
   IconButton,
   Tooltip,
-  Divider,
   LinearProgress,
   CircularProgress
 } from "@mui/material";
@@ -24,7 +23,6 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   Storefront as StorefrontIcon,
-  Search as SearchIcon,
   Refresh as RefreshIcon,
   Visibility as VisibilityIcon,
   VerifiedUser as VerifiedUserIcon
@@ -98,11 +96,6 @@ const StoreApproval = () => {
       store.ownerName.toLowerCase().includes(query)
     );
   }, [stores, search]);
-
-  const stats = useMemo(() => [
-    { label: "Pending Stores", value: stores.length, icon: <StorefrontIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
-    { label: "Verification Status", value: "Pending Verification", icon: <VerifiedUserIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
-  ], [stores]);
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>

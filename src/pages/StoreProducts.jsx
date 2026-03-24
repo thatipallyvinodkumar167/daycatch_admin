@@ -16,7 +16,6 @@ import {
   TextField,
   Tooltip,
   Typography,
-  Grid,
   Chip,
   LinearProgress
 } from "@mui/material";
@@ -78,17 +77,6 @@ const downloadCsv = (rows) => {
   window.URL.revokeObjectURL(url);
 };
 
-const getStatusColor = (status) => {
-  if (status === "Approved") {
-    return "#24d164";
-  }
-
-  if (status === "Rejected") {
-    return "#ff4d49";
-  }
-
-  return "#ffb800";
-};
 
 const StoreProducts = () => {
   const [storeProducts, setStoreProducts] = useState([]);

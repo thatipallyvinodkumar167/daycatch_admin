@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   Box, Typography, Paper, TextField, Button, Stack,
   Grid, Avatar, IconButton, Divider, MenuItem,
-  Select, FormControl, InputLabel, Tooltip, OutlinedInput,
+  Select, FormControl, Tooltip, OutlinedInput,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { genericApi } from "../api/genericApi";

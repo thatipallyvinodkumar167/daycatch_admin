@@ -17,7 +17,6 @@ import {
   Button,
 } from "@mui/material";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import PaidIcon from "@mui/icons-material/Paid";
 import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import HourglassTopIcon from "@mui/icons-material/HourglassTop";
 import StorefrontIcon from "@mui/icons-material/Storefront";

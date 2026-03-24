@@ -21,7 +21,6 @@ import {
   Collapse,
   LinearProgress,
   CircularProgress,
-  Divider,
   Grid,
 } from "@mui/material";
 import { 
@@ -35,11 +34,8 @@ import {
   DoneAll as DoneAllIcon,
   Warning as WarningIcon,
   Inventory as InventoryIcon,
-  Search as SearchIcon,
   TrendingUp as TrendingUpIcon,
-  Edit as EditIcon,
   Store as StoreIcon,
-  Visibility as VisibilityIcon,
   LocationOn as LocationOnIcon,
 } from "@mui/icons-material";
 import { getAllOrders } from "../api/ordersApi";

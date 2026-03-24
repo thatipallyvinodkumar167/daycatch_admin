@@ -10,7 +10,6 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Chip,
   Stack,
   Button,
   Avatar,
@@ -27,9 +26,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import ReplayIcon from "@mui/icons-material/Replay";
-import EditIcon from "@mui/icons-material/Edit";
 import { genericApi } from "../api/genericApi";
 import OrderDetailsDialog from "../components/OrderDetailsDialog";
 
