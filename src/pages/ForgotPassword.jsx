@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { Email, CheckCircle } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../api/api';
 import logo from '../assets/logo.png';
 
 const ForgotPassword = () => {
@@ -31,7 +31,7 @@ const ForgotPassword = () => {
     setErrorMsg('');
 
     try {
-      await axios.post('http://localhost:5001/api/v1/auth/forgot-password', { email });
+      await api.post('/auth/forgot-password', { email });
       setSuccess(true);
     } catch (error) {
       console.error('Forgot password error:', error);

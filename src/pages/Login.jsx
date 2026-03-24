@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff, Email, Lock } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../api/api';
 import logo from '../assets/logo.png';
 
 const LoginPage = () => {
@@ -28,7 +28,7 @@ const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5001/api/v1/auth/login', {
+      const response = await api.post('/auth/login', {
         email,
         password
       });

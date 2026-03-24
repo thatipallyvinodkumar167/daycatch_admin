@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Visibility, VisibilityOff, Lock, CheckCircle } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../api/api';
 import logo from '../assets/logo.png';
 
 const ResetPassword = () => {
@@ -45,7 +45,7 @@ const ResetPassword = () => {
     }
 
     try {
-      await axios.patch(`http://localhost:5001/api/v1/auth/reset-password/${token}`, { password });
+      await api.patch(`/auth/reset-password/${token}`, { password });
       setSuccess(true);
     } catch (error) {
       console.error('Reset password error:', error);

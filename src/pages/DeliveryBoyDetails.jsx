@@ -28,6 +28,7 @@ import {
   normalizeDeliveryBoyIdType,
   normalizeDeliveryBoyStatus,
 } from "../utils/deliveryBoyUtils";
+import { API_ROOT_URL } from "../api/api";
 
 const DeliveryBoyDetails = () => {
   const { id } = useParams();
@@ -325,7 +326,7 @@ const DeliveryBoyDetails = () => {
                     >
                         {boy.idImage ? (
                              <img 
-                                src={boy.idImage.startsWith("http") || boy.idImage.startsWith("data:") ? boy.idImage : `http://localhost:5001/uploads/${boy.idImage}`} 
+                                src={boy.idImage.startsWith("http") || boy.idImage.startsWith("data:") ? boy.idImage : `${API_ROOT_URL}/uploads/${boy.idImage}`} 
                                 alt="ID Document" 
                                 style={{ width: "100%", height: "100%", objectFit: "cover" }} 
                                 onError={(e) => { 

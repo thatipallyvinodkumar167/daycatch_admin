@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { Person, Email, Lock } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../api/api';
 import logo from '../assets/logo.png';
 
 const RegisterPage = () => {
@@ -36,7 +36,7 @@ const RegisterPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post('http://localhost:5001/api/v1/auth/register', formData);
+      await api.post('/auth/register', formData);
       alert('Registration successful! Please login.');
       navigate('/login');
     } catch (error) {

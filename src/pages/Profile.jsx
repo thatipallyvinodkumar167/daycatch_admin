@@ -31,9 +31,7 @@ import {
   VpnKey as VpnKeyIcon,
   Logout as LogoutIcon
 } from "@mui/icons-material";
-import axios from "axios";
-
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5001/api/v1";
+import api from "../api/api";
 
 const SectionTitle = ({ children, subtitle }) => (
   <Box sx={{ mb: 2 }}>
@@ -84,7 +82,7 @@ const ProfilePage = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.patch(`${API_BASE}/auth/update-profile`, { 
+      await api.patch("/auth/update-profile", { 
         Name: editForm.name.trim(), 
         Email: editForm.email.trim() 
       }, { headers: { Authorization: `Bearer ${token}` } });
@@ -117,7 +115,7 @@ const ProfilePage = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.patch(`${API_BASE}/auth/change-password`, { oldPassword: pwForm.oldPassword, newPassword: pwForm.newPassword }, { headers: { Authorization: `Bearer ${token}` } });
+      await api.patch("/auth/change-password", { oldPassword: pwForm.oldPassword, newPassword: pwForm.newPassword }, { headers: { Authorization: `Bearer ${token}` } });
       showSnack("Security protocol updated!");
       setPwForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
       setChangingPassword(false);
