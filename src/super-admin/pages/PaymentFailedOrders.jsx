@@ -259,7 +259,7 @@ const PaymentFailedOrders = () => {
                                 </IconButton>
                             </Tooltip>
                             <Tooltip title="Edit History">
-                                <IconButton 
+                                <IconButton className="action-edit" 
                                   size="small" 
                                   onClick={() => handleOpenDetails(order)}
                                   sx={{ 
@@ -343,5 +343,6 @@ const PaymentFailedOrders = () => {
 };
 
 export default PaymentFailedOrders;
+
 
 

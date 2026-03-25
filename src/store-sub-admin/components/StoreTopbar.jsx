@@ -32,10 +32,8 @@ function StoreTopbar({ onToggleSidebar, store }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const session = getAuthSession();
 
-  const fallbackName = localStorage.getItem("user_name") || "Administrator";
-  const fallbackEmail = localStorage.getItem("user_email") || "admin@daycatch.in";
-  const userName = store?.owner || store?.name || fallbackName;
-  const userEmail = store?.email || fallbackEmail;
+  const userName = store?.owner || store?.name || "Store Panel";
+  const userEmail = store?.email || "No email available";
   const userRole = session.role || "Store / Sub-Admin";
   const initials = userName.substring(0, 2).toUpperCase() || "DC";
 

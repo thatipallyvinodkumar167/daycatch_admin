@@ -228,7 +228,7 @@ const MembershipPlain = () => {
                                   <TableCell align="right" sx={{ pr: 3 }}>
                                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                                       <Tooltip title="Edit Plan">
-                                          <IconButton 
+                                          <IconButton className="action-edit" 
                                               onClick={() => navigate(`/membership-plain/edit/${plan.id}`)}
                                               sx={{ backgroundColor: "#00d26a", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(0, 210, 106, 0.2)", "&:hover": { backgroundColor: "#00b85c" } }}
                                           >
@@ -236,7 +236,7 @@ const MembershipPlain = () => {
                                           </IconButton>
                                       </Tooltip>
                                       <Tooltip title="Delete Plan">
-                                          <IconButton 
+                                          <IconButton className="action-delete" 
                                               onClick={() => handleDelete(plan.id)}
                                               sx={{ backgroundColor: "#ff4d49", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(255, 77, 73, 0.2)", "&:hover": { backgroundColor: "#d32f2f" } }}
                                           >
@@ -268,4 +268,5 @@ const MembershipPlain = () => {
 };
 
 export default MembershipPlain;
+
 

@@ -344,7 +344,7 @@ const StoresList = () => {
                       <TableCell align="right" sx={{ pr: 3 }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
                             <Tooltip title="Edit Store">
-                                <IconButton
+                                <IconButton className="action-edit"
                                     size="small"
                                     onClick={() => navigate(`/stores/edit/${item.id}`)}
                                     sx={{
@@ -378,7 +378,7 @@ const StoresList = () => {
                                 </IconButton>
                             </Tooltip>
                             <Tooltip title="Delete Store">
-                                <IconButton
+                                <IconButton className="action-delete"
                                     size="small"
                                     onClick={() => handleDelete(item.id, item.name)}
                                     sx={{
@@ -473,5 +473,6 @@ const Grid = ({ children, container, item, xs, md, spacing }) => {
 }
 
 export default StoresList;
+
 
 

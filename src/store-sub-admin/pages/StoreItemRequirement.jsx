@@ -13,11 +13,7 @@ import {
   useTheme,
   alpha,
   Paper,
-  IconButton
 } from "@mui/material";
-import {
-  ArrowBack as ArrowBackIcon,
-} from "@mui/icons-material";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
 
@@ -34,12 +30,12 @@ function StoreItemRequirement() {
   const [tableData, setTableData] = useState([]);
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
           <Box>
-            <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1px" }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
               Item Requirement
             </Typography>
             <Typography variant="body2" fontWeight="700" color="#a3aed0">
@@ -71,8 +67,8 @@ function StoreItemRequirement() {
                     fontWeight: 700,
                     color: "#1b2559",
                     "& fieldset": { borderColor: "rgba(224,229,242,0.8)" },
-                    "&:hover fieldset": { borderColor: "#4318ff" },
-                    "&.Mui-focused fieldset": { borderColor: "#4318ff", borderWidth: "2px" },
+                    "&:hover fieldset": { borderColor: "#E53935" },
+                    "&.Mui-focused fieldset": { borderColor: "#E53935", borderWidth: "2px" },
                   }
                 }}
               />
@@ -83,9 +79,9 @@ function StoreItemRequirement() {
             <Table>
               <TableHead sx={{ bgcolor: "#f8f9fc" }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2", width: "80px", py: 2 }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2", py: 2 }}>Product Name</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2", py: 2, textAlign: "right" }}>Stock</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", width: "80px", py: 2 }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", py: 2 }}>Product Name</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", py: 2, textAlign: "right" }}>Stock</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -97,10 +93,10 @@ function StoreItemRequirement() {
                   </TableRow>
                 ) : (
                   tableData.map((row, index) => (
-                    <TableRow key={index} hover sx={{ "&:last-child td, &:last-child th": { border: 0 }, transition: "0.2s", "&:hover": { bgcolor: alpha("#4318ff", 0.03) } }}>
+                    <TableRow key={index} hover sx={{ "&:last-child td, &:last-child th": { border: 0 }, transition: "0.2s", "&:hover": { bgcolor: alpha("#E53935", 0.03) } }}>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559", py: 2.5 }}>{index + 1}</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559", py: 2.5 }}>{row.productName}</TableCell>
-                      <TableCell sx={{ fontWeight: 900, color: "#4318ff", py: 2.5, textAlign: "right" }}>{row.stock}</TableCell>
+                      <TableCell sx={{ fontWeight: 900, color: "#E53935", py: 2.5, textAlign: "right" }}>{row.stock}</TableCell>
                     </TableRow>
                   ))
                 )}

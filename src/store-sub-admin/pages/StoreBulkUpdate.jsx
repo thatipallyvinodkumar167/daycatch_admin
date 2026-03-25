@@ -1,27 +1,28 @@
-import React, { useState } from "react";
+import React from "react";
 import {
+  alpha,
   Box,
+  Button,
   Typography,
   Paper,
   Stack,
-  Button,
   Grid,
-  IconButton,
-  alpha,
-  Divider,
   List,
   ListItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
 } from "@mui/material";
 import {
+  CheckCircle as CheckCircleIcon,
   CloudUpload as UploadIcon,
+  Description as FileIcon,
   Download as DownloadIcon,
   InfoOutlined as InfoIcon,
-  CheckCircle as CheckCircleIcon,
-  Description as FileIcon
+  PriceCheck as PriceIcon,
+  Inventory2 as StockIcon,
+  ShoppingCartOutlined as OrderIcon
 } from "@mui/icons-material";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 
 const StoreBulkUpdate = () => {
   const { store } = useOutletContext();
@@ -30,15 +31,15 @@ const StoreBulkUpdate = () => {
     <Paper sx={{ p: 4, borderRadius: "32px", border: "1px solid #e0e5f2", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", height: "100%" }}>
       <Stack spacing={3}>
         <Stack direction="row" spacing={2} alignItems="center">
-          <Box sx={{ p: 1.5, borderRadius: "12px", bgcolor: alpha("#4318ff", 0.05) }}>
-             <FileIcon sx={{ color: "#4318ff" }} />
+          <Box sx={{ p: 1.5, borderRadius: "12px", bgcolor: alpha("#E53935", 0.05) }}>
+             <FileIcon sx={{ color: "#E53935" }} />
           </Box>
           <Typography variant="h5" fontWeight="900" color="#1b2559">{title}</Typography>
         </Stack>
 
         <Box sx={{ bgcolor: "#fafbfc", p: 3, borderRadius: "20px", border: "1px solid #f0f4f8" }}>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-            <InfoIcon sx={{ color: "#4318ff", fontSize: 20 }} />
+            <InfoIcon sx={{ color: "#E53935", fontSize: 20 }} />
             <Typography variant="subtitle2" fontWeight="800" color="#1b2559">Instructions</Typography>
           </Stack>
           <List dense sx={{ py: 0 }}>
@@ -62,7 +63,7 @@ const StoreBulkUpdate = () => {
           <Button
             size="small"
             startIcon={<DownloadIcon />}
-            sx={{ mt: 2, color: "#4318ff", fontWeight: 800, textTransform: "none", py: 0 }}
+            sx={{ mt: 2, color: "#E53935", fontWeight: 800, textTransform: "none", py: 0 }}
           >
             Download Sample File
           </Button>
@@ -77,7 +78,7 @@ const StoreBulkUpdate = () => {
                p: 4, 
                textAlign: "center",
                cursor: "pointer",
-               "&:hover": { borderColor: "#4318ff", bgcolor: alpha("#4318ff", 0.02) }
+               "&:hover": { borderColor: "#E53935", bgcolor: alpha("#E53935", 0.02) }
              }}
            >
               <UploadIcon sx={{ color: "#d1d9e2", fontSize: 32, mb: 1 }} />
@@ -89,7 +90,7 @@ const StoreBulkUpdate = () => {
         <Button 
           fullWidth 
           variant="contained" 
-          sx={{ py: 1.8, borderRadius: "16px", bgcolor: "#4318ff", fontWeight: 900, fontSize: "15px", boxShadow: "0 10px 25px rgba(67,24,255,0.15)" }}
+          sx={{ py: 1.8, borderRadius: "16px", bgcolor: "#E53935", fontWeight: 900, fontSize: "15px", boxShadow: "0 10px 25px rgba(229, 57, 53,0.15)" }}
         >
           Proceed Bulk Update
         </Button>
@@ -98,8 +99,8 @@ const StoreBulkUpdate = () => {
   );
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
         <Stack spacing={1} sx={{ mb: 5 }}>
           <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>

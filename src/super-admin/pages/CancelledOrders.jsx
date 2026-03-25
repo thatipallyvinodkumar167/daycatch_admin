@@ -304,7 +304,7 @@ const CancelledOrders = () => {
                                     </IconButton>
                                 </Tooltip>
                                 <Tooltip title="Edit Case">
-                                    <IconButton 
+                                    <IconButton className="action-edit" 
                                       size="small" 
                                       onClick={() => navigate(buildOrderDetailsPath(order.id))}
                                       sx={{ 
@@ -389,5 +389,6 @@ const CancelledOrders = () => {
 };
 
 export default CancelledOrders;
+
 
 

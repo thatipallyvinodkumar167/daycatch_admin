@@ -13,7 +13,6 @@ import {
   IconButton,
   Snackbar,
   Alert,
-  Fade,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -23,6 +22,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
+import { storeWorkspaceApi } from "../../api/storeWorkspaceApi";
 
 const StoreAddProductBanner = () => {
   const { store } = useOutletContext();
@@ -43,19 +43,23 @@ const StoreAddProductBanner = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await genericApi.getAll("products");
-        setProducts(response.data || [
-          { id: 1, name: "Tiger Prawns Large" },
-          { id: 2, name: "Rohu Fish Cut" },
-          { id: 3, name: "Sea Crabs" },
-          { id: 4, name: "Chicken Breast Boneless" }
-        ]);
+        const response = await storeWorkspaceApi.getCatalogProducts(store.id);
+        const rows = response?.data?.data || [];
+        setProducts(
+          rows.map((product) => ({
+            id: product.id,
+            name: product.productName || "Unnamed Product"
+          }))
+        );
       } catch (err) {
         console.error("Products Error:", err);
+        setProducts([]);
       }
     };
-    fetchProducts();
-  }, []);
+    if (store?.id) {
+      fetchProducts();
+    }
+  }, [store?.id]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -108,11 +112,11 @@ const StoreAddProductBanner = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       <Box sx={{ maxWidth: "1000px", mx: "auto" }}>
         
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <IconButton onClick={() => navigate(-1)} sx={{ bgcolor: "#fff", color: "#4318ff", boxShadow: "0 6px 18px rgba(15,23,42,0.06)", "&:hover": { bgcolor: "#f4f7fe" } }}>
+          <IconButton onClick={() => navigate(-1)} sx={{ bgcolor: "#fff", color: "#E53935", boxShadow: "0 6px 18px rgba(15,23,42,0.06)", "&:hover": { bgcolor: "#f4f7fe" } }}>
              <ArrowBackIcon fontSize="small" />
           </IconButton>
           <Box>
@@ -170,7 +174,7 @@ const StoreAddProductBanner = () => {
                         textAlign: "center",
                         bgcolor: "#fafbfc",
                         cursor: "pointer",
-                        "&:hover": { borderColor: "#4318ff", bgcolor: "rgba(67, 24, 255, 0.02)" },
+                        "&:hover": { borderColor: "#E53935", bgcolor: "rgba(229, 57, 53, 0.02)" },
                         transition: "0.2s"
                       }}
                       onClick={() => fileInputRef.current?.click()}
@@ -201,12 +205,12 @@ const StoreAddProductBanner = () => {
                     sx={{
                       py: 2.2,
                       borderRadius: "20px",
-                      bgcolor: "#4318ff",
+                      bgcolor: "#E53935",
                       fontWeight: 900,
                       textTransform: "none",
                       fontSize: "17px",
-                      boxShadow: "0 14px 28px rgba(67,24,255,0.22)",
-                      "&:hover": { bgcolor: "#3310cc" }
+                      boxShadow: "0 14px 28px rgba(229, 57, 53,0.22)",
+                      "&:hover": { bgcolor: "#d32f2f" }
                     }}
                   >
                     {isSubmitting ? "Saving Banner..." : "Save Secondary Banner"}

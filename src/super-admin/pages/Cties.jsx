@@ -290,7 +290,7 @@ const Cities = () => {
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <Tooltip title="Edit City">
-                          <IconButton
+                          <IconButton className="action-edit"
                             size="small"
                             onClick={() => handleOpenEdit(city)}
                             sx={{ backgroundColor: "#f4f7fe", color: "#4318ff", borderRadius: "10px", "&:hover": { backgroundColor: "#e0e5f2" }, p: 1 }}
@@ -299,7 +299,7 @@ const Cities = () => {
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Delete City">
-                          <IconButton
+                          <IconButton className="action-delete"
                             size="small"
                             onClick={() => handleDelete(city)}
                             sx={{ backgroundColor: "#fff5f5", color: "#ff4d49", borderRadius: "10px", "&:hover": { backgroundColor: "#ffebeb" }, p: 1 }}
@@ -390,5 +390,6 @@ const Cities = () => {
 };
 
 export default Cities;
+
 
 

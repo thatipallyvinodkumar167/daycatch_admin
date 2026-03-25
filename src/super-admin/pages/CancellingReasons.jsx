@@ -172,7 +172,7 @@ const CancellingReasons = () => {
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <Tooltip title="Edit Reason">
-                            <IconButton 
+                            <IconButton className="action-edit" 
                                 onClick={() => navigate(`/cancelling-reasons/edit/${item.id}`)}
                                 sx={{ 
                                     backgroundColor: "#f4f7fe", 
@@ -186,7 +186,7 @@ const CancellingReasons = () => {
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Delete Reason">
-                            <IconButton 
+                            <IconButton className="action-delete" 
                                 onClick={() => handleDelete(item.id)}
                                 sx={{ 
                                     backgroundColor: "#fff5f5", 
@@ -213,5 +213,6 @@ const CancellingReasons = () => {
 };
 
 export default CancellingReasons;
+
 
 

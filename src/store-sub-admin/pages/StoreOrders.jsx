@@ -64,7 +64,7 @@ const StoreOrders = ({ viewType, title }) => {
     const s = String(status).toLowerCase();
     let config = { label: status, color: "#707eae", bg: alpha("#707eae", 0.1), icon: <PendingIcon sx={{ fontSize: 16 }} /> };
     
-    if (s.includes("pending")) config = { label: "Pending", color: "#4318ff", bg: alpha("#4318ff", 0.08), icon: <PendingIcon sx={{ fontSize: 16 }} /> };
+    if (s.includes("pending")) config = { label: "Pending", color: "#E53935", bg: alpha("#E53935", 0.08), icon: <PendingIcon sx={{ fontSize: 16 }} /> };
     if (s.includes("confirm")) config = { label: "Confirmed", color: "#01b574", bg: alpha("#01b574", 0.08), icon: <CheckCircleIcon sx={{ fontSize: 16 }} /> };
     if (s.includes("delivery") || s.includes("out")) config = { label: "Out For Delivery", color: "#ffb547", bg: alpha("#ffb547", 0.1), icon: <ShippingIcon sx={{ fontSize: 16 }} /> };
     if (s.includes("cancel") || s.includes("fail")) config = { label: "Cancelled", color: "#ee5d50", bg: alpha("#ee5d50", 0.08), icon: <CancelIcon sx={{ fontSize: 16 }} /> };
@@ -118,41 +118,48 @@ const StoreOrders = ({ viewType, title }) => {
      return [...common, { id: "actions", label: "Details", align: "right" }];
   };
 
+  const orderPanelSx = {
+    borderRadius: "24px",
+    border: "1px solid #e0e5f2",
+    bgcolor: "#fff",
+    boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
+  };
+
   const columns = getTableColumns();
 
-  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress sx={{ color: "#4318ff" }} /></Box>;
+  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}><CircularProgress sx={{ color: "#E53935" }} /></Box>;
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
+        <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Box>
-            <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
-              {title || "Orders Management"}
+            <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
+               {title || "Orders Management"}
             </Typography>
-            <Typography variant="body2" color="#a3aed0" fontWeight="600">
-               Manage orders for {store.name} storefront.
+            <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>
+               Review and manage fulfillment threads for {store.name}.
             </Typography>
           </Box>
           <Stack direction="row" spacing={2}>
              <Button
                variant="outlined"
                startIcon={<FilterIcon />}
-               sx={{ borderRadius: "14px", fontWeight: 800, textTransform: "none", border: "1px solid #e0e5f2", color: "#1b2559" }}
+               sx={{ borderRadius: "14px", fontWeight: 800, textTransform: "none", border: "1px solid #e0e5f2", color: "#1b2559", bgcolor: "#fff" }}
              >
                Filter
              </Button>
              <Button
                variant="contained"
-               sx={{ borderRadius: "14px", bgcolor: "#4318ff", fontWeight: 800, textTransform: "none", px: 3, boxShadow: "0 10px 20px rgba(67,24,255,0.2)" }}
+               sx={{ borderRadius: "14px", bgcolor: "#E53935", fontWeight: 900, textTransform: "none", px: 4, fontSize: "15px", boxShadow: "0 10px 20px rgba(229, 57, 53, 0.2)", "&:hover": { bgcolor: "#d32f2f" } }}
              >
                Export Results
              </Button>
           </Stack>
-        </Stack>
+        </Box>
 
-        <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
+        <Paper sx={{ p: 4, ...orderPanelSx }}>
           
           <Stack direction="row" justifyContent="flex-end" sx={{ mb: 4 }}>
             <TextField
@@ -172,7 +179,7 @@ const StoreOrders = ({ viewType, title }) => {
               <TableHead sx={{ bgcolor: "#fafbfc" }}>
                 <TableRow>
                   {columns.map((col) => (
-                    <TableCell key={col.id} sx={{ fontWeight: 900, color: "#a3aed0", textAlign: col.align || "left" }}>
+                    <TableCell key={col.id} sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", textAlign: col.align || "left" }}>
                       {col.label}
                     </TableCell>
                   ))}
@@ -183,13 +190,13 @@ const StoreOrders = ({ viewType, title }) => {
                   <TableRow>
                     <TableCell colSpan={columns.length} align="center" sx={{ py: 12 }}>
                       <Stack alignItems="center" spacing={2.5}>
-                        <Box sx={{ p: 3, borderRadius: "50%", bgcolor: alpha("#4318ff", 0.05) }}>
-                          <ShippingIcon sx={{ color: "#4318ff", fontSize: 56, opacity: 0.5 }} />
+                        <Box sx={{ p: 3, borderRadius: "50%", bgcolor: alpha("#E53935", 0.05) }}>
+                          <ShippingIcon sx={{ color: "#E53935", fontSize: 56, opacity: 0.5 }} />
                         </Box>
                         <Box>
-                           <Typography variant="h5" color="#1b2559" fontWeight="900" gutterBottom>No data found</Typography>
-                           <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                             There are currently no {title.toLowerCase()} list to display.
+                           <Typography variant="h5" color="#1b2559" fontWeight="900" gutterBottom>No operational data found</Typography>
+                           <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>
+                             There are currently no active {title?.toLowerCase()} list to display.
                            </Typography>
                         </Box>
                       </Stack>

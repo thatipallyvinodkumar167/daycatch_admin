@@ -278,7 +278,7 @@ const Taxes = () => {
                                   <TableCell align="right" sx={{ pr: 3 }}>
                                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                                       <Tooltip title="Edit Tax">
-                                          <IconButton 
+                                          <IconButton className="action-edit" 
                                               onClick={() => handleOpen(tax)}
                                               sx={{ backgroundColor: "#00d26a", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(0, 210, 106, 0.2)", "&:hover": { backgroundColor: "#00b85c" } }}
                                           >
@@ -286,7 +286,7 @@ const Taxes = () => {
                                           </IconButton>
                                       </Tooltip>
                                       <Tooltip title="Delete Tax">
-                                          <IconButton 
+                                          <IconButton className="action-delete" 
                                               onClick={() => handleDelete(tax.id)}
                                               sx={{ backgroundColor: "#ff4d49", color: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 10px rgba(255, 77, 73, 0.2)", "&:hover": { backgroundColor: "#d32f2f" } }}
                                           >
@@ -397,4 +397,5 @@ const Taxes = () => {
 };
 
 export default Taxes;
+
 

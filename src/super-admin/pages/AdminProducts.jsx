@@ -253,7 +253,7 @@ const AdminProducts = () => {
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <Tooltip title="Edit Product">
-                            <IconButton 
+                            <IconButton className="action-edit" 
                                 onClick={() => navigate(`/products/edit/${item.id}`)}
                                 sx={{ backgroundColor: "#f4f7fe", color: "#4318ff", borderRadius: "12px", "&:hover": { backgroundColor: "#e0e5f2" }, p: 1 }}
                             >
@@ -261,7 +261,7 @@ const AdminProducts = () => {
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Delete Product">
-                            <IconButton 
+                            <IconButton className="action-delete" 
                                 onClick={() => handleDelete(item.id)}
                                 sx={{ backgroundColor: "#fff5f5", color: "#ff4d49", borderRadius: "12px", "&:hover": { backgroundColor: "#ffebeb" }, p: 1 }}
                             >
@@ -282,5 +282,6 @@ const AdminProducts = () => {
 };
 
 export default AdminProducts;
+
 
 

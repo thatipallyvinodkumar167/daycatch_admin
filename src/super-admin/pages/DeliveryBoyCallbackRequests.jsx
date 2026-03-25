@@ -194,7 +194,7 @@ const DeliveryBoyCallbackRequests = () => {
                     </TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <IconButton 
+                        <IconButton className="action-edit" 
                             onClick={() => navigate(`/delivery-boy-callback-request/edit/${item.id}`)}
                             sx={{ 
                                 backgroundColor: "#f4f7fe", 
@@ -235,5 +235,6 @@ const DeliveryBoyCallbackRequests = () => {
 };
 
 export default DeliveryBoyCallbackRequests;
+
 
 

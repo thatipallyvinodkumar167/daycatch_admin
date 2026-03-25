@@ -59,6 +59,13 @@ const StoreDealProducts = () => {
     }
   }, [store?.id]);
 
+  const orderPanelSx = {
+    borderRadius: "24px",
+    border: "1px solid #e0e5f2",
+    bgcolor: "#fff",
+    boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
+  };
+
   const handleDelete = async (deal) => {
     setDeletingId(deal.id);
     try {
@@ -108,28 +115,29 @@ const StoreDealProducts = () => {
         label="Scheduled"
         size="small"
         icon={<ScheduleIcon sx={{ fontSize: "14px !important" }} />}
-        sx={{ bgcolor: alpha("#4318ff", 0.1), color: "#4318ff", fontWeight: 800, borderRadius: "10px" }}
+        sx={{ bgcolor: alpha("#1b2559", 0.1), color: "#1b2559", fontWeight: 800, borderRadius: "10px" }}
       />
     );
   };
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-        <CircularProgress sx={{ color: "#4318ff" }} />
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+        <CircularProgress sx={{ color: "#E53935" }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
+        
+        <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Box>
-            <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
               Deal Products
             </Typography>
-            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+            <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>
               Manage limited-time offers and discounts for {store.name}.
             </Typography>
           </Box>
@@ -137,22 +145,22 @@ const StoreDealProducts = () => {
             variant="contained"
             onClick={() => navigate("add")}
             sx={{
-              borderRadius: "18px",
+              borderRadius: "12px",
               py: 1.5,
               px: 4,
-              bgcolor: "#4318ff",
-              boxShadow: "0 10px 25px rgba(67,24,255,0.25)",
+              bgcolor: "#1b2559",
+              boxShadow: "0 10px 20px rgba(27, 37, 89, 0.2)",
               textTransform: "none",
               fontWeight: 800,
               fontSize: "15px",
-              "&:hover": { bgcolor: "#3310cc" },
+              "&:hover": { bgcolor: "#111c44" },
             }}
           >
             + Create Deal
           </Button>
-        </Stack>
+        </Box>
 
-        <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
+        <Paper sx={{ p: 4, ...orderPanelSx }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
             <Typography variant="h4" fontWeight="800" color="#1b2559">
               Deals Overview
@@ -205,14 +213,14 @@ const StoreDealProducts = () => {
                   </TableRow>
                 ) : (
                   filteredDeals.map((row, index) => (
-                    <TableRow key={row.id} hover sx={{ transition: "0.2s" }}>
-                      <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{index + 1}</TableCell>
+                    <TableRow key={row.id} hover sx={{ transition: "0.2s", "&:hover": { bgcolor: alpha("#1b2559", 0.02) } }}>
+                      <TableCell sx={{ fontWeight: 800, color: "#a3aed0" }}>{index + 1}</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{row.productName}</TableCell>
-                      <TableCell sx={{ fontWeight: 900, color: "#4318ff" }}>Rs. {row.dealPrice}</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#707eae", fontSize: "13px" }}>
+                      <TableCell sx={{ fontWeight: 900, color: "#1b2559" }}>Rs. {row.dealPrice}</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#a3aed0", fontSize: "13px" }}>
                         {row.fromDate ? new Date(row.fromDate).toLocaleString() : "N/A"}
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#707eae", fontSize: "13px" }}>
+                      <TableCell sx={{ fontWeight: 700, color: "#a3aed0", fontSize: "13px" }}>
                         {row.toDate ? new Date(row.toDate).toLocaleString() : "N/A"}
                       </TableCell>
                       <TableCell>
@@ -221,17 +229,19 @@ const StoreDealProducts = () => {
                       <TableCell sx={{ textAlign: "right" }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
                           <IconButton
+                            className="action-edit"
                             size="small"
-                            sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.1), borderRadius: "10px" }}
+                            sx={{ color: "#1b2559", bgcolor: alpha("#1b2559", 0.05), borderRadius: "10px" }}
                             onClick={() => navigate("add", { state: { deal: row } })}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
                           <IconButton
+                            className="action-delete"
                             size="small"
                             onClick={() => handleDelete(row)}
                             disabled={deletingId === row.id}
-                            sx={{ color: "#f44336", bgcolor: alpha("#f44336", 0.1), borderRadius: "10px" }}
+                            sx={{ color: "#E53935", bgcolor: alpha("#E53935", 0.05), borderRadius: "10px" }}
                           >
                             {deletingId === row.id ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon fontSize="small" />}
                           </IconButton>

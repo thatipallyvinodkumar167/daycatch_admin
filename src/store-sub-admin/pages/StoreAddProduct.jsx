@@ -8,23 +8,16 @@ import {
   Button,
   Grid,
   MenuItem,
-  FormControl,
   Select,
   IconButton,
   Snackbar,
   Alert,
-  Fade,
-  InputAdornment,
-  Chip,
-  alpha
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
+  AddPhotoAlternateOutlined as AddPhotoIcon,
   PhotoCamera as PhotoCameraIcon,
   Close as CloseIcon,
-  Inventory2Outlined as InventoryIcon,
-  LocalOffer as LocalOfferIcon,
-  AddPhotoAlternateOutlined as AddPhotoIcon
 } from "@mui/icons-material";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
@@ -41,6 +34,7 @@ const StoreAddProduct = () => {
   const [mainPreview, setMainPreview] = useState(null);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
 
   const [formData, setFormData] = useState({
     category: "",
@@ -55,22 +49,51 @@ const StoreAddProduct = () => {
     description: ""
   });
 
+  const orderPanelSx = {
+    borderRadius: "24px",
+    border: "1px solid #e0e5f2",
+    bgcolor: "#fff",
+    boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
+  };
+
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchLookupData = async () => {
       try {
-        const response = await genericApi.getAll("categories");
-        setCategories(response.data || [
-          { id: 1, name: "Sea Food" },
-          { id: 2, name: "Meat" },
-          { id: 3, name: "Vegetables" }
+        const [categoryResponse, subcategoryResponse] = await Promise.all([
+          genericApi.getAll("parentcategories"),
+          genericApi.getAll("subcategories")
         ]);
-      } catch (err) { console.error(err); }
+
+        setCategories(
+          (categoryResponse?.data?.results || []).map((category) => ({
+            id: String(category._id ?? category.id ?? ""),
+            name: category.Title || category.Category || "Untitled Category"
+          }))
+        );
+
+        setSubcategories(
+          (subcategoryResponse?.data?.results || []).map((subcategory) => ({
+            id: String(subcategory._id ?? subcategory.id ?? ""),
+            name: subcategory.Title || "Untitled Subcategory",
+            parentCategory: subcategory["Parent Category"] || ""
+          }))
+        );
+      } catch (err) {
+        console.error(err);
+        setCategories([]);
+        setSubcategories([]);
+      }
     };
-    fetchCategories();
+    fetchLookupData();
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((current) => ({
+      ...current,
+      [name]: value,
+      ...(name === "category" ? { type: "" } : {})
+    }));
   };
 
   const handleMainImageChange = (e) => {
@@ -117,10 +140,24 @@ const StoreAddProduct = () => {
 
     setIsSubmitting(true);
     try {
-      await genericApi.create("products", {
-        ...formData,
+      await genericApi.create("storeProducts", {
         storeId: store.id,
-        mainImage: mainImage.name,
+        "Product Id": formData.eanCode || `STORE-${Date.now()}`,
+        "Product Name": formData.name,
+        Category: formData.category,
+        Type: formData.type,
+        Price: Number(formData.price) || 0,
+        MRP: Number(formData.mrp) || 0,
+        stock: Number(formData.quantity) || 0,
+        "Order Quantity": 1,
+        Store: store.name,
+        Image: mainImage?.name || "",
+        status: "Pending",
+        submittedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        Unit: formData.unit,
+        Tags: formData.tags,
+        description: formData.description,
         galleryCount: galleryPreviews.length
       });
       setSnackbar({ open: true, message: "Product added successfully!", severity: "success" });
@@ -133,29 +170,35 @@ const StoreAddProduct = () => {
     }
   };
 
+  const availableTypes = subcategories.filter(
+    (subcategory) => !formData.category || subcategory.parentCategory === formData.category
+  );
+
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <IconButton onClick={() => navigate(-1)} sx={{ bgcolor: "#fff", color: "#4318ff", boxShadow: "0 6px 18px rgba(15,23,42,0.06)", "&:hover": { bgcolor: "#f4f7fe" } }}>
-             <ArrowBackIcon fontSize="small" />
-          </IconButton>
-          <Box>
-            <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
-              Add Product
-            </Typography>
-            <Typography variant="body2" color="#a3aed0" fontWeight="600">
-               Stock new inventory for {store.name}
-            </Typography>
-          </Box>
-        </Stack>
+        <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <IconButton onClick={() => navigate(-1)} sx={{ bgcolor: "#fff", color: "#1b2559", border: "1px solid #e0e5f2", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", "&:hover": { bgcolor: "#f4f7fe" } }}>
+               <ArrowBackIcon fontSize="small" />
+            </IconButton>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
+                Add Product
+              </Typography>
+              <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>
+                 Catalog expansion for {store.name}.
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
 
         <form onSubmit={handleSubmit}>
           <Grid container spacing={4}>
             {/* Left: Product Details */}
             <Grid item xs={12} lg={8}>
-              <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", boxShadow: "0 10px 40px rgba(0,0,0,0.03)" }}>
+              <Paper sx={{ p: 4, ...orderPanelSx }}>
                 <Stack spacing={4}>
                   <Grid container spacing={3}>
                     <Grid item xs={12} sm={6}>
@@ -169,8 +212,11 @@ const StoreAddProduct = () => {
                       <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block" }}>Type</Typography>
                       <Select fullWidth name="type" value={formData.type} onChange={handleChange} displayEmpty sx={{ borderRadius: "16px", bgcolor: "#fafbfc" }}>
                         <MenuItem value="" disabled>Select Type</MenuItem>
-                        <MenuItem value="Standard">Standard</MenuItem>
-                        <MenuItem value="Premium">Premium</MenuItem>
+                        {availableTypes.map((type) => (
+                          <MenuItem key={type.id} value={type.name}>
+                            {type.name}
+                          </MenuItem>
+                        ))}
                       </Select>
                     </Grid>
                     <Grid item xs={12}>
@@ -195,20 +241,20 @@ const StoreAddProduct = () => {
                       <TextField fullWidth name="eanCode" placeholder="Scan or enter code" value={formData.eanCode} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block" }}>MRP (₹)</Typography>
-                      <TextField fullWidth name="mrp" placeholder="Maximum Retail Price" value={formData.mrp} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }} />
+                      <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>MRP (Rs.)</Typography>
+                      <TextField fullWidth name="mrp" placeholder="Maximum Retail Price" value={formData.mrp} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block" }}>Sale Price (₹)</Typography>
-                      <TextField fullWidth name="price" placeholder="Discounted Price" value={formData.price} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }} />
+                      <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Sale Price (Rs.)</Typography>
+                      <TextField fullWidth name="price" placeholder="Discounted Price" value={formData.price} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
                     </Grid>
                     <Grid item xs={12}>
-                      <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block" }}>Tags</Typography>
-                      <TextField fullWidth name="tags" placeholder="Separate with commas (e.g. fresh, organic)" value={formData.tags} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }} />
+                      <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Tags</Typography>
+                      <TextField fullWidth name="tags" placeholder="Separate with commas (e.g. fresh, organic)" value={formData.tags} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
                     </Grid>
                     <Grid item xs={12}>
-                      <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block" }}>Description</Typography>
-                      <TextField fullWidth multiline rows={4} name="description" placeholder="Short product story..." value={formData.description} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }} />
+                      <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Description</Typography>
+                      <TextField fullWidth multiline rows={4} name="description" placeholder="Short product story..." value={formData.description} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
                     </Grid>
                   </Grid>
                 </Stack>
@@ -218,9 +264,9 @@ const StoreAddProduct = () => {
             {/* Right: Media & Submit */}
             <Grid item xs={12} lg={4}>
               <Stack spacing={3}>
-                <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", boxShadow: "0 10px 40px rgba(0,0,0,0.03)" }}>
-                  <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 2, display: "block" }}>Main Image</Typography>
-                  <Box sx={{ border: "2px dashed #e0e5f2", borderRadius: "20px", textAlign: "center", bgcolor: "#fafbfc", cursor: "pointer", p: mainPreview ? 0 : 3 }} onClick={() => mainImageRef.current.click()}>
+                <Paper sx={{ p: 4, ...orderPanelSx }}>
+                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 2, display: "block" }}>Main Image</Typography>
+                  <Box sx={{ border: "2px dashed #e0e5f2", borderRadius: "16px", textAlign: "center", bgcolor: "#fafbff", cursor: "pointer", p: mainPreview ? 0 : 3 }} onClick={() => mainImageRef.current.click()}>
                     {!mainPreview ? (
                       <Stack spacing={1} alignItems="center">
                         <PhotoCameraIcon sx={{ color: "#a3aed0", fontSize: 40 }} />
@@ -228,8 +274,8 @@ const StoreAddProduct = () => {
                       </Stack>
                     ) : (
                       <Box sx={{ position: "relative" }}>
-                        <Box component="img" src={mainPreview} sx={{ width: "100%", height: "180px", objectFit: "cover", borderRadius: "18px" }} />
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setMainPreview(null); }} sx={{ position: "absolute", top: 8, right: 8, bgcolor: "#ff4d49", color: "#fff" }}>
+                        <Box component="img" src={mainPreview} sx={{ width: "100%", height: "180px", objectFit: "cover", borderRadius: "16px" }} />
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setMainPreview(null); }} sx={{ position: "absolute", top: 8, right: 8, bgcolor: "#E53935", color: "#fff" }}>
                           <CloseIcon sx={{ fontSize: 16 }} />
                         </IconButton>
                       </Box>
@@ -237,20 +283,20 @@ const StoreAddProduct = () => {
                     <input type="file" ref={mainImageRef} hidden accept="image/*" onChange={handleMainImageChange} />
                   </Box>
 
-                  <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mt: 4, mb: 2, display: "block" }}>Gallery Images</Typography>
+                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mt: 4, mb: 2, display: "block" }}>Gallery Images</Typography>
                   <Grid container spacing={1.5}>
                     {galleryPreviews.map((img, i) => (
                       <Grid item xs={4} key={i}>
                         <Box sx={{ position: "relative" }}>
                           <Box component="img" src={img} sx={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", borderRadius: "12px", border: "1px solid #e0e5f2" }} />
-                          <IconButton size="small" onClick={() => removeGalleryImage(i)} sx={{ position: "absolute", top: -5, right: -5, p: 0.5, bgcolor: "#ff4d49", color: "#fff", "&:hover": { bgcolor: "#d32f2f" } }}>
+                          <IconButton size="small" onClick={() => removeGalleryImage(i)} sx={{ position: "absolute", top: -5, right: -5, p: 0.5, bgcolor: "#E53935", color: "#fff", "&:hover": { bgcolor: "#d32f2f" } }}>
                             <CloseIcon sx={{ fontSize: 10 }} />
                           </IconButton>
                         </Box>
                       </Grid>
                     ))}
                     <Grid item xs={4}>
-                      <Box sx={{ width: "100%", aspectRatio: "1/1", border: "2px dashed #e0e5f2", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", bgcolor: "#fafbfc" }} onClick={() => galleryImagesRef.current.click()}>
+                      <Box sx={{ width: "100%", aspectRatio: "1/1", border: "2px dashed #e0e5f2", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", bgcolor: "#fafbff" }} onClick={() => galleryImagesRef.current.click()}>
                         <AddPhotoIcon sx={{ color: "#a3aed0" }} />
                       </Box>
                     </Grid>
@@ -263,9 +309,9 @@ const StoreAddProduct = () => {
                   variant="contained"
                   fullWidth
                   disabled={isSubmitting}
-                  sx={{ py: 2.2, borderRadius: "20px", bgcolor: "#4318ff", fontWeight: 900, textTransform: "none", fontSize: "17px", boxShadow: "0 10px 25px rgba(67,24,255,0.2)" }}
+                  sx={{ py: 2.2, borderRadius: "12px", bgcolor: "#1b2559", fontWeight: 800, textTransform: "none", fontSize: "17px", boxShadow: "0 10px 20px rgba(27, 37, 89, 0.2)", "&:hover": { bgcolor: "#111c44" } }}
                 >
-                  {isSubmitting ? "Disseminating..." : "Save Product"}
+                  {isSubmitting ? "Disseminating..." : "Deploy Product"}
                 </Button>
               </Stack>
             </Grid>

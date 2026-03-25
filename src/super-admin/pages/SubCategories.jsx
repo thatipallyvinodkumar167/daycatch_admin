@@ -338,12 +338,12 @@ const SubCategories = () => {
                                         <TableCell align="right" sx={{ pr: 3 }}>
                                             <Stack direction="row" spacing={1} justifyContent="flex-end">
                                                 <Tooltip title="Edit Sub-Category">
-                                                    <IconButton onClick={() => handleEdit(item)} sx={{ backgroundColor: "#f4f7fe", color: "#4318ff", borderRadius: "10px", "&:hover": { backgroundColor: "#e0e5f2" } }}>
+                                                    <IconButton className="action-edit" onClick={() => handleEdit(item)} sx={{ backgroundColor: "#f4f7fe", color: "#4318ff", borderRadius: "10px", "&:hover": { backgroundColor: "#e0e5f2" } }}>
                                                         <EditIcon fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
                                                 <Tooltip title="Delete Sub-Category">
-                                                    <IconButton onClick={() => handleDelete(item.id)} sx={{ backgroundColor: "#fff5f5", color: "#ff4d49", borderRadius: "10px", "&:hover": { backgroundColor: "#ffebeb" } }}>
+                                                    <IconButton className="action-delete" onClick={() => handleDelete(item.id)} sx={{ backgroundColor: "#fff5f5", color: "#ff4d49", borderRadius: "10px", "&:hover": { backgroundColor: "#ffebeb" } }}>
                                                         <DeleteIcon fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
@@ -364,4 +364,5 @@ const SubCategories = () => {
 };
 
 export default SubCategories;
+
 

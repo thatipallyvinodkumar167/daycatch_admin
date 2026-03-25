@@ -42,27 +42,27 @@ const StoreOrderByPhoto = () => {
     setTimeout(() => setLoading(false), 500);
   }, []);
 
-  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress sx={{ color: "#4318ff" }} /></Box>;
+  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress sx={{ color: "#E53935" }} /></Box>;
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Box sx={{ p: 2, borderRadius: "18px", bgcolor: alpha("#4318ff", 0.08) }}>
-             <CameraIcon sx={{ color: "#4318ff", fontSize: 28 }} />
+          <Box sx={{ p: 2, borderRadius: "18px", bgcolor: alpha("#E53935", 0.08) }}>
+             <CameraIcon sx={{ color: "#E53935", fontSize: 28 }} />
           </Box>
           <Box>
-            <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
               Order By Photo List
             </Typography>
-            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+            <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>
                Manage grocery lists uploaded by users via photo for {store.name}.
             </Typography>
           </Box>
         </Stack>
 
-        <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
+        <Paper sx={{ p: 4, borderRadius: "24px", border: "1px solid #e0e5f2", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
           
           <Stack direction="row" justifyContent="flex-end" sx={{ mb: 4 }}>
             <TextField
@@ -81,10 +81,10 @@ const StoreOrderByPhoto = () => {
             <Table>
               <TableHead sx={{ bgcolor: "#fafbfc" }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", width: "60px" }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>User</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Address</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Accept/Reject</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", width: "60px" }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>User</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Address</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Accept/Reject</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -92,12 +92,12 @@ const StoreOrderByPhoto = () => {
                   <TableRow>
                     <TableCell colSpan={4} align="center" sx={{ py: 12 }}>
                       <Stack alignItems="center" spacing={2.5}>
-                        <Box sx={{ p: 3, borderRadius: "50%", bgcolor: alpha("#4318ff", 0.05) }}>
-                          <CameraIcon sx={{ color: "#4318ff", fontSize: 56, opacity: 0.3 }} />
+                        <Box sx={{ p: 3, borderRadius: "50%", bgcolor: alpha("#E53935", 0.05) }}>
+                          <CameraIcon sx={{ color: "#E53935", fontSize: 56, opacity: 0.3 }} />
                         </Box>
                         <Box>
                            <Typography variant="h5" color="#1b2559" fontWeight="900" gutterBottom>No data found</Typography>
-                           <Typography variant="body2" color="#a3aed0" fontWeight="600">No customers have uploaded shopping photos yet.</Typography>
+                           <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>No customers have uploaded shopping photos yet.</Typography>
                         </Box>
                       </Stack>
                     </TableCell>
@@ -108,7 +108,7 @@ const StoreOrderByPhoto = () => {
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{index + 1}</TableCell>
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={2}>
-                          <Avatar sx={{ bgcolor: alpha("#4318ff", 0.1), color: "#4318ff" }}><PersonIcon /></Avatar>
+                          <Avatar sx={{ bgcolor: alpha("#E53935", 0.1), color: "#E53935" }}><PersonIcon /></Avatar>
                           <Typography variant="body1" fontWeight="800" color="#1b2559">{row.userName}</Typography>
                         </Stack>
                       </TableCell>
@@ -128,7 +128,7 @@ const StoreOrderByPhoto = () => {
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="View Photo">
-                             <IconButton size="small" sx={{ color: "#4318ff" }}><ViewIcon fontSize="small" /></IconButton>
+                             <IconButton size="small" sx={{ color: "#E53935" }}><ViewIcon fontSize="small" /></IconButton>
                           </Tooltip>
                         </Stack>
                       </TableCell>

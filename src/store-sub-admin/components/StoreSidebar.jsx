@@ -61,7 +61,7 @@ function StoreSidebar({ store, open }) {
     if (activeGroup?.key) {
       setOpenMenu(activeGroup.key);
     }
-  }, [currentPath, store]);
+  }, [currentPath, store, isRouteActive]);
 
   const activeMenuSx = (isActive) => ({
     ...getShellMenuItemSx(isActive, primaryColor),

@@ -7,13 +7,13 @@ function Dashboard() {
     <Box 
       sx={{ 
         minHeight: "100vh",
-        backgroundColor: "#f8fafc", // Modern slate background
-        py: { xs: 2, md: 4 }
+        backgroundColor: "#f4f7fe", 
+        p: { xs: 2.5, md: 5 }
       }}
     >
-      <Container maxWidth="xl">
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         <DashboardCards />
-      </Container>
+      </Box>
     </Box>
   );
 }

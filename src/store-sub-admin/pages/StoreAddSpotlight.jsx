@@ -118,14 +118,14 @@ const StoreAddSpotlight = () => {
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-        <CircularProgress sx={{ color: "#4318ff" }} />
+        <CircularProgress sx={{ color: "#E53935" }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
           <Box>
             <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
@@ -184,7 +184,7 @@ const StoreAddSpotlight = () => {
                           variant="contained"
                           size="small"
                           onClick={() => handleAdd(product)}
-                          sx={{ borderRadius: "10px", bgcolor: alpha("#4318ff", 0.08), color: "#4318ff", fontWeight: 800, textTransform: "none", filter: "none", boxShadow: "none", "&:hover": { bgcolor: "#4318ff", color: "#fff" } }}
+                          sx={{ borderRadius: "10px", bgcolor: alpha("#E53935", 0.08), color: "#E53935", fontWeight: 800, textTransform: "none", filter: "none", boxShadow: "none", "&:hover": { bgcolor: "#E53935", color: "#fff" } }}
                         >
                           Add
                         </Button>
@@ -219,7 +219,7 @@ const StoreAddSpotlight = () => {
                     Currently featured in spotlight.
                   </Typography>
                 </Box>
-                <Chip label={`${selectedProducts.length} Selected`} color="primary" sx={{ fontWeight: 800, borderRadius: "10px", bgcolor: "#4318ff" }} />
+                <Chip label={`${selectedProducts.length} Selected`} color="primary" sx={{ fontWeight: 800, borderRadius: "10px", bgcolor: "#E53935" }} />
               </Stack>
 
               <TableContainer sx={{ border: "1px solid #eef2f6", borderRadius: "20px", overflow: "hidden" }}>
@@ -274,7 +274,7 @@ const StoreAddSpotlight = () => {
                 variant="contained"
                 onClick={handleSave}
                 disabled={saving}
-                sx={{ mt: 4, py: 2, borderRadius: "18px", bgcolor: "#4318ff", fontWeight: 900, fontSize: "16px", boxShadow: "0 10px 25px rgba(67,24,255,0.2)" }}
+                sx={{ mt: 4, py: 2, borderRadius: "18px", bgcolor: "#E53935", fontWeight: 900, fontSize: "16px", boxShadow: "0 10px 25px rgba(229, 57, 53,0.2)" }}
               >
                 {saving ? "Saving..." : "Save Spotlight Selection"}
               </Button>

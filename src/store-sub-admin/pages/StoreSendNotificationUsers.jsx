@@ -94,17 +94,17 @@ const StoreSendNotificationUsers = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
         {/* Premium Header */}
-        <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
           <Stack direction="row" spacing={2} alignItems="center">
             <Box>
-              <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
+              <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
                 Send Notification
               </Typography>
-              <Typography variant="body2" color="#a3aed0" fontWeight="600">
+              <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>
                 Propagate push notifications to {store.name} customers.
               </Typography>
             </Box>
@@ -112,7 +112,7 @@ const StoreSendNotificationUsers = () => {
           <Stack direction="row" spacing={2} alignItems="center">
             <Box sx={{ px: 2, py: 1, borderRadius: "12px", bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
               <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ display: "block", lineHeight: 1 }}>PROTOCOL</Typography>
-              <Typography variant="subtitle2" fontWeight="800" color="#4318ff">FCM-LIVE</Typography>
+              <Typography variant="subtitle2" fontWeight="800" color="#E53935">FCM-LIVE</Typography>
             </Box>
           </Stack>
         </Box>
@@ -120,10 +120,10 @@ const StoreSendNotificationUsers = () => {
         <Grid container spacing={4}>
           {/* Creator Card */}
           <Grid item xs={12} md={7}>
-            <Paper sx={{ p: 4, borderRadius: "28px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", bgcolor: "#fff" }}>
+            <Paper sx={{ p: 4, borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", bgcolor: "#fff" }}>
               <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
-                <Box sx={{ p: 1, borderRadius: "12px", bgcolor: "rgba(67, 24, 255, 0.05)" }}>
-                  <CampaignIcon sx={{ color: "#4318ff" }} />
+                <Box sx={{ p: 1, borderRadius: "12px", bgcolor: "rgba(229, 57, 53, 0.05)" }}>
+                  <CampaignIcon sx={{ color: "#E53935" }} />
                 </Box>
                 <Typography variant="h6" fontWeight="800" color="#1b2559">
                   Compose Message
@@ -194,13 +194,13 @@ const StoreSendNotificationUsers = () => {
                         gap: 2.5,
                         backgroundColor: "#fafbfc",
                         cursor: "pointer",
-                        "&:hover": { borderColor: "#4318ff", backgroundColor: "rgba(67, 24, 255, 0.02)" },
+                        "&:hover": { borderColor: "#E53935", backgroundColor: "rgba(229, 57, 53, 0.02)" },
                         transition: "0.2s",
                       }}
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <Box sx={{ p: 1.5, borderRadius: "14px", backgroundColor: "rgba(67, 24, 255, 0.05)", display: "flex" }}>
-                        <PhotoCameraIcon sx={{ color: "#4318ff" }} />
+                      <Box sx={{ p: 1.5, borderRadius: "14px", backgroundColor: "rgba(229, 57, 53, 0.05)", display: "flex" }}>
+                        <PhotoCameraIcon sx={{ color: "#E53935" }} />
                       </Box>
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="body2" fontWeight="800" color="#1b2559">
@@ -231,13 +231,13 @@ const StoreSendNotificationUsers = () => {
                     disabled={isSubmitting}
                     startIcon={<SendIcon />}
                     sx={{
-                      backgroundColor: "#4318ff",
+                      backgroundColor: "#E53935",
                       borderRadius: "18px",
                       py: 2,
                       textTransform: "none",
                       fontWeight: "800",
                       fontSize: "16px",
-                      boxShadow: "0 10px 25px rgba(67, 24, 255, 0.25)",
+                      boxShadow: "0 10px 25px rgba(229, 57, 53, 0.25)",
                     }}
                   >
                     {isSubmitting ? "Dispatching..." : "Broadcast Notification"}
@@ -277,12 +277,12 @@ const StoreSendNotificationUsers = () => {
                 <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, #f4f7fe 0%, #ffffff 100%)", zIndex: 0 }} />
                 <Box sx={{ position: "relative", zIndex: 1, p: 2, mt: 4 }}>
                   <Fade in={true}>
-                    <Paper sx={{ p: 2, bgcolor: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)", borderRadius: "20px", border: "1px solid rgba(67, 24, 255, 0.1)", boxShadow: "0 10px 40px rgba(0,0,0,0.08)" }}>
+                    <Paper sx={{ p: 2, bgcolor: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)", borderRadius: "20px", border: "1px solid rgba(229, 57, 53, 0.1)", boxShadow: "0 10px 40px rgba(0,0,0,0.08)" }}>
                       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
-                        <Box sx={{ p: 0.5, borderRadius: "6px", bgcolor: "#4318ff", display: "flex" }}>
+                        <Box sx={{ p: 0.5, borderRadius: "6px", bgcolor: "#E53935", display: "flex" }}>
                           <CampaignIcon sx={{ fontSize: "14px", color: "#fff" }} />
                         </Box>
-                        <Typography variant="caption" fontWeight="900" color="#4318ff" sx={{ fontSize: "10px", letterSpacing: "1px" }}>
+                        <Typography variant="caption" fontWeight="900" color="#E53935" sx={{ fontSize: "10px", letterSpacing: "1px" }}>
                           {store.name.toUpperCase()} • NOW
                         </Typography>
                       </Stack>

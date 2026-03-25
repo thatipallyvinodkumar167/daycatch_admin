@@ -115,12 +115,12 @@ const StoreAddDealProduct = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       <Box sx={{ maxWidth: "1000px", mx: "auto" }}>
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
           <IconButton
             onClick={() => navigate(dealsRoute)}
-            sx={{ bgcolor: "#fff", color: "#4318ff", boxShadow: "0 6px 18px rgba(15,23,42,0.06)", "&:hover": { bgcolor: "#f4f7fe" } }}
+            sx={{ bgcolor: "#fff", color: "#E53935", boxShadow: "0 6px 18px rgba(15,23,42,0.06)", "&:hover": { bgcolor: "#f4f7fe" } }}
           >
             <ArrowBackIcon fontSize="small" />
           </IconButton>
@@ -250,7 +250,7 @@ const StoreAddDealProduct = () => {
                       <Typography variant="caption" color="#a3aed0" fontWeight="800">
                         Selected
                       </Typography>
-                      <Typography variant="h6" color="#4318ff" fontWeight="900">
+                      <Typography variant="h6" color="#E53935" fontWeight="900">
                         {selectedProductLabel || "Product"}
                       </Typography>
                     </Box>

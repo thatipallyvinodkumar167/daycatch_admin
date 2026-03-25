@@ -316,7 +316,7 @@ const UsersData = () => {
                                           <IconButton size="small" onClick={() => handleToggleStatus(user)} disabled={Boolean(mutatingKey)} sx={{ color: user.status === "Active" ? "#ff4d49" : "#00d26a", bgcolor: user.status === "Active" ? "rgba(255, 77, 73, 0.05)" : "rgba(0, 210, 106, 0.05)", borderRadius: "10px" }}>
                                               {user.status === "Active" ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
                                           </IconButton>
-                                          <IconButton size="small" onClick={() => handleDelete(user.id)} disabled={Boolean(mutatingKey)} sx={{ color: "#ff4d49", bgcolor: "rgba(255, 77, 73, 0.05)", borderRadius: "10px" }}>
+                                          <IconButton className="action-delete" size="small" onClick={() => handleDelete(user.id)} disabled={Boolean(mutatingKey)} sx={{ color: "#ff4d49", bgcolor: "rgba(255, 77, 73, 0.05)", borderRadius: "10px" }}>
                                               <DeleteIcon fontSize="small" />
                                           </IconButton>
                                       </Stack>
@@ -333,5 +333,6 @@ const UsersData = () => {
 };
 
 export default UsersData;
+
 
 

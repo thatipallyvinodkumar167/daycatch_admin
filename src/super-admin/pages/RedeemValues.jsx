@@ -212,7 +212,7 @@ const RedeemValues = () => {
                       <TableCell align="right" sx={{ pr: 3 }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
                           <Tooltip title="Edit Value">
-                              <IconButton 
+                              <IconButton className="action-edit" 
                                    onClick={() => navigate(`/redeem-value/edit/${item.id}`)}
                                    sx={{ 
                                        backgroundColor: "#00d26a", 
@@ -225,7 +225,7 @@ const RedeemValues = () => {
                               </IconButton>
                           </Tooltip>
                           <Tooltip title="Delete Value">
-                              <IconButton 
+                              <IconButton className="action-delete" 
                                   onClick={() => handleDelete(item.id)}
                                   sx={{ 
                                       backgroundColor: "#ff4d49", 
@@ -252,5 +252,6 @@ const RedeemValues = () => {
 };
 
 export default RedeemValues;
+
 
 

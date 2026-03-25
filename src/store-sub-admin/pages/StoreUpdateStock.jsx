@@ -118,14 +118,14 @@ const StoreUpdateStock = () => {
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-        <CircularProgress sx={{ color: "#4318ff" }} />
+        <CircularProgress sx={{ color: "#E53935" }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
           <Box>
             <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
@@ -211,7 +211,7 @@ const StoreUpdateStock = () => {
                             onClick={() => handleUpdate(row)}
                             disabled={savingId === row.id}
                             startIcon={savingId === row.id ? <CircularProgress size={16} color="inherit" /> : <UpdateIcon />}
-                            sx={{ borderRadius: "14px", bgcolor: "#4318ff", fontWeight: 800, textTransform: "none", py: 1, px: 2, boxShadow: "0 6px 16px rgba(67,24,255,0.15)" }}
+                            sx={{ borderRadius: "14px", bgcolor: "#E53935", fontWeight: 800, textTransform: "none", py: 1, px: 2, boxShadow: "0 6px 16px rgba(229, 57, 53,0.15)" }}
                           >
                             {savingId === row.id ? "Updating" : "Update"}
                           </Button>

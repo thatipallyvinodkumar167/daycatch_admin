@@ -8,12 +8,10 @@ import {
   TextField,
   Button,
   alpha,
-  Divider,
   InputAdornment,
-  MenuItem
+  Avatar
 } from "@mui/material";
 import {
-  Settings as SettingsIcon,
   AccessTime as TimeIcon,
   DeliveryDining as DeliveryIcon,
   ShoppingBag as OrderIcon,
@@ -39,12 +37,19 @@ const StoreSettings = () => {
     setSettings({ ...settings, [e.target.name]: e.target.value });
   };
 
+  const orderPanelSx = {
+    borderRadius: "24px",
+    border: "1px solid #e0e5f2",
+    bgcolor: "#fff",
+    boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
+  };
+
   const SettingCard = ({ title, icon: Icon, children }) => (
-    <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", height: "100%" }}>
+    <Paper sx={{ p: 4, ...orderPanelSx, height: "100%" }}>
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
-        <Box sx={{ p: 1.5, borderRadius: "14px", bgcolor: alpha("#4318ff", 0.08) }}>
-           <Icon sx={{ color: "#4318ff", fontSize: 24 }} />
-        </Box>
+        <Avatar sx={{ bgcolor: "#eef2ff", color: "#1b2559", width: 48, height: 48, borderRadius: "12px" }}>
+           <Icon />
+        </Avatar>
         <Typography variant="h5" fontWeight="900" color="#1b2559">{title}</Typography>
       </Stack>
       {children}
@@ -52,77 +57,91 @@ const StoreSettings = () => {
   );
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
-        <Stack spacing={1} sx={{ mb: 5 }}>
-          <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
-            Hi, {store.name}.
-          </Typography>
-          <Typography variant="body1" color="#a3aed0" fontWeight="700">
-             Welcome to your Store Panel. Manage your store operations here.
-          </Typography>
-        </Stack>
+        <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
+               Store Settings
+            </Typography>
+            <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+               <TimeIcon sx={{ fontSize: 18 }} /> Settings Node • Operational Constraints
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            sx={{
+              borderRadius: "14px",
+              py: 1.5,
+              px: 4,
+              bgcolor: "#E53935",
+              boxShadow: "0 10px 20px rgba(229, 57, 53, 0.2)",
+              textTransform: "none",
+              fontWeight: 900,
+              fontSize: "15px",
+              "&:hover": { bgcolor: "#d32f2f" }
+            }}
+          >
+            Deploy Sync
+          </Button>
+        </Box>
 
         <Grid container spacing={4}>
-          {/* Store Time Slot */}
           <Grid item xs={12} md={6}>
-            <SettingCard title="Store Time Slot" icon={TimeIcon}>
+            <SettingCard title="Temporal Windows" icon={TimeIcon}>
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Store Opening Time</Typography>
-                  <TextField fullWidth type="time" name="openingTime" value={settings.openingTime} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }} />
+                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Opening Aperture</Typography>
+                  <TextField fullWidth type="time" name="openingTime" value={settings.openingTime} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Store Closing Time</Typography>
-                  <TextField fullWidth type="time" name="closingTime" value={settings.closingTime} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }} />
+                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Closing Aperture</Typography>
+                  <TextField fullWidth type="time" name="closingTime" value={settings.closingTime} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Interval (Minutes)</Typography>
-                  <TextField fullWidth type="number" name="interval" value={settings.interval} onChange={handleChange} placeholder="30" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }} />
+                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Fulfillment Interval (Mins)</Typography>
+                  <TextField fullWidth type="number" name="interval" value={settings.interval} onChange={handleChange} placeholder="30" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
                 </Grid>
               </Grid>
             </SettingCard>
           </Grid>
 
-          {/* Delivery Charge Setting */}
           <Grid item xs={12} md={6}>
-            <SettingCard title="Delivery Charge Setting" icon={DeliveryIcon}>
+            <SettingCard title="Financial Logistics" icon={DeliveryIcon}>
               <Stack spacing={3}>
                 <Box>
-                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Free delivery cart value(Min)</Typography>
-                  <TextField fullWidth name="freeDeliveryLimit" value={settings.freeDeliveryLimit} onChange={handleChange} placeholder="enter minimum cart value" InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }} />
+                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Free Delivery Threshold (Rs.)</Typography>
+                  <TextField fullWidth name="freeDeliveryLimit" value={settings.freeDeliveryLimit} onChange={handleChange} placeholder="enter minimum cart value" InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
                 </Box>
                 <Box>
-                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Delivery Charge</Typography>
-                  <TextField fullWidth name="deliveryCharge" value={settings.deliveryCharge} onChange={handleChange} placeholder="enter delivery charge" InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }} />
+                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Standard Dispatch Fee</Typography>
+                  <TextField fullWidth name="deliveryCharge" value={settings.deliveryCharge} onChange={handleChange} placeholder="enter delivery charge" InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
                 </Box>
               </Stack>
             </SettingCard>
           </Grid>
 
-          {/* Order Value Setting */}
           <Grid item xs={12} md={6}>
-            <SettingCard title="Order Value Setting" icon={OrderIcon}>
+            <SettingCard title="Transactional Limits" icon={OrderIcon}>
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Minimum Value</Typography>
-                  <TextField fullWidth name="minOrderValue" value={settings.minOrderValue} onChange={handleChange} placeholder="Enter minimum order value" InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }} />
+                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Minimum Payload</Typography>
+                  <TextField fullWidth name="minOrderValue" value={settings.minOrderValue} onChange={handleChange} placeholder="Enter minimum order value" InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Maximum Value</Typography>
-                  <TextField fullWidth name="maxOrderValue" value={settings.maxOrderValue} onChange={handleChange} placeholder="Enter maximum order value" InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }} />
+                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Maximum Payload</Typography>
+                  <TextField fullWidth name="maxOrderValue" value={settings.maxOrderValue} onChange={handleChange} placeholder="Enter maximum order value" InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
                 </Grid>
               </Grid>
             </SettingCard>
           </Grid>
 
-          {/* Driver Incentive */}
           <Grid item xs={12} md={6}>
-            <SettingCard title="Driver Incentive" icon={IncentiveIcon}>
+            <SettingCard title="Personnel Incentive" icon={IncentiveIcon}>
               <Box>
-                <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Driver Incentive (Rs) Per Order</Typography>
-                <TextField fullWidth name="driverIncentive" value={settings.driverIncentive} onChange={handleChange} placeholder="Driver Incentive Per Order" InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }} />
+                <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>Incentive Node (Rs) Per Order</Typography>
+                <TextField fullWidth name="driverIncentive" value={settings.driverIncentive} onChange={handleChange} placeholder="Driver Incentive Per Order" InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
               </Box>
             </SettingCard>
           </Grid>
@@ -136,10 +155,10 @@ const StoreSettings = () => {
               borderRadius: "18px",
               py: 2,
               px: 6,
-              bgcolor: "#4318ff",
+              bgcolor: "#E53935",
               fontWeight: 900,
               fontSize: "16px",
-              boxShadow: "0 10px 25px rgba(67,24,255,0.25)",
+              boxShadow: "0 10px 25px rgba(229, 57, 53,0.25)",
               textTransform: "none"
             }}
           >

@@ -13,7 +13,6 @@ import {
   IconButton,
   Snackbar,
   Alert,
-  Fade,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -43,15 +42,17 @@ const StoreAddCategoryBanner = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await genericApi.getAll("categories");
-        setCategories(response.data || [
-          { id: 1, name: "Prawns" },
-          { id: 2, name: "Fish" },
-          { id: 3, name: "Crabs" },
-          { id: 4, name: "Chicken" }
-        ]);
+        const response = await genericApi.getAll("parentcategories");
+        const rows = response?.data?.results || [];
+        setCategories(
+          rows.map((category) => ({
+            id: String(category._id ?? category.id ?? ""),
+            name: category.Title || category.Category || "Untitled Category"
+          }))
+        );
       } catch (err) {
         console.error("Categories Error:", err);
+        setCategories([]);
       }
     };
     fetchCategories();
@@ -108,11 +109,11 @@ const StoreAddCategoryBanner = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       <Box sx={{ maxWidth: "1000px", mx: "auto" }}>
         
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <IconButton onClick={() => navigate(-1)} sx={{ bgcolor: "#fff", color: "#4318ff", boxShadow: "0 6px 18px rgba(15,23,42,0.06)", "&:hover": { bgcolor: "#f4f7fe" } }}>
+          <IconButton onClick={() => navigate(-1)} sx={{ bgcolor: "#fff", color: "#E53935", boxShadow: "0 6px 18px rgba(15,23,42,0.06)", "&:hover": { bgcolor: "#f4f7fe" } }}>
              <ArrowBackIcon fontSize="small" />
           </IconButton>
           <Box>
@@ -171,7 +172,7 @@ const StoreAddCategoryBanner = () => {
                         textAlign: "center",
                         bgcolor: "#fafbfc",
                         cursor: "pointer",
-                        "&:hover": { borderColor: "#4318ff", bgcolor: "rgba(67, 24, 255, 0.02)" },
+                        "&:hover": { borderColor: "#E53935", bgcolor: "rgba(229, 57, 53, 0.02)" },
                         transition: "0.2s"
                       }}
                       onClick={() => fileInputRef.current?.click()}
@@ -202,12 +203,12 @@ const StoreAddCategoryBanner = () => {
                     sx={{
                       py: 2.2,
                       borderRadius: "20px",
-                      bgcolor: "#4318ff",
+                      bgcolor: "#E53935",
                       fontWeight: 900,
                       textTransform: "none",
                       fontSize: "17px",
-                      boxShadow: "0 14px 28px rgba(67,24,255,0.22)",
-                      "&:hover": { bgcolor: "#3310cc" }
+                      boxShadow: "0 14px 28px rgba(229, 57, 53,0.22)",
+                      "&:hover": { bgcolor: "#d32f2f" }
                     }}
                   >
                     {isSubmitting ? "Saving Banner..." : "Save Category Banner"}

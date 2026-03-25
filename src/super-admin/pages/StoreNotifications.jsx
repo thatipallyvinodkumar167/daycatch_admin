@@ -202,7 +202,7 @@ const StoreNotifications = () => {
                                               <VisibilityIcon fontSize="small" />
                                           </IconButton>
                                       </Tooltip>
-                                      <IconButton onClick={() => handleDelete(item.id)} size="small" sx={{ color: "#ff4d49", bgcolor: "rgba(255, 77, 73, 0.05)", borderRadius: "10px" }}>
+                                      <IconButton className="action-delete" onClick={() => handleDelete(item.id)} size="small" sx={{ color: "#ff4d49", bgcolor: "rgba(255, 77, 73, 0.05)", borderRadius: "10px" }}>
                                           <DeleteOutlineIcon fontSize="small" />
                                       </IconButton>
                                   </Stack>
@@ -218,5 +218,6 @@ const StoreNotifications = () => {
 };
 
 export default StoreNotifications;
+
 
 

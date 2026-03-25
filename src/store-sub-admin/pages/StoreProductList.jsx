@@ -32,54 +32,74 @@ const StoreProductList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  
-  const [products] = useState([]); // Default empty for "No data found"
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    // Simulating loading
-    setTimeout(() => setLoading(false), 500);
-  }, []);
+    const fetchProducts = async () => {
+      try {
+        const response = await genericApi.getAll("products");
+        const list = response?.data?.results || [];
+        setProducts(list.filter(p => String(p.storeId) === String(store.id)).map(p => ({
+          id: p._id || p.id,
+          name: p["Product Name"] || p.name,
+          category: p["Category"] || p.category,
+          image: p["Product Image"] || p.image || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=1000",
+        })));
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (store?.id) fetchProducts();
+  }, [store?.id]);
 
   const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.id.toString().includes(searchTerm)
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const orderPanelSx = {
+    borderRadius: "24px",
+    border: "1px solid #e0e5f2",
+    bgcolor: "#fff",
+    boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
+  };
 
-  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress sx={{ color: "#4318ff" }} /></Box>;
+  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}><CircularProgress sx={{ color: "#E53935" }} /></Box>;
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
+        <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Box>
-            <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
-              Products
+            <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
+               Products
             </Typography>
-            <Typography variant="body2" color="#a3aed0" fontWeight="600">
-              Manage inventory and product details for {store.name}.
+            <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+               <InventoryIcon sx={{ fontSize: 18 }} /> Catalog Terminal • Workspace Node
             </Typography>
           </Box>
           <Button
             variant="contained"
             onClick={() => navigate("add")}
             sx={{
-              borderRadius: "18px",
+              borderRadius: "14px",
               py: 1.5,
               px: 4,
-              bgcolor: "#4318ff",
-              boxShadow: "0 10px 25px rgba(67,24,255,0.25)",
+              bgcolor: "#E53935",
+              boxShadow: "0 10px 20px rgba(229, 57, 53, 0.2)",
               textTransform: "none",
-              fontWeight: 800,
+              fontWeight: 900,
               fontSize: "15px",
-              "&:hover": { bgcolor: "#3310cc" }
+              "&:hover": { bgcolor: "#d32f2f" }
             }}
           >
-            + New Product
+            + Create Product
           </Button>
-        </Stack>
+        </Box>
 
-        <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
+        <Paper sx={{ p: 4, ...orderPanelSx }}>
           
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
             <Typography variant="h4" fontWeight="800" color="#1b2559">
@@ -107,38 +127,40 @@ const StoreProductList = () => {
             />
           </Stack>
 
-          <TableContainer sx={{ border: "1px solid #eef2f6", borderRadius: "18px", overflow: "hidden" }}>
+          <TableContainer sx={{ border: "1px solid #eef2f6", borderRadius: "20px", overflow: "hidden" }}>
             <Table>
               <TableHead sx={{ bgcolor: "#fafbfc" }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #eef2f6", width: "80px" }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #eef2f6" }}>Product Name</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #eef2f6" }}>Product Id</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #eef2f6" }}>Category</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #eef2f6" }}>Product Image</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #eef2f6", textAlign: "right" }}>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", px: 4 }}># Index</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Object Reference</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>ID Segment</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Category</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Resource</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", px: 4, textAlign: "right" }}>Operation</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredProducts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                      <Stack alignItems="center" spacing={2}>
-                        <Box sx={{ p: 2, borderRadius: "50%", bgcolor: "#f8f9fc" }}>
-                          <InventoryIcon sx={{ color: "#d1d9e2", fontSize: 48 }} />
+                    <TableCell colSpan={6} align="center" sx={{ py: 12 }}>
+                      <Stack alignItems="center" spacing={2.5}>
+                        <Box sx={{ p: 3, borderRadius: "50%", bgcolor: alpha("#E53935", 0.05) }}>
+                          <InventoryIcon sx={{ color: "#E53935", fontSize: 56, opacity: 0.5 }} />
                         </Box>
-                        <Typography variant="h6" color="#a3aed0" fontWeight="800">No data found</Typography>
-                        <Typography variant="body2" color="#a3aed0" fontWeight="600">You haven't added any products to your list yet.</Typography>
+                        <Box>
+                           <Typography variant="h5" color="#1b2559" fontWeight="900" gutterBottom>No operational items found</Typography>
+                           <Typography variant="body2" color="#a3aed0" fontWeight="600">You haven't added any products to your catalog terminal yet.</Typography>
+                        </Box>
                       </Stack>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredProducts.map((row, index) => (
-                    <TableRow key={row.id} hover sx={{ transition: "0.2s", "&:hover": { bgcolor: alpha("#4318ff", 0.03) } }}>
+                    <TableRow key={row.id} hover sx={{ transition: "0.2s", "&:hover": { bgcolor: alpha("#1b2559", 0.02) } }}>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{index + 1}</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{row.name}</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#707eae" }}>#{row.id}</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: "#4318ff" }}>{row.category}</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#a3aed0" }}>#{row.id}</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: "#E53935" }}>{row.category}</TableCell>
                       <TableCell>
                         <Avatar
                           src={row.image}
@@ -148,10 +170,10 @@ const StoreProductList = () => {
                       </TableCell>
                       <TableCell sx={{ textAlign: "right" }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <IconButton size="small" sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.1), borderRadius: "10px" }}>
+                          <IconButton className="action-edit" size="small" sx={{ color: "#1b2559", bgcolor: alpha("#1b2559", 0.05), borderRadius: "10px" }}>
                             <EditIcon fontSize="small" />
                           </IconButton>
-                          <IconButton size="small" sx={{ color: "#f44336", bgcolor: alpha("#f44336", 0.1), borderRadius: "10px" }}>
+                          <IconButton className="action-delete" size="small" sx={{ color: "#f44336", bgcolor: alpha("#f44336", 0.05), borderRadius: "10px" }}>
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         </Stack>

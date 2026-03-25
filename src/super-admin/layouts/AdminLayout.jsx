@@ -18,7 +18,7 @@ function AdminLayout() {
   };
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box className="super-admin-shell" sx={{ display: "flex" }}>
       
       {/* TOPBAR */}
       <Topbar toggleSidebar={toggleSidebar} />

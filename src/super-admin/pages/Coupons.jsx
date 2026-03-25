@@ -182,7 +182,7 @@ const Coupons = () => {
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <Tooltip title="Edit">
-                          <IconButton
+                          <IconButton className="action-edit"
                             onClick={() => navigate(`/coupons/edit/${item.id}`)}
                             sx={{ backgroundColor: "#24d164", color: "#ffffff", borderRadius: "8px", "&:hover": { backgroundColor: "#1eb856" } }}
                           >
@@ -190,7 +190,7 @@ const Coupons = () => {
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Delete">
-                          <IconButton
+                          <IconButton className="action-delete"
                             onClick={() => handleDelete(item.id)}
                             sx={{ backgroundColor: "#ff4d49", color: "#ffffff", borderRadius: "8px", "&:hover": { backgroundColor: "#e04340" } }}
                           >
@@ -211,4 +211,5 @@ const Coupons = () => {
 };
 
 export default Coupons;
+
 

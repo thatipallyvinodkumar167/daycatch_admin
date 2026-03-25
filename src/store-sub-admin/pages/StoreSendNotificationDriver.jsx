@@ -95,34 +95,34 @@ const StoreSendNotificationDriver = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
         {/* Premium Header */}
-        <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
           <Stack direction="row" spacing={2} alignItems="center">
             <Box>
-              <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
+              <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
                 Driver Notifications
               </Typography>
-              <Typography variant="body2" color="#a3aed0" fontWeight="600">
+              <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>
                 Communicate with {store.name} delivery fleet members.
               </Typography>
             </Box>
           </Stack>
           <Box sx={{ px: 2, py: 1, borderRadius: "12px", bgcolor: "#fff", border: "1px solid #e0e5f2" }}>
             <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ display: "block", lineHeight: 1 }}>FLEET ROLE</Typography>
-            <Typography variant="subtitle2" fontWeight="800" color="#4318ff">Store Admin</Typography>
+            <Typography variant="subtitle2" fontWeight="800" color="#E53935">Store Admin</Typography>
           </Box>
         </Box>
 
         <Grid container spacing={4}>
           {/* Creator Module */}
           <Grid item xs={12} md={7}>
-            <Paper sx={{ p: 4, borderRadius: "28px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", bgcolor: "#fff" }}>
+            <Paper sx={{ p: 4, borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", bgcolor: "#fff" }}>
               <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
-                <Box sx={{ p: 1, borderRadius: "12px", bgcolor: "rgba(67, 24, 255, 0.05)" }}>
-                  <SpeedIcon sx={{ color: "#4318ff" }} />
+                <Box sx={{ p: 1, borderRadius: "12px", bgcolor: "rgba(229, 57, 53, 0.05)" }}>
+                  <SpeedIcon sx={{ color: "#E53935" }} />
                 </Box>
                 <Typography variant="h6" fontWeight="800" color="#1b2559">
                   Fleet Broadcast
@@ -192,13 +192,13 @@ const StoreSendNotificationDriver = () => {
                         gap: 2.5,
                         backgroundColor: "#fafbfc",
                         cursor: "pointer",
-                        "&:hover": { borderColor: "#4318ff", backgroundColor: "rgba(67, 24, 255, 0.02)" },
+                        "&:hover": { borderColor: "#E53935", backgroundColor: "rgba(229, 57, 53, 0.02)" },
                         transition: "0.2s",
                       }}
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <Box sx={{ p: 1.5, borderRadius: "14px", backgroundColor: "rgba(67, 24, 255, 0.05)", display: "flex" }}>
-                        <PhotoCameraIcon sx={{ color: "#4318ff" }} />
+                      <Box sx={{ p: 1.5, borderRadius: "14px", backgroundColor: "rgba(229, 57, 53, 0.05)", display: "flex" }}>
+                        <PhotoCameraIcon sx={{ color: "#E53935" }} />
                       </Box>
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="body2" fontWeight="800" color="#1b2559">
@@ -229,13 +229,13 @@ const StoreSendNotificationDriver = () => {
                     disabled={isSubmitting}
                     startIcon={<SendIcon />}
                     sx={{
-                      backgroundColor: "#4318ff",
+                      backgroundColor: "#E53935",
                       borderRadius: "18px",
                       py: 2,
                       textTransform: "none",
                       fontWeight: "800",
                       fontSize: "16px",
-                      boxShadow: "0 10px 25px rgba(67, 24, 255, 0.25)",
+                      boxShadow: "0 10px 25px rgba(229, 57, 53, 0.25)",
                     }}
                   >
                     {isSubmitting ? "Dispatching..." : "Send Fleet Message"}
@@ -251,12 +251,12 @@ const StoreSendNotificationDriver = () => {
               <Typography variant="h6" fontWeight="800" color="#1b2559" sx={{ mb: 3, px: 1 }}>
                 Driver App Interface (Live)
               </Typography>
-              <Paper sx={{ p: 4, borderRadius: "28px", backgroundColor: "#000", color: "#fff", position: "relative", overflow: "hidden", minHeight: "520px" }}>
-                <Box sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, bgcolor: "#4318ff" }} />
+              <Paper sx={{ p: 4, borderRadius: "24px", backgroundColor: "#000", color: "#fff", position: "relative", overflow: "hidden", minHeight: "520px" }}>
+                <Box sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, bgcolor: "#E53935" }} />
 
                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 4 }}>
-                  <Box sx={{ p: 1, borderRadius: "12px", bgcolor: "rgba(67, 24, 255, 0.2)" }}>
-                    <DeliveryDiningIcon sx={{ color: "#4318ff" }} />
+                  <Box sx={{ p: 1, borderRadius: "12px", bgcolor: "rgba(229, 57, 53, 0.2)" }}>
+                    <DeliveryDiningIcon sx={{ color: "#E53935" }} />
                   </Box>
                   <Box>
                     <Typography variant="subtitle2" fontWeight="900" sx={{ color: "#fff" }}>{store.name.toUpperCase()} DRIVER</Typography>

@@ -18,7 +18,8 @@ import {
   IconButton,
   Tooltip,
   Button,
-  LinearProgress
+  LinearProgress,
+  CircularProgress
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +33,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import HubIcon from "@mui/icons-material/Hub";
 import InsightIcon from "@mui/icons-material/Insights";
+import SpeedIcon from "@mui/icons-material/Speed";
 import { getAllOrders } from "../api/ordersApi";
 import { getAllUsers } from "../api/usersApi";
 
@@ -44,19 +46,20 @@ const cardVariants = {
 const DashboardCards = () => {
   useTheme();
   const navigate = useNavigate();
-  const indigoPrimary = "#4318ff";
+  const indigoPrimary = "#1b2559"; // Refreshed Navy
+  const brandRed = "#E53935"; // Brand Red
 
   const [stats, setStats] = useState([
     {
       title: "Total Revenue",
-      value: "RS 0",
-      change: "Calculating...",
+      value: "Rs. 0",
+      change: "0%",
       isIncrease: true,
       icon: <CurrencyRupeeIcon sx={{ fontSize: 20 }} />,
-      color: indigoPrimary,
+      color: brandRed,
       subItems: [
-        { label: "Merchant Share", val: "RS 0" },
-        { label: "Admin Share", val: "RS 0" }
+        { label: "Merchant Share", val: "Rs. 0" },
+        { label: "Admin Share", val: "Rs. 0" }
       ]
     },
     {
@@ -65,7 +68,7 @@ const DashboardCards = () => {
       change: "+0%",
       isIncrease: true,
       icon: <ShoppingBagIcon sx={{ fontSize: 20 }} />,
-      color: "#00d26a",
+      color: "#05cd99",
     },
     {
       title: "Total Users",
@@ -76,12 +79,12 @@ const DashboardCards = () => {
       color: "#ffb547",
     },
     {
-      title: "Order Success %",
+      title: "Performance",
       value: "0%",
       change: "+0%",
       isIncrease: true,
-      icon: <CheckCircleIcon sx={{ fontSize: 20 }} />,
-      color: "#00d26a",
+      icon: <RocketLaunchIcon sx={{ fontSize: 20 }} />,
+      color: indigoPrimary,
     },
   ]);
   const [orders, setOrders] = useState([]);
@@ -177,14 +180,14 @@ const DashboardCards = () => {
       setStats([
         {
           title: "Total Revenue",
-          value: `RS ${totalRevenue.toLocaleString()}`,
+          value: `Rs. ${totalRevenue.toLocaleString()}`,
           change: revPerf.change,
           isIncrease: revPerf.isInc,
           icon: <CurrencyRupeeIcon sx={{ fontSize: 20 }} />,
-          color: indigoPrimary,
+          color: brandRed,
           subItems: [
-            { label: "Merchant Share", val: `RS ${storeRev.toLocaleString()}` },
-            { label: "Admin Share", val: `RS ${adminRev.toLocaleString()}` }
+            { label: "Merchant Share", val: `Rs. ${storeRev.toLocaleString()}` },
+            { label: "Admin Share", val: `Rs. ${adminRev.toLocaleString()}` }
           ]
         },
         {
@@ -193,7 +196,7 @@ const DashboardCards = () => {
           change: ordersPerf.change,
           isIncrease: ordersPerf.isInc,
           icon: <ShoppingBagIcon sx={{ fontSize: 20 }} />,
-          color: "#00d26a",
+          color: "#05cd99",
         },
         {
           title: "Total Users",
@@ -204,7 +207,7 @@ const DashboardCards = () => {
           color: "#ffb547",
         },
         {
-          title: "Order Success %",
+          title: "Performance",
           value: `${fulfillmentRate}%`,
           change: successPerf.change,
           isIncrease: successPerf.isInc,
@@ -226,9 +229,9 @@ const DashboardCards = () => {
 
   const getStatusConfig = (status) => {
     const s = status.toLowerCase();
-    if (s.includes("complete") || s.includes("deliver")) return { color: "#00d26a", label: "Completed", bgcolor: "rgba(0, 210, 106, 0.1)" };
-    if (s.includes("cancel") || s.includes("reject")) return { color: "#ff4d49", label: "Cancelled", bgcolor: "rgba(255, 77, 73, 0.1)" };
-    return { color: "#4318ff", label: "Pending", bgcolor: "rgba(67, 24, 255, 0.1)" };
+    if (s.includes("complete") || s.includes("deliver")) return { color: "#05cd99", label: "Completed", bgcolor: alpha("#05cd99", 0.1) };
+    if (s.includes("cancel") || s.includes("reject")) return { color: "#E53935", label: "Cancelled", bgcolor: alpha("#E53935", 0.1) };
+    return { color: "#1b2559", label: "Pending", bgcolor: alpha("#1b2559", 0.1) };
   };
 
   return (
@@ -239,8 +242,8 @@ const DashboardCards = () => {
           <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
             Operational Overview
           </Typography>
-          <Typography variant="body2" sx={{ color: "#a3aed0", fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
-            <HubIcon sx={{ fontSize: 16 }} /> DayCatch Dashboard • Real-time Data Sync
+          <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+            <HubIcon sx={{ fontSize: 18 }} /> DayCatch Dashboard • Real-time Data Sync
           </Typography>
         </Box>
         <Tooltip title={refreshing ? "Refreshing..." : "Fresh Data"}>
@@ -261,7 +264,7 @@ const DashboardCards = () => {
       </Stack>
 
       {/* KPI Cloud */}
-      <Grid container spacing={4} sx={{ mb: 6 }}>
+      <Grid container spacing={3} sx={{ mb: 6 }}>
         {stats.map((stat, i) => (
           <Grid item xs={12} sm={6} lg={3} key={i}>
             <Paper
@@ -292,8 +295,8 @@ const DashboardCards = () => {
                   label={stat.change}
                   size="small"
                   sx={{
-                    bgcolor: stat.isIncrease ? alpha("#00d26a", 0.08) : alpha("#ff4d49", 0.08),
-                    color: stat.isIncrease ? "#00d26a" : "#ff4d49",
+                    bgcolor: stat.isIncrease ? alpha("#05cd99", 0.08) : alpha("#E53935", 0.08),
+                    color: stat.isIncrease ? "#05cd99" : "#E53935",
                     fontWeight: "900",
                     borderRadius: "10px",
                     border: "none",
@@ -312,11 +315,11 @@ const DashboardCards = () => {
               </Typography>
               
               {stat.subItems && (
-                <Stack direction="row" spacing={3} sx={{ mt: 2.5, pt: 2.5, borderTop: "1px dashed #e0e5f2" }}>
+                <Stack direction="row" spacing={2} sx={{ mt: 1.5, pt: 1.5, borderTop: "1px dashed #eef2f7" }}>
                   {stat.subItems.map((sub, j) => (
-                    <Box key={j}>
-                      <Typography variant="caption" sx={{ fontWeight: "800", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase" }}>{sub.label}</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: "900", color: "#1b2559" }}>{sub.val}</Typography>
+                    <Box key={j} sx={{ flex: 1 }}>
+                      <Typography variant="caption" sx={{ fontWeight: "800", color: "#a3aed0", fontSize: "9px", textTransform: "uppercase", display: "block" }}>{sub.label}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: "900", color: "#1b2559", fontSize: "12px" }}>{sub.val}</Typography>
                     </Box>
                   ))}
                 </Stack>
@@ -329,75 +332,71 @@ const DashboardCards = () => {
       <Grid container spacing={4}>
         {/* Real-time Order Stream */}
         <Grid item xs={12} lg={8}>
-          <Paper sx={{ p: 0, borderRadius: "32px", bgcolor: "#fff", border: "1px solid #e0e5f2", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", overflow: "hidden" }}>
-            <Box sx={{ p: 4, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#fafbfc", borderBottom: "1px solid #e0e5f2" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <InsightIcon sx={{ color: indigoPrimary }} />
-                <Typography variant="subtitle1" sx={{ fontWeight: "900", color: "#1b2559" }}>Recent Orders</Typography>
+          <Paper sx={{ p: 4, borderRadius: "24px", bgcolor: "#fff", border: "1px solid #e0e5f2", boxShadow: "0 20px 50px rgba(0,0,0,0.05)" }}>
+            <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: "900", color: "#1b2559", letterSpacing: "-1px" }}>Recent Operations</Typography>
+                <Typography variant="body2" sx={{ color: "#a3aed0", fontWeight: 700 }}>Real-time cluster stream from nodal transactions.</Typography>
               </Box>
               <Button 
                 onClick={() => navigate("/all-orders")}
-                sx={{ color: indigoPrimary, fontWeight: "900", textTransform: "none", fontSize: "13px", "&:hover": { bgcolor: "transparent", opacity: 0.7 } }}
+                sx={{ color: brandRed, fontWeight: "900", textTransform: "none", fontSize: "14px", "&:hover": { bgcolor: alpha(brandRed, 0.05) } }}
               >
-                View All Orders →
+                Launch All →
               </Button>
             </Box>
 
-            <TableContainer>
+            <TableContainer sx={{ border: "1px solid #eef2f6", borderRadius: "16px", overflow: "hidden" }}>
               <Table>
-                <TableHead>
+                <TableHead sx={{ bgcolor: "#fafbfc" }}>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", px: 4, py: 2, bgcolor: "#fff" }}>ID / Date</TableCell>
-                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", py: 2, bgcolor: "#fff" }}>Customer</TableCell>
-                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", py: 2, bgcolor: "#fff" }}>Order Status</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "10px", textTransform: "uppercase", px: 4, py: 2, bgcolor: "#fff" }}>Amount</TableCell>
+                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", px: 4 }}># Cart ID</TableCell>
+                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Recipient node</TableCell>
+                    <TableCell sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Status</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: "900", color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", px: 4 }}>Net payload</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {loading ? (
-                    <TableRow><TableCell colSpan={4} align="center" sx={{ py: 10 }}><LinearProgress sx={{ width: 100, bgcolor: "#f4f7fe", "& .MuiLinearProgress-bar": { bgcolor: indigoPrimary } }} /></TableCell></TableRow>
+                    <TableRow><TableCell colSpan={4} align="center" sx={{ py: 10 }}><CircularProgress size={30} sx={{ color: brandRed }} /></TableCell></TableRow>
+                  ) : orders.length === 0 ? (
+                    <TableRow><TableCell colSpan={4} align="center" sx={{ py: 10 }}><Typography variant="body1" color="#a3aed0" fontWeight="800">No operational threads found.</Typography></TableCell></TableRow>
                   ) : (
-                    <AnimatePresence mode="popLayout">
-                      {orders.map((order, idx) => {
-                        const status = getStatusConfig(order.status);
-                        return (
-                          <TableRow 
-                            key={order.id + idx}
-                            component={motion.tr}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                            sx={{ "&:hover": { bgcolor: "#f9fbff" }, transition: "0.2s" }}
-                          >
-                            <TableCell sx={{ px: 4, py: 2.5, borderBottom: "1px solid #f1f4f9" }}>
-                              <Typography variant="body2" sx={{ fontWeight: "900", color: indigoPrimary, fontFamily: "monospace" }}>#{order.id}</Typography>
-                              <Typography variant="caption" sx={{ fontWeight: "700", color: "#a3aed0" }}>{order.date}</Typography>
-                            </TableCell>
-                            <TableCell sx={{ py: 2.5, borderBottom: "1px solid #f1f4f9" }}>
-                              <Typography variant="body2" sx={{ fontWeight: "800", color: "#1b2559" }}>{order.customer}</Typography>
-                              <Typography variant="caption" sx={{ fontWeight: "700", color: "#a3aed0" }}>{order.phone}</Typography>
-                            </TableCell>
-                            <TableCell sx={{ py: 2.5, borderBottom: "1px solid #f1f4f9" }}>
-                              <Chip 
-                                label={status.label.toUpperCase()} 
-                                size="small" 
-                                sx={{ 
-                                  bgcolor: status.bgcolor, 
-                                  color: status.color, 
-                                  fontWeight: "900", 
-                                  fontSize: "9px",
-                                  borderRadius: "6px",
-                                  border: `1px solid ${alpha(status.color, 0.2)}`
-                                }} 
-                              />
-                            </TableCell>
-                            <TableCell align="right" sx={{ px: 4, py: 2.5, borderBottom: "1px solid #f1f4f9" }}>
-                              <Typography variant="body1" sx={{ fontWeight: "900", color: "#1b2559" }}>RS {Number(order.amount).toLocaleString()}</Typography>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </AnimatePresence>
+                    orders.map((order, idx) => {
+                      const status = getStatusConfig(order.status);
+                      return (
+                        <TableRow 
+                          key={order.id + idx}
+                          hover
+                          sx={{ "&:hover": { bgcolor: alpha(indigoPrimary, 0.02) }, transition: "0.2s" }}
+                        >
+                          <TableCell sx={{ px: 4 }}>
+                            <Typography variant="body2" sx={{ fontWeight: "900", color: "#1b2559" }}>#{order.id}</Typography>
+                            <Typography variant="caption" sx={{ fontWeight: "700", color: "#a3aed0" }}>{order.date}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontWeight: "800", color: "#1b2559" }}>{order.customer}</Typography>
+                            <Typography variant="caption" sx={{ fontWeight: "700", color: "#a3aed0" }}>{order.phone}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={status.label} 
+                              size="small" 
+                              sx={{ 
+                                bgcolor: status.bgcolor, 
+                                color: status.color, 
+                                fontWeight: "900", 
+                                fontSize: "10px",
+                                borderRadius: "8px"
+                              }} 
+                            />
+                          </TableCell>
+                          <TableCell align="right" sx={{ px: 4 }}>
+                            <Typography variant="body1" sx={{ fontWeight: "900", color: "#1b2559" }}>Rs. {Number(order.amount).toLocaleString()}</Typography>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -407,27 +406,19 @@ const DashboardCards = () => {
 
         {/* Action Cloud */}
         <Grid item xs={12} lg={4}>
-          <Paper sx={{ p: 4, borderRadius: "32px", height: "100%", bgcolor: indigoPrimary, color: "#fff", position: "relative", overflow: "hidden", boxShadow: "0 20px 50px rgba(67, 24, 255, 0.2)" }}>
+          <Paper sx={{ p: 4, borderRadius: "24px", height: "100%", bgcolor: indigoPrimary, color: "#fff", position: "relative", overflow: "hidden", boxShadow: "0 20px 50px rgba(27, 37, 89, 0.2)" }}>
             <Box sx={{ position: "absolute", top: -30, right: -30, width: 160, height: 160, background: alpha("#fff", 0.1), borderRadius: "50%" }} />
             <Box sx={{ position: "absolute", bottom: -50, left: -50, width: 200, height: 200, background: alpha("#fff", 0.05), borderRadius: "50%" }} />
             
-            <Typography variant="h5" sx={{ fontWeight: "900", mb: 1, position: "relative", letterSpacing: "-1px" }}>Quick Actions</Typography>
-            <Typography variant="body2" sx={{ mb: 4, opacity: 0.8, fontWeight: "600" }}>Manage your store catalog and detailed sales reports.</Typography>
+            <Typography variant="h5" sx={{ fontWeight: "900", mb: 1, position: "relative", letterSpacing: "-1px" }}>Workspace Hub</Typography>
+            <Typography variant="body2" sx={{ mb: 4, opacity: 0.8, fontWeight: "600" }}>Direct control node for system-wide configuration.</Typography>
             
-            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: 220 }}>
-              <motion.div
-                animate={{ 
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <Avatar sx={{ width: 90, height: 90, bgcolor: "rgba(255, 255, 255, 0.2)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.3)" }}>
-                  <TrendingUpIcon sx={{ fontSize: 40 }} />
-                </Avatar>
-              </motion.div>
-              <Typography variant="h6" sx={{ mt: 3, fontWeight: "900" }}>System Connected</Typography>
-              <Typography variant="caption" sx={{ opacity: 0.7, fontWeight: "700" }}>Health Status: 98.4% Live</Typography>
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: 180 }}>
+              <Avatar sx={{ width: 80, height: 80, bgcolor: "rgba(255, 255, 255, 0.15)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.2)" }}>
+                <SpeedIcon sx={{ fontSize: 40 }} />
+              </Avatar>
+              <Typography variant="h6" sx={{ mt: 3, fontWeight: "900" }}>System Core Active</Typography>
+              <Typography variant="caption" sx={{ opacity: 0.7, fontWeight: "700" }}>Operational Health: 100%</Typography>
             </Box>
             
             <Stack spacing={2} sx={{ position: "relative", mt: "auto" }}>
@@ -435,17 +426,18 @@ const DashboardCards = () => {
                   fullWidth 
                   variant="contained" 
                   sx={{ 
-                    bgcolor: "#fff", 
-                    color: indigoPrimary, 
+                    bgcolor: brandRed, 
+                    color: "#fff", 
                     fontWeight: "900",
-                    borderRadius: "16px",
+                    borderRadius: "14px",
                     py: 1.5,
                     textTransform: "none",
-                    "&:hover": { bgcolor: alpha("#fff", 0.9) }
+                    boxShadow: "0 10px 15px rgba(229, 57, 53, 0.2)",
+                    "&:hover": { bgcolor: "#d32f2f" }
                   }}
                   onClick={() => navigate("/products")}
                 >
-                  View Product List
+                  Configure Catalog
                 </Button>
                 <Button 
                   fullWidth 
@@ -454,14 +446,14 @@ const DashboardCards = () => {
                     borderColor: "rgba(255,255,255,0.3)", 
                     color: "#fff", 
                     fontWeight: "900",
-                    borderRadius: "16px",
+                    borderRadius: "14px",
                     py: 1.5,
                     textTransform: "none",
                     "&:hover": { borderColor: "#fff", border: "1px solid #fff" }
                   }}
                   onClick={() => navigate("/reports")}
                 >
-                  General Reports
+                  Operational Logs
                 </Button>
             </Stack>
           </Paper>

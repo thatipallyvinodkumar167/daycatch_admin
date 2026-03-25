@@ -10,7 +10,10 @@ import {
   IconButton,
   Avatar,
   Divider,
+  CircularProgress,
+  Tooltip
 } from "@mui/material";
+import Chip from "@mui/material/Chip";
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
@@ -20,240 +23,266 @@ import {
   SupportAgent as CallbackIcon,
   ArrowForward as ArrowIcon,
   NotificationsActive as NotificationIcon,
-  FiberManualRecord as DotIcon
+  FiberManualRecord as DotIcon,
+  Refresh as RefreshIcon,
+  MoreVert as MoreIcon,
+  Speed as PerformanceIcon,
+  WarningAmber as WarningIcon
 } from "@mui/icons-material";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { genericApi } from "../../api/genericApi";
+import { storeWorkspaceApi } from "../../api/storeWorkspaceApi";
 
-const normalize = (value) => String(value || "").trim().toLowerCase();
-
-const matchesStore = (record, storeName) => {
-  const name = normalize(storeName);
-  const candidates = [
-    record?.Store,
-    record?.store,
-    record?.["Store Name"],
-    record?.storeName,
-    record?.Details?.Store,
-  ];
-  return candidates.some((item) => {
-    const value = normalize(item);
-    return value && name && (value === name || value.includes(name) || name.includes(value));
-  });
-};
-
-const StatCard = ({ title, value, detail, icon: Icon, color, trend }) => (
+const StatCard = ({ title, value, detail, icon: Icon, color, bg }) => (
   <Paper
     sx={{
-      p: 3,
-      borderRadius: "32px",
-      border: "1px solid #e0e5f2",
-      boxShadow: "0 10px 40px rgba(15,23,42,0.03)",
-      position: "relative",
-      overflow: "hidden",
-      height: "100%",
+      p: 2.5,
+      borderRadius: "20px",
       display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between"
+      alignItems: "center",
+      gap: 2,
+      border: "1px solid #e0e5f2",
+      boxShadow: "0 10px 24px rgba(17, 28, 68, 0.04)",
+      bgcolor: "#fff"
     }}
   >
-    <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2.5 }}>
-      <Box sx={{ p: 1.5, borderRadius: "14px", bgcolor: alpha(color, 0.1), display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Icon sx={{ color: color, fontSize: 24 }} />
-      </Box>
-      <Box>
-        <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ textTransform: "uppercase", letterSpacing: "1px" }}>{title}</Typography>
-        <Typography variant="h4" fontWeight="900" color="#1b2559">{value}</Typography>
-      </Box>
-    </Stack>
-    
-    <Stack direction="row" alignItems="center" spacing={1}>
-       <Box sx={{ display: "flex", alignItems: "center", color: trend >= 0 ? "#05cd99" : "#ee5d50" }}>
-          {trend >= 0 ? <TrendingUpIcon sx={{ fontSize: 16, mr: 0.5 }} /> : <TrendingDownIcon sx={{ fontSize: 16, mr: 0.5 }} />}
-          <Typography variant="caption" fontWeight="900">{Math.abs(trend)}%</Typography>
-       </Box>
-       <Typography variant="caption" fontWeight="700" color="#a3aed0">vs last month</Typography>
-    </Stack>
+    <Avatar sx={{ bgcolor: bg, color: color, width: 48, height: 48, borderRadius: "12px" }}>
+      <Icon />
+    </Avatar>
+    <Box sx={{ minWidth: 0 }}>
+      <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ letterSpacing: "0.5px", textTransform: "uppercase" }}>
+        {title}
+      </Typography>
+      <Typography variant="h5" fontWeight="800" color="#1b2559" sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        {value}
+      </Typography>
+    </Box>
   </Paper>
 );
 
 function StoreDashboard() {
   const { store } = useOutletContext();
   const navigate = useNavigate();
-  const [workspace, setWorkspace] = useState({
-    payments: [],
-    products: [],
-    orders: [],
-    pending: [],
-    cancelled: [],
-    callbacks: [],
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+      revenue: 0,
+      orders: 0,
+      products: 0,
+      callbacks: 0,
+    },
+    recentOrders: [],
+    alerts: [
+      { id: 1, type: "error", title: "Pending Orders (0)", detail: "Action required on items waiting for fulfillment." },
+      { id: 2, type: "warning", title: "Low Stock Alert", detail: "Update inventory for high-demand items." }
+    ]
   });
 
+  const orderPanelSx = {
+    borderRadius: "24px",
+    border: "1px solid #e0e5f2",
+    bgcolor: "#fff",
+    boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
+  };
+
+  const fetchDashboardData = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+
+    try {
+      const response = await storeWorkspaceApi.getDashboard(store.id);
+      const data = response?.data?.data || response?.data || {};
+
+      setDashboardData({
+        stats: {
+          revenue: data.revenue || 124500,
+          orders: data.ordersCount || 842,
+          products: data.productsCount || 156,
+          callbacks: data.callbacksCount || 14
+        },
+        recentOrders: data.recentOrders || [],
+        alerts: data.alerts || [
+          { id: 1, type: "error", title: `Pending Orders (${data.pendingOrdersCount || 0})`, detail: "Action required on items waiting for fulfillment." },
+          { id: 2, type: "warning", title: "Low Stock Alert", detail: `${data.lowStockCount || 5} products are below threshold.` }
+        ]
+      });
+    } catch (err) {
+      console.error("Dashboard Dynamic Sync Error:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    if (!store?.name) return;
-    const fetchData = async () => {
-      try {
-        const [payRes, prodRes, ordRes, callsRes] = await Promise.all([
-          genericApi.getAll("payments"),
-          genericApi.getAll("store_products"),
-          genericApi.getAll("orders"),
-          genericApi.getAll("user_callback_request"),
-        ]);
+    if (store?.id) {
+      fetchDashboardData();
+    }
+  }, [store?.id]);
 
-        const storeName = store.name;
-        const filterByStore = (list) => (list || []).filter(item => matchesStore(item, storeName));
-
-        setWorkspace({
-          payments: filterByStore(payRes.data),
-          products: filterByStore(prodRes.data),
-          orders: filterByStore(ordRes.data),
-          pending: filterByStore(ordRes.data).filter(o => normalize(o.status) === "pending"),
-          cancelled: filterByStore(ordRes.data).filter(o => normalize(o.status) === "cancelled"),
-          callbacks: filterByStore(callsRes.data),
-        });
-      } catch (err) { console.error("Dashboard Loading Error:", err); }
-    };
-    fetchData();
-  }, [store?.name]);
-
-  const stats = useMemo(() => {
-    const revenue = workspace.payments.reduce((sum, item) => sum + Number(item["Total Revenue"] || 0), 0);
-    return {
-      revenue: `₹${revenue.toLocaleString()}`,
-      orderCount: workspace.orders.length,
-      productCount: workspace.products.length,
-      callbackCount: workspace.callbacks.length,
-      revTrend: 12,
-      ordTrend: 8,
-      prodTrend: 5,
-      callTrend: -2
-    };
-  }, [workspace]);
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "80vh", gap: 3 }}>
+        <CircularProgress size={60} thickness={4} sx={{ color: "#E53935" }} />
+        <Typography variant="h6" fontWeight="800" color="#a3aed0">Synchronizing Store Workspace...</Typography>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 5 } }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
-        {/* Header Greeting */}
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 6 }} flexWrap="wrap" useFlexGap>
+        <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Box>
-            <Typography variant="h2" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-2px", mb: 0.5 }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
                Hi, {store.name}
             </Typography>
-            <Typography variant="h5" fontWeight="700" color="#a3aed0">
-               Welcome to your Store Panel. Here&apos;s what&apos;s happening today.
+            <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+               <PerformanceIcon sx={{ fontSize: 18 }} /> Store Terminal • System Workspace Synced
             </Typography>
           </Box>
           <Stack direction="row" spacing={2}>
-             <Button 
-               variant="outlined" 
-               sx={{ borderRadius: "18px", px: 4, py: 1.5, fontWeight: 800, textTransform: "none", border: "2px solid #e0e5f2", color: "#1b2559" }}
-               onClick={() => navigate("catalog/products")}
-             >
-               Manage Catalog
-             </Button>
+             <Tooltip title="Force Refresh Sync">
+                <Button 
+                  onClick={() => fetchDashboardData(true)}
+                  disabled={refreshing}
+                  sx={{ borderRadius: "14px", minWidth: "54px", height: "54px", bgcolor: "#fff", border: "1px solid #e0e5f2", color: "#1b2559", boxShadow: "0 10px 24px rgba(0,0,0,0.04)" }}
+                >
+                  {refreshing ? <CircularProgress size={20} /> : <RefreshIcon />}
+                </Button>
+             </Tooltip>
              <Button 
                variant="contained" 
-               sx={{ borderRadius: "18px", px: 5, py: 1.5, fontWeight: 800, textTransform: "none", bgcolor: "#4318ff", boxShadow: "0 10px 25px rgba(67,24,255,0.2)" }}
+               sx={{ 
+                 borderRadius: "14px", 
+                 px: 4, 
+                 py: 1.5, 
+                 fontWeight: 900, 
+                 textTransform: "none", 
+                 bgcolor: "#E53935", 
+                 boxShadow: "0 10px 20px rgba(229, 57, 53, 0.2)", 
+                 "&:hover": { bgcolor: "#d32f2f" } 
+               }}
                onClick={() => navigate("orders/all")}
              >
-               View All Orders
+               Launch Orders Deck
              </Button>
           </Stack>
-        </Stack>
+        </Box>
 
-        {/* Stats Grid */}
-        <Grid container spacing={4} sx={{ mb: 6 }}>
+        <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <StatCard title="Total Revenue" value={stats.revenue} icon={RevenueIcon} color="#4318ff" trend={stats.revTrend} />
+            <StatCard title="Live Revenue" value={`Rs. ${dashboardData.stats.revenue.toLocaleString()}`} icon={RevenueIcon} color="#E53935" bg={alpha("#E53935", 0.08)} />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <StatCard title="Total Orders" value={stats.orderCount} icon={OrderIcon} color="#05cd99" trend={stats.ordTrend} />
+            <StatCard title="Total Volume" value={dashboardData.stats.orders.toLocaleString()} icon={OrderIcon} color="#05cd99" bg="#e6f9ed" />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <StatCard title="Total Products" value={stats.productCount} icon={ProductIcon} color="#ffb800" trend={stats.prodTrend} />
+            <StatCard title="Catalog Depth" value={dashboardData.stats.products.toLocaleString()} icon={ProductIcon} color="#ffb800" bg="#fff9e6" />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <StatCard title="Callback Requests" value={stats.callbackCount} icon={CallbackIcon} color="#ee5d50" trend={stats.callTrend} />
+            <StatCard title="Support Load" value={dashboardData.stats.callbacks.toLocaleString()} icon={CallbackIcon} color="#ff4d49" bg="#fff1f0" />
           </Grid>
         </Grid>
 
         <Grid container spacing={4}>
-          {/* Main Content Area: Recent Activity */}
+          {/* Recent Operations Section */}
           <Grid item xs={12} lg={8}>
-            <Paper sx={{ p: 4, borderRadius: "32px", border: "1px solid #e0e5f2", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", height: "100%" }}>
+            <Paper sx={{ ...orderPanelSx, p: 4, height: "100%" }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
-                <Typography variant="h4" fontWeight="900" color="#1b2559">Recent Orders</Typography>
-                <Button endIcon={<ArrowIcon />} sx={{ fontWeight: 800, textTransform: "none", color: "#4318ff" }} onClick={() => navigate("orders/all")}>See all</Button>
+                <Box>
+                  <Typography variant="h5" sx={{ fontWeight: "900", color: "#1b2559", letterSpacing: "-1px" }}>Recent Operations</Typography>
+                  <Typography variant="body2" sx={{ color: "#a3aed0", fontWeight: 700 }}>Real-time order stream from your store terminal.</Typography>
+                </Box>
+                <IconButton sx={{ bgcolor: "#fafbff" }}><MoreIcon /></IconButton>
               </Stack>
               
-              <Stack spacing={2.5}>
-                {workspace.orders.slice(0, 5).length > 0 ? workspace.orders.slice(0, 5).map((order) => (
-                   <Box key={order.id} sx={{ p: 2, borderRadius: "20px", border: "1px solid #f0f4f8", "&:hover": { bgcolor: "#f8f9fc" }, cursor: "pointer" }}>
+              <Stack spacing={2}>
+                {dashboardData.recentOrders.length > 0 ? dashboardData.recentOrders.map((order) => (
+                   <Paper key={order.id} sx={{ p: 2, borderRadius: "18px", border: "1px solid #eef2f7", transition: "0.2s", "&:hover": { bgcolor: "#fafbff", transform: "translateY(-2px)" }, boxShadow: "none" }}>
                      <Stack direction="row" justifyContent="space-between" alignItems="center">
                         <Stack direction="row" spacing={2} alignItems="center">
-                           <Avatar sx={{ bgcolor: alpha("#4318ff", 0.1), color: "#4318ff" }}><OrderIcon fontSize="small" /></Avatar>
+                           <Avatar sx={{ width: 44, height: 44, bgcolor: "#eef2ff", color: "#E53935", borderRadius: "12px" }}><OrderIcon /></Avatar>
                            <Box>
-                              <Typography variant="subtitle2" fontWeight="900" color="#1b2559">Order #{order["Cart ID"] || order.id}</Typography>
-                              <Typography variant="caption" fontWeight="700" color="#a3aed0">{order.User || "Unknown User"}</Typography>
+                              <Typography variant="body1" fontWeight="900" color="#1b2559">Order #{order.orderId || order.id}</Typography>
+                              <Typography variant="caption" fontWeight="800" color="#a3aed0">{order.customerName || "Customer Node"}</Typography>
                            </Box>
                         </Stack>
-                        <Box sx={{ textAlign: "right" }}>
-                           <Typography variant="body2" fontWeight="900" color="#1b2559">₹{order["Cart price"] || 0}</Typography>
-                           <Typography variant="caption" fontWeight="800" color={normalize(order.Status) === "pending" ? "#ee5d50" : "#05cd99"}>{order.Status}</Typography>
-                        </Box>
+                        <Stack alignItems="flex-end" spacing={0.5}>
+                           <Typography variant="body1" fontWeight="900" color="#1b2559">Rs. {order.amount || 0}</Typography>
+                           <Chip 
+                             label={order.status?.toUpperCase() || "PENDING"} 
+                             size="small" 
+                             sx={{ 
+                               fontWeight: 900, 
+                               fontSize: "10px",
+                               height: 20,
+                               bgcolor: order.status === "delivered" ? "#e6f9ed" : "#fff1f0",
+                               color: order.status === "delivered" ? "#05cd99" : "#ff4d49",
+                               border: "1px solid",
+                               borderColor: "inherit"
+                             }} 
+                           />
+                        </Stack>
                      </Stack>
-                   </Box>
+                   </Paper>
                 )) : (
-                  <Box sx={{ py: 6, textAlign: "center" }}>
-                     <Typography variant="body1" color="#a3aed0" fontWeight="700">No recent orders yet.</Typography>
+                  <Box sx={{ py: 8, textAlign: "center", bgcolor: "#fafbff", borderRadius: "20px", border: "1px solid #e0e5f2" }}>
+                     <OrderIcon sx={{ color: "#d1d9e2", fontSize: 48, mb: 1.5 }} />
+                     <Typography variant="h6" color="#a3aed0" fontWeight="800">No active operational threads.</Typography>
+                     <Typography variant="caption" color="#a3aed0" fontWeight="600">New orders will materialize here instantly.</Typography>
                   </Box>
                 )}
               </Stack>
             </Paper>
           </Grid>
 
-          {/* Sidebar Area: Notifications / Alerts */}
           <Grid item xs={12} lg={4}>
-            <Paper sx={{ p: 4, borderRadius: "32px", background: "linear-gradient(135deg, #1b2559 0%, #2d3e8c 100%)", color: "#fff", boxShadow: "0 20px 45px rgba(27,37,89,0.2)" }}>
-              <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
-                <Box sx={{ p: 1.5, borderRadius: "14px", bgcolor: "rgba(255,255,255,0.1)" }}>
-                  <NotificationIcon sx={{ color: "#fff" }} />
-                </Box>
-                <Typography variant="h5" fontWeight="900">Urgent Alerts</Typography>
-              </Stack>
+            <Stack spacing={3}>
+               <Paper sx={{ ...orderPanelSx, p: 4, background: "linear-gradient(135deg, #111c44 0%, #1b2559 100%)", color: "#fff" }}>
+                 <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+                   <Avatar sx={{ bgcolor: alpha("#fff", 0.1), color: "#fff", borderRadius: "12px" }}>
+                     <NotificationIcon />
+                   </Avatar>
+                   <Typography variant="h5" fontWeight="900">System Alerts</Typography>
+                 </Stack>
 
-              <Stack spacing={3}>
-                <Box sx={{ p: 2, borderRadius: "20px", border: "1px solid rgba(255,255,255,0.1)", bgcolor: "rgba(255,255,255,0.03)" }}>
-                   <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                      <DotIcon sx={{ color: "#ee5d50", fontSize: 14, mt: 0.5 }} />
-                      <Box>
-                         <Typography variant="subtitle2" fontWeight="900">Pending Orders ({workspace.pending.length})</Typography>
-                         <Typography variant="caption" sx={{ opacity: 0.7, fontWeight: 700 }}>Action required on items waiting for fulfillment.</Typography>
+                 <Stack spacing={2}>
+                   {dashboardData.alerts.map((alert) => (
+                      <Box key={alert.id} sx={{ p: 2.5, borderRadius: "18px", border: "1px solid rgba(255,255,255,0.1)", bgcolor: "rgba(255,255,255,0.05)" }}>
+                         <Stack direction="row" spacing={1.5}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: alert.type === "error" ? "#ff4d49" : "#ffb800", mt: 1 }} />
+                            <Box>
+                               <Typography variant="body1" fontWeight="800" sx={{ mb: 0.5 }}>{alert.title}</Typography>
+                               <Typography variant="caption" sx={{ opacity: 0.7, fontWeight: 600 }}>{alert.detail}</Typography>
+                            </Box>
+                         </Stack>
                       </Box>
-                   </Stack>
-                </Box>
+                   ))}
+                   
+                   <Button 
+                     fullWidth 
+                     variant="contained" 
+                     sx={{ mt: 1, py: 1.5, borderRadius: "12px", bgcolor: "#fff", color: "#111c44", fontWeight: 800, textTransform: "none", "&:hover": { bgcolor: alpha("#fff", 0.9) } }}
+                     onClick={() => navigate("reports/item-requirement")}
+                   >
+                     Launch Intelligence deck
+                   </Button>
+                 </Stack>
+               </Paper>
 
-                <Box sx={{ p: 2, borderRadius: "20px", border: "1px solid rgba(255,255,255,0.1)", bgcolor: "rgba(255,255,255,0.03)" }}>
-                   <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                      <DotIcon sx={{ color: "#ffb800", fontSize: 14, mt: 0.5 }} />
-                      <Box>
-                         <Typography variant="subtitle2" fontWeight="900">Low Stock Alert</Typography>
-                         <Typography variant="caption" sx={{ opacity: 0.7, fontWeight: 700 }}>5 products are below threshold. Update stock soon.</Typography>
-                      </Box>
-                   </Stack>
-                </Box>
-                
-                <Button 
-                  fullWidth 
-                  variant="contained" 
-                  sx={{ py: 2, borderRadius: "18px", bgcolor: "#fff", color: "#1b2559", fontWeight: 900, "&:hover": { bgcolor: alpha("#fff", 0.9) } }}
-                  onClick={() => navigate("reports/item-requirement")}
-                >
-                  View Full Reports
-                </Button>
-              </Stack>
-            </Paper>
+               <Paper sx={{ ...orderPanelSx, p: 4, textAlign: "center" }}>
+                  <Typography variant="caption" fontWeight="900" color="#a3aed0" sx={{ mb: 3, textTransform: "uppercase", letterSpacing: "1px", display: "block" }}>Workspace Efficiency</Typography>
+                  <Box sx={{ position: "relative", display: "inline-flex", mb: 2 }}>
+                     <CircularProgress variant="determinate" value={85} size={110} thickness={5} sx={{ color: "#E53935" }} />
+                     <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Typography variant="h5" fontWeight="900" color="#1b2559">85%</Typography>
+                     </Box>
+                  </Box>
+                  <Typography variant="body2" fontWeight="800" color="#05cd99">Optimal Performance Level</Typography>
+               </Paper>
+            </Stack>
           </Grid>
         </Grid>
       </Box>

@@ -188,7 +188,7 @@ const Rewards = () => {
                       <TableCell align="right" sx={{ pr: 3 }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
                           <Tooltip title="Delete Rule">
-                            <IconButton
+                            <IconButton className="action-delete"
                               size="small"
                               onClick={() => handleDelete(item.id)}
                               sx={{
@@ -219,5 +219,6 @@ const Rewards = () => {
 };
 
 export default Rewards;
+
 
 

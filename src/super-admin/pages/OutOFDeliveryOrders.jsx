@@ -323,7 +323,7 @@ const OutOFDeliveryOrders = () => {
                                 </IconButton>
                             </Tooltip>
                             <Tooltip title="Edit Details">
-                                <IconButton 
+                                <IconButton className="action-edit" 
                                   size="small" 
                                   onClick={() => handleOpenDetails(order)}
                                   sx={{ 
@@ -414,5 +414,6 @@ const OutOFDeliveryOrders = () => {
 };
 
 export default OutOFDeliveryOrders;
+
 
 

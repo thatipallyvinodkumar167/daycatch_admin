@@ -193,7 +193,7 @@ const StoresCallbackRequests = () => {
                     </TableCell>
                     <TableCell align="right" sx={{ pr: 3 }}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <IconButton 
+                        <IconButton className="action-edit" 
                             onClick={() => navigate(`/store-callback-request/edit/${item.id}`)}
                             sx={{ 
                                 backgroundColor: "#f4f7fe", 
@@ -206,6 +206,7 @@ const StoresCallbackRequests = () => {
                             <EditIcon fontSize="small" />
                         </IconButton>
                         <Button 
+                            className="action-delete"
                             variant="outlined" 
                             size="small"
                             onClick={() => handleDelete(item.id)}
@@ -234,5 +235,6 @@ const StoresCallbackRequests = () => {
 };
 
 export default StoresCallbackRequests;
+
 
 

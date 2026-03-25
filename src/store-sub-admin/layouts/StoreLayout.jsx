@@ -16,7 +16,7 @@ export const useStore = () => useContext(StoreContext);
 const createFallbackStore = (storeId, storeNameRaw) => ({
   id: storeId,
   name: storeNameRaw || "Unknown",
-  logo: `https://ui-avatars.com/api/?name=${encodeURIComponent(storeNameRaw || "S")}&background=4318ff&color=fff`,
+  logo: `https://ui-avatars.com/api/?name=${encodeURIComponent(storeNameRaw || "S")}&background=E53935&color=fff`,
 });
 
 const getCachedStore = (storeId, storeNameRaw) => {
@@ -102,14 +102,14 @@ function StoreLayout() {
   if (loading && !store) {
     return (
       <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#f4f7fe" }}>
-        <CircularProgress sx={{ color: "#4318ff" }} />
+        <CircularProgress sx={{ color: "#E53935" }} />
       </Box>
     );
   }
 
   return (
     <StoreContext.Provider value={store}>
-      <Box sx={{ display: "flex" }}>
+      <Box className="store-shell" sx={{ display: "flex" }}>
         <StoreTopbar
           store={store}
           onToggleSidebar={() => setSidebarOpen((current) => !current)}

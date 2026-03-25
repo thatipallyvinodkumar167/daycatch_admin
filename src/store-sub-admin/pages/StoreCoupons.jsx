@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  alpha,
   Box,
+  Button,
+  Chip,
+  IconButton,
+  InputAdornment,
+  Paper,
+  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -9,82 +16,157 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
-  InputAdornment,
-  useTheme,
-  alpha,
-  Paper,
-  IconButton,
-  Chip,
-  Button
+  Alert,
 } from "@mui/material";
 import {
-  Search as SearchIcon,
+  Delete as DeleteIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Search as SearchIcon,
+  LocalOffer as CouponIcon
 } from "@mui/icons-material";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
+import { formatStoreDate, matchesStoreRecord } from "../utils/storeWorkspace";
+
+const getCouponStatus = (coupon) => {
+  if (coupon.status) return coupon.status;
+  if (!coupon.toDate) return "Active";
+
+  const expiryDate = new Date(coupon.toDate);
+  if (Number.isNaN(expiryDate.getTime())) return "Active";
+
+  return expiryDate < new Date() ? "Expired" : "Active";
+};
 
 function StoreCoupons() {
   const { store } = useOutletContext();
   const navigate = useNavigate();
-  const theme = useTheme();
-  
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // Mock data matching the requested fields
-  const [coupons] = useState([
-    {
-      id: 1,
-      name: "Promotion Coupon",
-      discount: "0",
-      amountType: "regular",
-      fromDate: "2026-02-26 23:37:00",
-      toDate: "2026-03-27 23:36:00",
-      useLimit: 10,
-      cartValue: 0
-    }
-  ]);
+  const [coupons, setCoupons] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
-  const filteredCoupons = coupons.filter(coupon => 
-    coupon.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const fetchCoupons = async () => {
+    try {
+      const response = await genericApi.getAll("coupons");
+      const rows = response?.data?.results || [];
+
+      setCoupons(
+        rows
+          .filter((row) => matchesStoreRecord(row, store))
+          .map((row) => ({
+            id: String(row._id ?? row.id ?? ""),
+            name: row["Coupon Name"] || row.couponName || "Untitled Coupon",
+            code: row["Coupon Code"] || row.couponCode || "N/A",
+            type: row["Coupon Type"] || row.couponType || "regular",
+            discountType: row["Discount Type"] || row.discount || "percentage",
+            discountValue: Number(row["Discount Value"] || row.discountValue || 0),
+            useLimit: Number(row["Use Limit"] || row.useLimit || 0),
+            minCartValue: Number(row["Minimum Cart Value"] || row.minCartValue || 0),
+            fromDate: row["From Date"] || row.fromDate || "",
+            toDate: row["To Date"] || row.toDate || "",
+            status: getCouponStatus({
+              status: row.Status || row.status,
+              toDate: row["To Date"] || row.toDate,
+            }),
+          }))
+      );
+    } catch (error) {
+      console.error("Error fetching coupons:", error);
+      setCoupons([]);
+    }
+  };
+
+  useEffect(() => {
+    if (store?.id || store?.name) {
+      fetchCoupons();
+    }
+  }, [store?.id, store?.name]);
+
+  const orderPanelSx = {
+    borderRadius: "24px",
+    border: "1px solid #e0e5f2",
+    bgcolor: "#fff",
+    boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
+  };
+
+  const filteredCoupons = useMemo(
+    () =>
+      coupons.filter((coupon) => {
+        const query = searchTerm.toLowerCase().trim();
+        return (
+          coupon.name.toLowerCase().includes(query) ||
+          coupon.code.toLowerCase().includes(query)
+        );
+      }),
+    [coupons, searchTerm]
   );
 
+  const handleDelete = async (couponId) => {
+    try {
+      await genericApi.remove("coupons", couponId);
+      setCoupons((current) => current.filter((coupon) => coupon.id !== couponId));
+      setSnackbar({ open: true, message: "Coupon deleted successfully.", severity: "success" });
+    } catch (error) {
+      console.error("Unable to delete coupon:", error);
+      setSnackbar({ open: true, message: "Failed to delete coupon.", severity: "error" });
+    }
+  };
+
+  const handleQuickEdit = async (coupon) => {
+    const nextName = window.prompt("Coupon name", coupon.name);
+    if (nextName === null) return;
+
+    const nextCode = window.prompt("Coupon code", coupon.code);
+    if (nextCode === null) return;
+
+    try {
+      await genericApi.update("coupons", coupon.id, {
+        "Coupon Name": nextName.trim() || coupon.name,
+        "Coupon Code": nextCode.trim() || coupon.code,
+      });
+      await fetchCoupons();
+      setSnackbar({ open: true, message: "Coupon updated successfully.", severity: "success" });
+    } catch (error) {
+      console.error("Unable to update coupon:", error);
+      setSnackbar({ open: true, message: "Failed to update coupon.", severity: "error" });
+    }
+  };
+
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
+        <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Box>
-            <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1px" }}>
-              Store Coupons
+            <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
+               Store Coupons
             </Typography>
-            <Typography variant="body2" fontWeight="700" color="#a3aed0">
-              Manage promotion vouchers for {store.name}
+            <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+               <CouponIcon sx={{ fontSize: 18 }} /> Incentive Console • Promotional Strategy
             </Typography>
           </Box>
           <Button
             variant="contained"
             onClick={() => navigate("../add-coupon")}
             sx={{
-              borderRadius: "18px",
+              borderRadius: "14px",
               py: 1.5,
               px: 4,
-              bgcolor: "#4318ff",
-              boxShadow: "0 10px 25px rgba(67,24,255,0.25)",
+              bgcolor: "#E53935",
+              boxShadow: "0 10px 20px rgba(229, 57, 53, 0.2)",
               textTransform: "none",
-              fontWeight: 800,
+              fontWeight: 900,
               fontSize: "15px",
-              "&:hover": { bgcolor: "#3310cc" }
+              "&:hover": { bgcolor: "#d32f2f" }
             }}
           >
-            + Add Coupon
+            + Create Coupon
           </Button>
-        </Stack>
+        </Box>
 
-        <Paper sx={{ p: { xs: 3, md: 4 }, borderRadius: "28px", boxShadow: "0 18px 40px rgba(15,23,42,0.04)", border: "1px solid #e0e5f2" }}>
-          
+        <Paper sx={{ p: 4, ...orderPanelSx }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
             <Typography variant="h4" fontWeight="800" color="#1b2559">
               Coupon List
@@ -93,7 +175,7 @@ function StoreCoupons() {
               placeholder="Search coupons..."
               size="small"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(event) => setSearchTerm(event.target.value)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -106,7 +188,7 @@ function StoreCoupons() {
                   width: { xs: "100%", sm: "280px" },
                   fontWeight: 600,
                   "& fieldset": { borderColor: "rgba(224,229,242,0.8)" },
-                }
+                },
               }}
             />
           </Stack>
@@ -115,47 +197,70 @@ function StoreCoupons() {
             <Table>
               <TableHead sx={{ bgcolor: "#f8f9fc" }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2", width: "60px" }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2" }}>Coupon Name</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2" }}>Discount</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2" }}>Amount</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2" }}>From Date</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2" }}>To Date</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2" }}>Uses Limit</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2" }}>Cart Value</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #e0e5f2", textAlign: "right" }}>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", width: "60px" }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Coupon Name</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Code</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Discount</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Valid Till</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Min Cart Value</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", textAlign: "right" }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredCoupons.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
-                      <Typography variant="h6" color="#a3aed0" fontWeight="800">No coupons found</Typography>
+                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                      <Typography variant="h6" color="#a3aed0" fontWeight="800">
+                        No coupons found
+                      </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredCoupons.map((row) => (
-                    <TableRow key={row.id} hover sx={{ transition: "0.2s", "&:hover": { bgcolor: alpha("#4318ff", 0.03) } }}>
-                      <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{row.id}</TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="800" color="#1b2559">{row.name}</Typography>
+                  filteredCoupons.map((coupon, index) => (
+                    <TableRow key={coupon.id} hover sx={{ transition: "0.2s", "&:hover": { bgcolor: alpha("#1b2559", 0.02) } }}>
+                      <TableCell sx={{ fontWeight: 800, color: "#a3aed0" }}>{index + 1}</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{coupon.name}</TableCell>
+                      <TableCell sx={{ fontWeight: 900, color: "#1b2559" }}>{coupon.code}</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: "#05cd99" }}>
+                        {coupon.discountType === "fixed" ? `Rs. ${coupon.discountValue}` : `${coupon.discountValue}%`}
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: "#05cd99" }}>{row.discount}%</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#a3aed0" }}>{formatStoreDate(coupon.toDate)}</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>Rs. {coupon.minCartValue}</TableCell>
                       <TableCell>
-                        <Chip label={row.amountType} size="small" sx={{ fontWeight: 900, textTransform: "uppercase", fontSize: "10px", bgcolor: "#eef4ff", color: "#4318ff" }} />
+                        <Chip
+                          label={coupon.status}
+                          size="small"
+                          sx={{
+                            backgroundColor: coupon.status === "Active" ? alpha("#05cd99", 0.1) : alpha("#E53935", 0.1),
+                            color: coupon.status === "Active" ? "#05cd99" : "#E53935",
+                            fontWeight: 800,
+                            borderRadius: "10px"
+                          }}
+                        />
                       </TableCell>
-                      <TableCell sx={{ color: "#707eae", fontSize: "0.8rem", fontWeight: 700 }}>{row.fromDate}</TableCell>
-                      <TableCell sx={{ color: "#707eae", fontSize: "0.8rem", fontWeight: 700 }}>{row.toDate}</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{row.useLimit}</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>₹{row.cartValue}</TableCell>
                       <TableCell sx={{ textAlign: "right" }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <IconButton size="small" sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.1), borderRadius: "10px" }}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton size="small" sx={{ color: "#f44336", bgcolor: alpha("#f44336", 0.1), borderRadius: "10px" }}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
+                          <Tooltip title="Quick Edit">
+                            <IconButton
+                              className="action-edit"
+                              size="small"
+                              onClick={() => handleQuickEdit(coupon)}
+                              sx={{ color: "#1b2559", bgcolor: alpha("#1b2559", 0.05), borderRadius: "10px" }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton
+                              className="action-delete"
+                              size="small"
+                              onClick={() => handleDelete(coupon.id)}
+                              sx={{ color: "#E53935", bgcolor: alpha("#E53935", 0.05), borderRadius: "10px" }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </Stack>
                       </TableCell>
                     </TableRow>
@@ -164,10 +269,24 @@ function StoreCoupons() {
               </TableBody>
             </Table>
           </TableContainer>
-
         </Paper>
-
       </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3500}
+        onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          severity={snackbar.severity}
+          variant="filled"
+          onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
+          sx={{ borderRadius: "12px" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

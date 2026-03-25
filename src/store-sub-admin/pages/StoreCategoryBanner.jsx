@@ -24,26 +24,16 @@ import {
   Image as ImageIcon
 } from "@mui/icons-material";
 import { useOutletContext, useNavigate } from "react-router-dom";
-import { genericApi } from "../../api/genericApi";
 
 const StoreCategoryBanner = () => {
   const { store } = useOutletContext();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  
-  const [banners] = useState([
-    {
-      id: 1,
-      title: "First 10 Orders",
-      categoryRedirect: "Prawns",
-      imageUrl: null
-    }
-  ]);
+  const [loading, setLoading] = useState(false);
+  const [banners] = useState([]);
 
   useEffect(() => {
-    // Simulating loading
-    setTimeout(() => setLoading(false), 500);
+    setLoading(false);
   }, []);
 
   const filteredBanners = banners.filter(b => 
@@ -51,18 +41,18 @@ const StoreCategoryBanner = () => {
     b.categoryRedirect.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress sx={{ color: "#4318ff" }} /></Box>;
+  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress sx={{ color: "#E53935" }} /></Box>;
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-      <Box sx={{ maxWidth: "1420px", mx: "auto" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
           <Box>
-            <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
               Category Banners
             </Typography>
-            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+            <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>
               Manage category-linked promotional banners for {store.name}.
             </Typography>
           </Box>
@@ -73,19 +63,19 @@ const StoreCategoryBanner = () => {
               borderRadius: "18px",
               py: 1.5,
               px: 4,
-              bgcolor: "#4318ff",
-              boxShadow: "0 10px 25px rgba(67,24,255,0.25)",
+              bgcolor: "#E53935",
+              boxShadow: "0 10px 25px rgba(229, 57, 53,0.25)",
               textTransform: "none",
               fontWeight: 800,
               fontSize: "15px",
-              "&:hover": { bgcolor: "#3310cc" }
+              "&:hover": { bgcolor: "#d32f2f" }
             }}
           >
             + Add Banner
           </Button>
         </Stack>
 
-        <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
+        <Paper sx={{ p: 4, borderRadius: "24px", border: "1px solid #e0e5f2", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
           
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
             <Typography variant="h4" fontWeight="800" color="#1b2559">
@@ -117,11 +107,11 @@ const StoreCategoryBanner = () => {
             <Table>
               <TableHead sx={{ bgcolor: "#fafbfc" }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #eef2f6", width: "80px" }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #eef2f6" }}>Title</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #eef2f6" }}>Category Redirect</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #eef2f6" }}>Image</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", borderBottom: "1px solid #eef2f6", textAlign: "right" }}>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", width: "80px" }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Title</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Category Redirect</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Image</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", textAlign: "right" }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -131,10 +121,10 @@ const StoreCategoryBanner = () => {
                   </TableRow>
                 ) : (
                   filteredBanners.map((row, index) => (
-                    <TableRow key={row.id} hover sx={{ transition: "0.2s", "&:hover": { bgcolor: alpha("#4318ff", 0.03) } }}>
+                    <TableRow key={row.id} hover sx={{ transition: "0.2s", "&:hover": { bgcolor: alpha("#E53935", 0.03) } }}>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{index + 1}</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{row.title}</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#4318ff" }}>{row.categoryRedirect}</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#E53935" }}>{row.categoryRedirect}</TableCell>
                       <TableCell>
                         <Box
                           sx={{
@@ -158,10 +148,10 @@ const StoreCategoryBanner = () => {
                       </TableCell>
                       <TableCell sx={{ textAlign: "right" }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <IconButton size="small" sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.1), borderRadius: "10px" }}>
+                          <IconButton className="action-edit" size="small" sx={{ color: "#E53935", bgcolor: alpha("#E53935", 0.1), borderRadius: "10px" }}>
                             <EditIcon fontSize="small" />
                           </IconButton>
-                          <IconButton size="small" sx={{ color: "#f44336", bgcolor: alpha("#f44336", 0.1), borderRadius: "10px" }}>
+                          <IconButton className="action-delete" size="small" sx={{ color: "#f44336", bgcolor: alpha("#f44336", 0.1), borderRadius: "10px" }}>
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         </Stack>

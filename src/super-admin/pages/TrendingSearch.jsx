@@ -490,7 +490,7 @@ const TrendingSearch = () => {
                         </TableCell>
                         <TableCell align="right" sx={{ pr: 3 }}>
                           <Tooltip title="Remove From Trending">
-                            <IconButton
+                            <IconButton className="action-delete"
                               onClick={() => handleDelete(item.id)}
                               sx={{
                                 backgroundColor: "#fff5f5",
@@ -517,5 +517,6 @@ const TrendingSearch = () => {
 };
 
 export default TrendingSearch;
+
 
 

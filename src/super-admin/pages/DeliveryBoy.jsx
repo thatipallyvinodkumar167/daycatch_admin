@@ -380,7 +380,7 @@ const DeliveryBoy = () => {
                       <TableCell align="right" sx={{ pr: 3 }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
                             <Tooltip title="Edit Profile">
-                                <IconButton
+                                <IconButton className="action-edit"
                                     size="small"
                                     onClick={() => navigate(`/delivery-boy-list/edit/${item._id || item.id}`)}
                                     sx={{
@@ -397,7 +397,7 @@ const DeliveryBoy = () => {
                                 </IconButton>
                             </Tooltip>
                             <Tooltip title="Delete Account">
-                                <IconButton
+                                <IconButton className="action-delete"
                                     size="small"
                                     onClick={() => handleDelete(item._id || item.id)}
                                     sx={{
@@ -483,5 +483,6 @@ const Grid = ({ children, container, item, xs, md, spacing }) => {
 }
 
 export default DeliveryBoy;
+
 
 

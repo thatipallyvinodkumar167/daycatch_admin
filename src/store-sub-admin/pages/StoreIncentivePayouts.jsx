@@ -15,10 +15,8 @@ import {
   CircularProgress,
   TextField,
   InputAdornment,
-  Chip,
   Avatar,
   IconButton,
-  Tooltip
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -26,7 +24,6 @@ import {
   PaymentsOutlined as PaymentIcon,
   AccountBalanceWallet as WalletIcon,
   Person as PersonIcon,
-  Visibility as ViewIcon,
   History as HistoryIcon
 } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
@@ -43,27 +40,27 @@ const StoreIncentivePayouts = () => {
     setTimeout(() => setLoading(false), 500);
   }, []);
 
-  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress sx={{ color: "#4318ff" }} /></Box>;
+  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress sx={{ color: "#E53935" }} /></Box>;
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Box sx={{ p: 2, borderRadius: "18px", bgcolor: alpha("#4318ff", 0.08) }}>
-             <IncentiveIcon sx={{ color: "#4318ff", fontSize: 28 }} />
+          <Box sx={{ p: 2, borderRadius: "18px", bgcolor: alpha("#E53935", 0.08) }}>
+             <IncentiveIcon sx={{ color: "#E53935", fontSize: 28 }} />
           </Box>
           <Box>
-            <Typography variant="h3" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-1.5px" }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
               Incentive Payouts
             </Typography>
-            <Typography variant="body2" color="#a3aed0" fontWeight="600">
+            <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>
                Manage and track payouts for delivery personnel at {store.name}.
             </Typography>
           </Box>
         </Stack>
 
-        <Paper sx={{ p: 4, borderRadius: "28px", border: "1px solid #e0e5f2", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
+        <Paper sx={{ p: 4, borderRadius: "24px", border: "1px solid #e0e5f2", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
           
           <Stack direction="row" justifyContent="flex-end" sx={{ mb: 4 }}>
             <TextField
@@ -82,14 +79,14 @@ const StoreIncentivePayouts = () => {
             <Table>
               <TableHead sx={{ bgcolor: "#fafbfc" }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", width: "60px" }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Delivery Boy</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Address</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Bank/UPI</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Total Incentive</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Paid Incentive</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Pending Incentive</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", textAlign: "right" }}>Action</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", width: "60px" }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Delivery Boy</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Address</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Bank/UPI</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Total Incentive</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Paid Incentive</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Pending Incentive</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", textAlign: "right" }}>Action</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -97,12 +94,12 @@ const StoreIncentivePayouts = () => {
                   <TableRow>
                     <TableCell colSpan={8} align="center" sx={{ py: 12 }}>
                       <Stack alignItems="center" spacing={2.5}>
-                        <Box sx={{ p: 3, borderRadius: "50%", bgcolor: alpha("#4318ff", 0.05) }}>
-                          <WalletIcon sx={{ color: "#4318ff", fontSize: 56, opacity: 0.3 }} />
+                        <Box sx={{ p: 3, borderRadius: "50%", bgcolor: alpha("#E53935", 0.05) }}>
+                          <WalletIcon sx={{ color: "#E53935", fontSize: 56, opacity: 0.3 }} />
                         </Box>
                         <Box>
                            <Typography variant="h5" color="#1b2559" fontWeight="900" gutterBottom>No data found</Typography>
-                           <Typography variant="body2" color="#a3aed0" fontWeight="600">No incentive payouts recorded yet.</Typography>
+                           <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>No incentive payouts recorded yet.</Typography>
                         </Box>
                       </Stack>
                     </TableCell>
@@ -113,7 +110,7 @@ const StoreIncentivePayouts = () => {
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{index + 1}</TableCell>
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={2}>
-                          <Avatar sx={{ bgcolor: alpha("#4318ff", 0.1), color: "#4318ff" }}><PersonIcon /></Avatar>
+                          <Avatar sx={{ bgcolor: alpha("#E53935", 0.1), color: "#E53935" }}><PersonIcon /></Avatar>
                           <Typography variant="body1" fontWeight="800" color="#1b2559">{row.name}</Typography>
                         </Stack>
                       </TableCell>
@@ -132,11 +129,11 @@ const StoreIncentivePayouts = () => {
                             variant="contained" 
                             size="small" 
                             startIcon={<PaymentIcon />}
-                            sx={{ borderRadius: "10px", bgcolor: "#4318ff", fontWeight: 800, textTransform: "none" }}
+                            sx={{ borderRadius: "10px", bgcolor: "#E53935", fontWeight: 800, textTransform: "none" }}
                           >
                             Pay Now
                           </Button>
-                          <IconButton size="small" sx={{ color: "#4318ff" }}><HistoryIcon fontSize="small" /></IconButton>
+                          <IconButton size="small" sx={{ color: "#E53935" }}><HistoryIcon fontSize="small" /></IconButton>
                         </Stack>
                       </TableCell>
                     </TableRow>

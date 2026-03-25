@@ -173,7 +173,7 @@ const Reviews = () => {
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Delete Review">
-                          <IconButton
+                          <IconButton className="action-delete"
                             onClick={() => handleDelete(item.id)}
                             sx={{ backgroundColor: "#fff1f0", color: "#ff4d49", borderRadius: "8px" }}
                           >
@@ -194,4 +194,5 @@ const Reviews = () => {
 };
 
 export default Reviews;
+
 
