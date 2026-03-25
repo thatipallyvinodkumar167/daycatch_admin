@@ -1,7 +1,7 @@
 import React, { useState, useMemo, createContext } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import AppRoutes from './routes/AppRoutes';
+import AppRoutes from './super-admin/routes/AppRoutes';
 
 export const ColorModeContext = createContext({ toggleColorMode: () => {} });
 
