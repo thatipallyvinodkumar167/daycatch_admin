@@ -31,7 +31,6 @@ const StoreAddProductBanner = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
-  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [products, setProducts] = useState([]);
 
@@ -58,10 +57,10 @@ const StoreAddProductBanner = () => {
         setProducts([]);
       }
     };
-    if (store?.id) {
+    if (store) {
       fetchProducts();
     }
-  }, [store?.id]);
+  }, [store]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -77,21 +76,19 @@ const StoreAddProductBanner = () => {
       return;
     }
 
-    setImageFile(file);
     const reader = new FileReader();
     reader.onloadend = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
   };
 
   const removeImage = () => {
-    setImageFile(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.productId || !imageFile) {
+    if (!formData.title || !formData.productId || !imagePreview) {
       setSnackbar({ open: true, message: "Title, Product, and Image are required", severity: "error" });
       return;
     }
@@ -132,7 +129,7 @@ const StoreAddProductBanner = () => {
               Add Secondary Banner
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-               Promote a specific product for {store.name}
+               Promote a specific product for {store?.name || "this store"}
             </Typography>
           </Box>
         </Stack>

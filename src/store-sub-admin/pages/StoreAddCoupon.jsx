@@ -33,7 +33,6 @@ const StoreAddCoupon = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
-  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -75,14 +74,12 @@ const StoreAddCoupon = () => {
       return;
     }
 
-    setImageFile(file);
     const reader = new FileReader();
     reader.onloadend = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
   };
 
   const removeImage = () => {
-    setImageFile(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -268,7 +265,7 @@ const StoreAddCoupon = () => {
                     {!imagePreview ? (
                       <Stack spacing={1} alignItems="center" sx={{ py: 2 }}>
                         <PhotoCameraIcon sx={{ color: "#a3aed0", fontSize: 40 }} />
-                        <Typography variant="body2" fontWeight="700" color="#707eae">keywords.Choose_File</Typography>
+                        <Typography variant="body2" fontWeight="700" color="#707eae">Choose File</Typography>
                         <Typography variant="caption" color="#a3aed0">Less than 1000 KB</Typography>
                       </Stack>
                     ) : (

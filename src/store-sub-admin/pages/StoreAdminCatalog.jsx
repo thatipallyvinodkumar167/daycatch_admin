@@ -105,7 +105,7 @@ const StoreAdminCatalog = () => {
     } finally {
       setLoading(false);
     }
-  }, [store?.id]);
+  }, [store]);
 
   useEffect(() => {
     if (store?.id) {
