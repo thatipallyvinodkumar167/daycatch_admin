@@ -6,42 +6,37 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   IconButton,
+  InputAdornment,
   Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip,
-  Typography
+  Typography,
+  alpha
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
-import PrintIcon from "@mui/icons-material/Print";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import SearchIcon from "@mui/icons-material/Search";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import {
+  Add as AddIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+  LocalFireDepartment as FireIcon,
+  Search as SearchIcon,
+  Storefront as StoreIcon,
+  TrendingUp as TrendingUpIcon,
+} from "@mui/icons-material";
 import { genericApi } from "../../api/genericApi";
 
 const normalizeValue = (value) => String(value || "").trim().toLowerCase();
 
 const normalizeStatus = (value) => {
   const normalized = normalizeValue(value);
-
-  if (["approved", "live", "active", "accepted"].includes(normalized)) {
-    return "Approved";
-  }
-
-  if (["rejected", "declined"].includes(normalized)) {
-    return "Rejected";
-  }
-
+  if (["approved", "live", "active", "accepted"].includes(normalized)) return "Approved";
+  if (["rejected", "declined"].includes(normalized)) return "Rejected";
   return "Pending";
 };
 
@@ -85,48 +80,22 @@ const formatTrendingProduct = (item, index) => ({
   lastUpdated: item["Last Updated"] ? new Date(item["Last Updated"]).toLocaleDateString() : "N/A"
 });
 
-const downloadCsv = (rows) => {
-  const headers = ["#", "Store Product Id", "Product Name", "Store", "Category", "Type", "Price", "MRP", "Status", "Search Count", "Last Updated"];
-  const csvRows = rows.map((item, index) => [
-    index + 1,
-    item.storeProductId || item.productID,
-    item.productName,
-    item.storeName,
-    item.category,
-    item.type,
-    item.price,
-    item.mrp,
-    item.status,
-    item.searchCount,
-    item.lastUpdated
-  ]);
-
-  const csvContent = [headers, ...csvRows]
-    .map((row) => row.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "trending-products.csv";
-  link.click();
-  window.URL.revokeObjectURL(url);
-};
-
 const TrendingSearch = () => {
   const [approvedStoreProducts, setApprovedStoreProducts] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  const fetchData = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+  // Aesthetic Colors
+  const navy = "#1b2559";
+  const brandRed = "#E53935";
+  const bgSoft = "#f4f7fe";
 
+  const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
       const [productsResponse, trendingResponse] = await Promise.all([
         genericApi.getAll("storeProducts"),
@@ -140,6 +109,7 @@ const TrendingSearch = () => {
         .map(formatStoreProduct)
         .filter((item) => item.requestStatus === "Approved")
         .sort((a, b) => a.productName.localeCompare(b.productName));
+      
       const formattedTrending = rawTrending
         .map(formatTrendingProduct)
         .sort((a, b) => a.position - b.position || a.productName.localeCompare(b.productName));
@@ -150,7 +120,6 @@ const TrendingSearch = () => {
       console.error("Error fetching trending product data:", error);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
 
@@ -158,13 +127,11 @@ const TrendingSearch = () => {
     fetchData();
   }, [fetchData]);
 
-  const trendingKeys = useMemo(() => {
-    return new Set(trendingProducts.map(getProductKey).filter(Boolean));
-  }, [trendingProducts]);
+  const trendingKeys = useMemo(() => new Set(trendingProducts.map(getProductKey).filter(Boolean)), [trendingProducts]);
 
-  const availableProducts = useMemo(() => {
-    return approvedStoreProducts.filter((item) => !trendingKeys.has(getProductKey(item)));
-  }, [approvedStoreProducts, trendingKeys]);
+  const availableProducts = useMemo(() => 
+    approvedStoreProducts.filter((item) => !trendingKeys.has(getProductKey(item))), 
+  [approvedStoreProducts, trendingKeys]);
 
   const filteredTrendingProducts = useMemo(() => {
     const query = normalizeValue(search);
@@ -178,11 +145,7 @@ const TrendingSearch = () => {
   }, [trendingProducts, search]);
 
   const handleAddProducts = async () => {
-    if (!selectedProducts.length) {
-      alert("Select at least one approved store product.");
-      return;
-    }
-
+    if (!selectedProducts.length) return;
     setSaving(true);
     try {
       const basePosition = trendingProducts.length;
@@ -213,7 +176,8 @@ const TrendingSearch = () => {
       }
 
       setSelectedProducts([]);
-      await fetchData(true);
+      setIsAddModalOpen(false);
+      await fetchData();
     } catch (error) {
       console.error("Error adding trending products:", error);
       alert(error.response?.data?.error || "Failed to add selected products to trending.");
@@ -224,10 +188,9 @@ const TrendingSearch = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Remove this product from trending?")) return;
-
     try {
       await genericApi.remove("trending_search", id);
-      await fetchData(true);
+      await fetchData();
     } catch (error) {
       console.error("Error deleting trending product:", error);
       alert("Failed to remove product from trending.");
@@ -235,288 +198,307 @@ const TrendingSearch = () => {
   };
 
   return (
-    <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
-      <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Box>
-          <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-            Trending Products
-          </Typography>
-          <Typography variant="body2" color="#a3aed0" fontWeight="600">
-            Super-admin selects only approved store products here, then the user app can highlight real live listings as trending picks.
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              px: 2,
-              py: 1,
-              borderRadius: "14px",
-              bgcolor: "#fff",
-              border: "1px solid #e0e5f2",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.02)"
-            }}
-          >
-            <Box sx={{ p: 1, borderRadius: "8px", bgcolor: "#fff4eb", display: "flex" }}>
-              <LocalFireDepartmentIcon sx={{ color: "#ff7a00", fontSize: 20 }} />
-            </Box>
-            <Box>
-              <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ display: "block", lineHeight: 1 }}>
-                LIVE NOW
-              </Typography>
-              <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ lineHeight: 1.2 }}>
-                {trendingProducts.length} Trending Products
-              </Typography>
-            </Box>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: bgSoft, minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
+        
+        {/* Dynamic Page Header */}
+        <Box sx={{ mb: 6, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 3 }}>
+          <Box>
+            <Typography variant="h3" fontWeight="900" color={navy} sx={{ letterSpacing: "-1.5px", mb: 0.5, display: "flex", alignItems: "center", gap: 1.5 }}>
+              Trending Overview <FireIcon sx={{ color: brandRed, fontSize: 36, mb: 0.5 }} />
+            </Typography>
+            <Typography variant="body1" color="#a3aed0" fontWeight="700">
+              Manage the most popular and highly searched products dynamically.
+            </Typography>
           </Box>
-
-          <Tooltip title="Refresh List">
-            <IconButton
-              onClick={() => fetchData(true)}
-              disabled={refreshing || loading}
-              sx={{ bgcolor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", p: 1.5 }}
+          <Stack direction="row" spacing={2} alignItems="center">
+            <TextField
+              size="small"
+              placeholder="Search active trending..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: "#a3aed0" }} />
+                  </InputAdornment>
+                ),
+                sx: { 
+                  borderRadius: "14px", 
+                  bgcolor: "#fff", 
+                  width: { xs: "100%", sm: "260px" }, 
+                  "& fieldset": { borderColor: "transparent" },
+                  boxShadow: "0 4px 15px rgba(0,0,0,0.03)"
+                }
+              }}
+            />
+            <Button
+              variant="contained"
+              onClick={() => setIsAddModalOpen(true)}
+              startIcon={<AddIcon />}
+              sx={{
+                borderRadius: "14px",
+                py: 1.2,
+                px: 3,
+                bgcolor: brandRed,
+                fontWeight: 900,
+                fontSize: "15px",
+                textTransform: "none",
+                boxShadow: "0 10px 20px rgba(229, 57, 53, 0.25)",
+                "&:hover": { bgcolor: "#d32f2f" }
+              }}
             >
-              {refreshing ? <CircularProgress size={20} /> : <RefreshIcon sx={{ color: "#4318ff" }} />}
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      </Box>
+              Add Products
+            </Button>
+          </Stack>
+        </Box>
 
-      <Grid container spacing={4} sx={{ mt: 1 }}>
-        <Grid item xs={12} md={4.5}>
-          <Paper sx={{ p: 4, borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", border: "1px solid #e0e5f2", bgcolor: "#fff", height: "100%" }}>
-            <Stack spacing={3}>
-              <Box>
-                <Typography variant="h6" fontWeight="800" color="#1b2559">
-                  Select Approved Store Products
-                </Typography>
-                <Typography variant="body2" color="#a3aed0" fontWeight="600" sx={{ mt: 0.5 }}>
-                  Choose one or more approved live store listings to push into the trending shelf.
-                </Typography>
-              </Box>
-
-              <Autocomplete
-                multiple
-                options={availableProducts}
-                value={selectedProducts}
-                onChange={(_, value) => setSelectedProducts(value)}
-                loading={loading}
-                getOptionLabel={(option) => option.productName}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    placeholder={availableProducts.length ? "Search approved store products..." : "No approved store products available"}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "16px",
-                        backgroundColor: "#f4f7fe"
-                      }
-                    }}
-                  />
-                )}
-                renderOption={(props, option) => (
-                  <Box component="li" {...props} key={option.id}>
-                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ py: 0.5 }}>
-                      <Avatar src={option.image} variant="rounded" sx={{ width: 42, height: 42, borderRadius: "10px" }} />
-                      <Box>
-                        <Typography variant="body2" fontWeight="800" color="#1b2559">
-                          {option.productName}
-                        </Typography>
-                        <Typography variant="caption" color="#a3aed0" fontWeight="700">
-                          {option.storeName} | Rs {option.price} | {option.category}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </Box>
-                )}
-              />
-
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {selectedProducts.length ? (
-                  selectedProducts.map((item) => (
-                    <Chip
-                      key={item.id}
-                      label={item.productName}
-                      onDelete={() => setSelectedProducts((prev) => prev.filter((product) => product.id !== item.id))}
-                      sx={{ bgcolor: "#eef2ff", color: "#4318ff", fontWeight: "800" }}
-                    />
-                  ))
-                ) : (
-                  <Typography variant="body2" color="#a3aed0" fontWeight="600">
-                    No products selected yet.
+        {/* Trending Dashboard Stats */}
+        <Grid container spacing={3} sx={{ mb: 6 }}>
+          {[
+            { title: "Total Trending", value: trendingProducts.length, icon: <TrendingUpIcon />, color: navy },
+            { title: "Top Searched", value: trendingProducts.length ? trendingProducts[0].productName : "N/A", icon: <SearchIcon />, color: brandRed },
+            { title: "Live Stores", value: new Set(trendingProducts.map(p => p.storeName)).size, icon: <StoreIcon />, color: "#05cd99" },
+          ].map((stat, i) => (
+            <Grid item xs={12} sm={4} key={i}>
+              <Paper sx={{ p: 3, borderRadius: "24px", display: "flex", alignItems: "center", gap: 2.5, border: "1px solid #e0e5f2", boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
+                <Box sx={{ p: 2, borderRadius: "16px", bgcolor: alpha(stat.color, 0.08), color: stat.color, display: "flex" }}>
+                  {React.cloneElement(stat.icon, { sx: { fontSize: 32 } })}
+                </Box>
+                <Box>
+                  <Typography variant="body2" color="#a3aed0" fontWeight="800" textTransform="uppercase" letterSpacing="1px">
+                    {stat.title}
                   </Typography>
-                )}
-              </Stack>
-
-              <Button
-                variant="contained"
-                onClick={handleAddProducts}
-                disabled={saving || !selectedProducts.length}
-                sx={{
-                  backgroundColor: "#4318ff",
-                  "&:hover": { backgroundColor: "#3311cc" },
-                  borderRadius: "16px",
-                  py: 1.8,
-                  textTransform: "none",
-                  fontWeight: "800",
-                  boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)"
-                }}
-              >
-                {saving
-                  ? "Adding to Trending..."
-                  : `Add ${selectedProducts.length} Selected ${selectedProducts.length === 1 ? "Product" : "Products"}`}
-              </Button>
-
-              <Paper sx={{ p: 2.5, borderRadius: "18px", bgcolor: "#fafbff", border: "1px solid #eef2ff" }}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Box sx={{ p: 1.3, borderRadius: "12px", bgcolor: "#f4f7fe", display: "flex" }}>
-                    <TrendingUpIcon sx={{ color: "#4318ff" }} />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ textTransform: "uppercase" }}>
-                      Approved Live Listings
-                    </Typography>
-                    <Typography variant="h5" fontWeight="800" color="#1b2559">
-                      {availableProducts.length}
-                    </Typography>
-                  </Box>
-                </Stack>
+                  <Typography variant="h4" fontWeight="900" color={navy} sx={{ mt: 0.5, letterSpacing: "-1px", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", maxWidth: "200px" }}>
+                    {stat.value}
+                  </Typography>
+                </Box>
               </Paper>
-            </Stack>
-          </Paper>
+            </Grid>
+          ))}
         </Grid>
 
-        <Grid item xs={12} md={7.5}>
-          <Paper sx={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid #e0e5f2", backgroundColor: "#fff" }}>
-            <Box sx={{ p: 4, borderBottom: "1px solid #e0e5f2", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, bgcolor: "#fafbfc" }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#1b2559">
-                Selected Products
-              </Typography>
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <TextField
-                  size="small"
-                  placeholder="Search selected products..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: <SearchIcon sx={{ color: "#a3aed0", mr: 1, fontSize: 20 }} />
+        {/* Gallery / Cards Layout */}
+        {loading && trendingProducts.length === 0 ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 15 }}>
+            <CircularProgress sx={{ color: brandRed }} />
+          </Box>
+        ) : filteredTrendingProducts.length === 0 ? (
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 15, opacity: 0.7 }}>
+            <TrendingUpIcon sx={{ fontSize: 80, color: "#a3aed0", mb: 2 }} />
+            <Typography variant="h5" color={navy} fontWeight="900">No Trending Products</Typography>
+            <Typography variant="body1" color="#a3aed0" fontWeight="700">Add products to see them appear in your live feed.</Typography>
+          </Box>
+        ) : (
+          <Grid container spacing={3}>
+            {filteredTrendingProducts.map((product, index) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
+                <Paper
+                  sx={{
+                    borderRadius: "24px",
+                    overflow: "hidden",
+                    border: "1px solid #e0e5f2",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.04)",
+                    position: "relative",
+                    transition: "transform 0.2s ease",
+                    "&:hover": { transform: "translateY(-6px)", boxShadow: "0 20px 40px rgba(0,0,0,0.08)" },
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100%"
                   }}
+                >
+                  {/* Rank Badge */}
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 16,
+                      left: 16,
+                      bgcolor: index < 3 ? brandRed : "rgba(255,255,255,0.9)",
+                      color: index < 3 ? "#fff" : navy,
+                      fontWeight: 900,
+                      px: 2,
+                      py: 0.5,
+                      borderRadius: "10px",
+                      zIndex: 2,
+                      boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                      backdropFilter: "blur(4px)"
+                    }}
+                  >
+                    #{index + 1}
+                  </Box>
+
+                  {/* Delete Button */}
+                  <Tooltip title="Remove from Trending">
+                    <IconButton
+                      onClick={() => handleDelete(product.id)}
+                      sx={{
+                        position: "absolute",
+                        top: 12,
+                        right: 12,
+                        bgcolor: "rgba(255,255,255,0.8)",
+                        color: brandRed,
+                        zIndex: 2,
+                        backdropFilter: "blur(4px)",
+                        "&:hover": { bgcolor: "#fff", color: "#d32f2f" }
+                      }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+
+                  {/* Image Area */}
+                  <Box sx={{ height: 200, bgcolor: "#fafbfc", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {product.image ? (
+                      <Box component="img" src={product.image} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <StoreIcon sx={{ fontSize: 60, color: "#e0e5f2" }} />
+                    )}
+                  </Box>
+
+                  {/* Details Area */}
+                  <Box sx={{ p: 3, flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                    <Box>
+                      <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+                        <Chip label={product.category} size="small" sx={{ bgcolor: alpha(navy, 0.05), color: navy, fontWeight: 800, fontSize: "10px", height: 22 }} />
+                        <Chip label="Live" size="small" icon={<FireIcon sx={{ fontSize: "12px !important", color: "#05cd99" }} />} sx={{ bgcolor: alpha("#05cd99", 0.1), color: "#05cd99", fontWeight: 800, fontSize: "10px", height: 22, pl: 0.5 }} />
+                      </Stack>
+                      <Typography variant="h6" fontWeight="900" color={navy} sx={{ lineHeight: 1.2, mb: 1, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                        {product.productName}
+                      </Typography>
+                      <Typography variant="caption" color="#a3aed0" fontWeight="700" sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 2 }}>
+                        <StoreIcon sx={{ fontSize: 14 }} /> {product.storeName}
+                      </Typography>
+                    </Box>
+
+                    <Stack direction="row" alignItems="flex-end" spacing={1}>
+                      <Typography variant="h5" fontWeight="900" color={brandRed}>
+                        Rs. {product.price}
+                      </Typography>
+                      {product.mrp > product.price && (
+                        <Typography variant="body2" fontWeight="700" color="#a3aed0" sx={{ textDecoration: "line-through", pb: 0.5 }}>
+                          Rs. {product.mrp}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Box>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </Box>
+
+      {/* Add New Trending Products Modal */}
+      <Dialog 
+        open={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: "24px", p: 2, boxShadow: "0 20px 60px rgba(0,0,0,0.1)" }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Box>
+            <Typography variant="h5" fontWeight="900" color={navy} sx={{ letterSpacing: "-1px" }}>
+              Curate Trending List
+            </Typography>
+            <Typography variant="body2" color="#a3aed0" fontWeight="700" sx={{ mt: 0.5 }}>
+              Select live store inventory to push to the homepage trending feed.
+            </Typography>
+          </Box>
+          <IconButton onClick={() => setIsAddModalOpen(false)} sx={{ bgcolor: bgSoft }}>
+            <CloseIcon sx={{ color: navy }} />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ minHeight: "340px", pb: 4 }}>
+          <Box sx={{ py: 2 }}>
+            <Autocomplete
+              multiple
+              options={availableProducts}
+              value={selectedProducts}
+              onChange={(_, value) => setSelectedProducts(value)}
+              getOptionLabel={(option) => option.productName}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Search and select approved products..."
                   sx={{
                     "& .MuiOutlinedInput-root": {
-                      borderRadius: "12px",
-                      backgroundColor: "#fff",
-                      width: { xs: "180px", md: "280px" }
+                      borderRadius: "16px",
+                      backgroundColor: bgSoft,
+                      py: 1.5,
+                      "& fieldset": { borderColor: "transparent" },
+                      "&:hover fieldset": { borderColor: alpha(navy, 0.2) },
+                      "&.Mui-focused fieldset": { borderColor: navy }
                     }
                   }}
                 />
-                <Tooltip title="Print List">
-                  <IconButton onClick={() => window.print()} sx={{ backgroundColor: "#fff", border: "1px solid #e0e5f2", borderRadius: "12px" }}>
-                    <PrintIcon sx={{ color: "#2b3674" }} />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Download CSV">
-                  <IconButton onClick={() => downloadCsv(filteredTrendingProducts)} sx={{ backgroundColor: "#fff", border: "1px solid #e0e5f2", borderRadius: "12px" }}>
-                    <FileDownloadIcon sx={{ color: "#2b3674" }} />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            </Box>
+              )}
+              renderOption={(props, option) => (
+                <Box component="li" {...props} key={option.id} sx={{ '&:hover': { bgcolor: alpha(brandRed, 0.04) }, borderRadius: "12px", mx: 1 }}>
+                  <Stack direction="row" spacing={2} alignItems="center" sx={{ py: 1 }}>
+                    <Avatar src={option.image} variant="rounded" sx={{ width: 50, height: 50, borderRadius: "12px" }} />
+                    <Box>
+                      <Typography variant="body1" fontWeight="800" color={navy}>
+                        {option.productName}
+                      </Typography>
+                      <Typography variant="caption" color="#a3aed0" fontWeight="700" sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                        <StoreIcon sx={{ fontSize: 13 }} /> {option.storeName} • Rs. {option.price}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              )}
+            />
 
-            <TableContainer sx={{ maxHeight: "calc(100vh - 320px)" }}>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
-                    <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Product</TableCell>
-                    <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Category</TableCell>
-                    <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Store</TableCell>
-                    <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Price</TableCell>
-                    <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>MRP</TableCell>
-                    <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", bgcolor: "#f4f7fe" }}>Status</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "12px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading && trendingProducts.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                        <CircularProgress sx={{ color: "#4318ff" }} />
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredTrendingProducts.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                        <Typography color="#a3aed0" fontWeight="600">
-                          No trending products found.
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredTrendingProducts.map((item, index) => (
-                      <TableRow key={item.id} sx={{ "&:hover": { backgroundColor: "#f9fbff" }, transition: "0.2s" }}>
-                        <TableCell sx={{ color: "#1b2559", fontWeight: "800", pl: 4 }}>#{index + 1}</TableCell>
-                        <TableCell>
-                          <Stack direction="row" spacing={1.5} alignItems="center">
-                            <Avatar src={item.image} variant="rounded" sx={{ width: 50, height: 50, borderRadius: "12px", border: "2px solid #f4f7fe" }}>
-                              {item.productName?.charAt(0) || "P"}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="body2" fontWeight="800" color="#1b2559">
-                                {item.productName}
-                              </Typography>
-                              <Typography variant="caption" color="#a3aed0" fontWeight="700">
-                                {item.storeName} | {item.productID || "No Product ID"} | {item.type}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                        </TableCell>
-                        <TableCell>
-                          <Chip label={item.category} size="small" sx={{ bgcolor: "#f4f7fe", color: "#1b2559", fontWeight: "700", borderRadius: "8px" }} />
-                        </TableCell>
-                        <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>
-                          {item.storeName}
-                        </TableCell>
-                        <TableCell sx={{ color: "#4318ff", fontWeight: "900" }}>
-                          {item.price ? `Rs ${item.price}` : "Rs 0"}
-                        </TableCell>
-                        <TableCell sx={{ color: "#1b2559", fontWeight: "700" }}>
-                          {item.mrp ? `Rs ${item.mrp}` : "Rs 0"}
-                        </TableCell>
-                        <TableCell>
-                          <Chip label={item.status} size="small" sx={{ bgcolor: "#fff4eb", color: "#ff7a00", fontWeight: "800", borderRadius: "8px" }} />
-                        </TableCell>
-                        <TableCell align="right" sx={{ pr: 3 }}>
-                          <Tooltip title="Remove From Trending">
-                            <IconButton className="action-delete"
-                              onClick={() => handleDelete(item.id)}
-                              sx={{
-                                backgroundColor: "#fff5f5",
-                                color: "#ff4d49",
-                                borderRadius: "10px",
-                                "&:hover": { backgroundColor: "#ffebeb" }
-                              }}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-        </Grid>
-      </Grid>
+            <Box sx={{ mt: 3, display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {selectedProducts.map((item) => (
+                <Chip
+                  key={item.id}
+                  label={item.productName}
+                  onDelete={() => setSelectedProducts(prev => prev.filter(p => p.id !== item.id))}
+                  sx={{ bgcolor: alpha(brandRed, 0.08), color: brandRed, fontWeight: "800", borderRadius: "10px", "& .MuiChip-deleteIcon": { color: alpha(brandRed, 0.6), "&:hover": { color: brandRed } } }}
+                />
+              ))}
+              {selectedProducts.length === 0 && (
+                <Typography variant="body2" color="#a3aed0" fontWeight="600" sx={{ mt: 1 }}>No products selected. Search above to begin.</Typography>
+              )}
+            </Box>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button 
+            onClick={() => setIsAddModalOpen(false)} 
+            sx={{ color: "#a3aed0", fontWeight: 800, textTransform: "none", mr: 1 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAddProducts}
+            disabled={saving || !selectedProducts.length}
+            startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
+            sx={{
+              backgroundColor: brandRed,
+              "&:hover": { backgroundColor: "#d32f2f" },
+              borderRadius: "14px",
+              py: 1.5,
+              px: 4,
+              textTransform: "none",
+              fontWeight: "900",
+              boxShadow: "0 10px 20px rgba(229, 57, 53, 0.25)"
+            }}
+          >
+            {saving ? "Pushing..." : `Push ${selectedProducts.length} Products`}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
 
 export default TrendingSearch;
-
-
-

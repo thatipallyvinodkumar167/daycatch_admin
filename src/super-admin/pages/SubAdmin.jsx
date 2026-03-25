@@ -86,7 +86,9 @@ const SubAdmin = () => {
     if (!q) return admins;
     return admins.filter((admin) =>
       admin.name.toLowerCase().includes(q) ||
-      admin.email.toLowerCase().includes(q)
+      admin.email.toLowerCase().includes(q) ||
+      admin.phone.toLowerCase().includes(q) ||
+      admin.storeName.toLowerCase().includes(q)
     );
   }, [admins, search]);
 

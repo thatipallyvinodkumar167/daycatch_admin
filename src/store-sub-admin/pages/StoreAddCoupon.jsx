@@ -97,9 +97,30 @@ const StoreAddCoupon = () => {
     setIsSubmitting(true);
     try {
       await genericApi.create("coupons", {
-        ...formData,
         storeId: store.id,
-        imageUrl: imageFile ? imageFile.name : null
+        Store: store.name,
+        "Coupon Type": formData.couponType,
+        "Use Limit": Number(formData.useLimit) || 0,
+        "Coupon Name": formData.couponName,
+        "Coupon Code": formData.couponCode,
+        Description: formData.description,
+        "From Date": formData.fromDate,
+        "To Date": formData.toDate,
+        "Discount Type": formData.discount,
+        "Discount Value": Number(formData.discountValue) || 0,
+        "Minimum Cart Value": Number(formData.minCartValue) || 0,
+        Status: "Active",
+        imageUrl: imagePreview || null,
+        couponType: formData.couponType,
+        useLimit: Number(formData.useLimit) || 0,
+        couponName: formData.couponName,
+        couponCode: formData.couponCode,
+        description: formData.description,
+        fromDate: formData.fromDate,
+        toDate: formData.toDate,
+        discount: formData.discount,
+        discountValue: Number(formData.discountValue) || 0,
+        minCartValue: Number(formData.minCartValue) || 0,
       });
       setSnackbar({ open: true, message: "Coupon added successfully!", severity: "success" });
       setTimeout(() => navigate(-1), 1500);

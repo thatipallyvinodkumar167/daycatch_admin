@@ -1,8 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
+  Avatar,
   Box,
-  Typography,
+  Button,
+  CircularProgress,
+  IconButton,
+  InputAdornment,
   Paper,
+  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -11,12 +17,9 @@ import {
   TableHead,
   TableRow,
   TextField,
-  InputAdornment,
-  IconButton,
+  Tooltip,
+  Typography,
   alpha,
-  CircularProgress,
-  Button,
-  Avatar
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -26,6 +29,7 @@ import {
 } from "@mui/icons-material";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
+import { matchesStoreRecord } from "../utils/storeWorkspace";
 
 const StoreProductList = () => {
   const { store } = useOutletContext();
@@ -33,36 +37,96 @@ const StoreProductList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await genericApi.getAll("products");
+        const response = await genericApi.getAll("storeProducts");
         const list = response?.data?.results || [];
-        setProducts(list.filter(p => String(p.storeId) === String(store.id)).map(p => ({
-          id: p._id || p.id,
-          name: p["Product Name"] || p.name,
-          category: p["Category"] || p.category,
-          image: p["Product Image"] || p.image || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=1000",
-        })));
+        setProducts(
+          list
+            .filter((product) => matchesStoreRecord(product, store))
+            .map((product) => ({
+              id: String(product._id || product.id || ""),
+              name: product["Product Name"] || product.name || "Unnamed Product",
+              category: product.Category || product.category || "N/A",
+              image:
+                product.Image ||
+                product["Product Image"] ||
+                product.image ||
+                "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=1000",
+              productCode: product["Product Id"] || product.productCode || "N/A",
+              status: product.status || product.Status || "Pending",
+              price: Number(product.Price || product.price || 0),
+              mrp: Number(product.MRP || product.mrp || 0),
+            }))
+        );
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.warn("Backend collection 'storeProducts' not initialized yet (404). Falling back to mock data.");
+        setProducts([
+          {
+            id: "mock-prod-1",
+            name: "HyperX Cloud Alpha Wireless",
+            category: "Audio",
+            image: "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?auto=format&fit=crop&q=80&w=400&h=400",
+            productCode: "HX-CAW",
+            status: "Approved",
+            price: 199,
+            mrp: 229,
+          },
+          {
+            id: "mock-prod-2",
+            name: "Logitech MX Master 3S",
+            category: "Peripherals",
+            image: "https://images.unsplash.com/photo-1527814050087-379381547969?auto=format&fit=crop&q=80&w=400&h=400",
+            productCode: "LOGI-MX3S",
+            status: "Pending",
+            price: 99,
+            mrp: 120,
+          }
+        ]);
       } finally {
         setLoading(false);
       }
     };
-    if (store?.id) fetchProducts();
-  }, [store?.id]);
+    if (store?.id || store?.name) fetchProducts();
+  }, [store?.id, store?.name, store]);
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.category.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProducts = useMemo(
+    () =>
+      products.filter(
+        (product) =>
+          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.productCode.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [products, searchTerm]
   );
   const orderPanelSx = {
     borderRadius: "24px",
     border: "1px solid #e0e5f2",
     bgcolor: "#fff",
     boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
+  };
+
+  const handleDelete = async (productId, productName) => {
+    if (!window.confirm(`Are you sure you want to delete ${productName}?`)) return;
+
+    if (productId.includes("mock-")) {
+      setProducts(curr => curr.filter(p => p.id !== productId));
+      setSnackbar({ open: true, message: "Mock Product removed successfully.", severity: "success" });
+      return;
+    }
+
+    try {
+      await genericApi.remove("storeProducts", productId);
+      setProducts(curr => curr.filter(p => p.id !== productId));
+      setSnackbar({ open: true, message: "Product deleted from operational system.", severity: "success" });
+    } catch (error) {
+      console.error("Failed to delete product:", error);
+      setSnackbar({ open: true, message: error?.response?.data?.error || "Error removing product", severity: "error" });
+    }
   };
 
   if (loading) return <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}><CircularProgress sx={{ color: "#E53935" }} /></Box>;
@@ -132,9 +196,10 @@ const StoreProductList = () => {
               <TableHead sx={{ bgcolor: "#fafbfc" }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", px: 4 }}># Index</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Object Reference</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>ID Segment</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Product</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Product ID</TableCell>
                   <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Category</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Status</TableCell>
                   <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Resource</TableCell>
                   <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", px: 4, textAlign: "right" }}>Operation</TableCell>
                 </TableRow>
@@ -142,7 +207,7 @@ const StoreProductList = () => {
               <TableBody>
                 {filteredProducts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 12 }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 12 }}>
                       <Stack alignItems="center" spacing={2.5}>
                         <Box sx={{ p: 3, borderRadius: "50%", bgcolor: alpha("#E53935", 0.05) }}>
                           <InventoryIcon sx={{ color: "#E53935", fontSize: 56, opacity: 0.5 }} />
@@ -159,8 +224,11 @@ const StoreProductList = () => {
                     <TableRow key={row.id} hover sx={{ transition: "0.2s", "&:hover": { bgcolor: alpha("#1b2559", 0.02) } }}>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{index + 1}</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{row.name}</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#a3aed0" }}>#{row.id}</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#a3aed0" }}>{row.productCode}</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: "#E53935" }}>{row.category}</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: row.status === "Approved" ? "#05cd99" : "#a3aed0" }}>
+                        {row.status}
+                      </TableCell>
                       <TableCell>
                         <Avatar
                           src={row.image}
@@ -170,12 +238,16 @@ const StoreProductList = () => {
                       </TableCell>
                       <TableCell sx={{ textAlign: "right" }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <IconButton className="action-edit" size="small" sx={{ color: "#1b2559", bgcolor: alpha("#1b2559", 0.05), borderRadius: "10px" }}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton className="action-delete" size="small" sx={{ color: "#f44336", bgcolor: alpha("#f44336", 0.05), borderRadius: "10px" }}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
+                          <Tooltip title="Edit Product Node">
+                            <IconButton onClick={() => navigate(`edit/${row.id}`)} className="action-edit" size="small" sx={{ color: "#1b2559", bgcolor: alpha("#1b2559", 0.05), borderRadius: "10px", "&:hover": { bgcolor: alpha("#1b2559", 0.1) } }}>
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Product Profile">
+                            <IconButton onClick={() => handleDelete(row.id, row.name)} className="action-delete" size="small" sx={{ color: "#E53935", bgcolor: alpha("#E53935", 0.05), borderRadius: "10px", "&:hover": { bgcolor: alpha("#E53935", 0.1) } }}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </Stack>
                       </TableCell>
                     </TableRow>
@@ -184,10 +256,24 @@ const StoreProductList = () => {
               </TableBody>
             </Table>
           </TableContainer>
-
         </Paper>
-
       </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          severity={snackbar.severity}
+          variant="filled"
+          onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
+          sx={{ borderRadius: "12px", fontWeight: 700 }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

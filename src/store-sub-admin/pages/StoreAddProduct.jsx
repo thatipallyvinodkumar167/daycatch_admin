@@ -142,6 +142,7 @@ const StoreAddProduct = () => {
     try {
       await genericApi.create("storeProducts", {
         storeId: store.id,
+        storeName: store.name,
         "Product Id": formData.eanCode || `STORE-${Date.now()}`,
         "Product Name": formData.name,
         Category: formData.category,
@@ -151,7 +152,8 @@ const StoreAddProduct = () => {
         stock: Number(formData.quantity) || 0,
         "Order Quantity": 1,
         Store: store.name,
-        Image: mainImage?.name || "",
+        "Store Name": store.name,
+        Image: mainPreview || "",
         status: "Pending",
         submittedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

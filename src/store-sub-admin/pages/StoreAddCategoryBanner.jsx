@@ -93,10 +93,16 @@ const StoreAddCategoryBanner = () => {
 
     setIsSubmitting(true);
     try {
+      const selectedCategory = categories.find((category) => category.id === formData.categoryId);
       await genericApi.create("category_banners", {
-        ...formData,
         storeId: store.id,
-        imageUrl: imageFile.name
+        Store: store.name,
+        title: formData.title,
+        categoryId: formData.categoryId,
+        categoryName: selectedCategory?.name || "",
+        imageUrl: imagePreview || null,
+        status: "Active",
+        createdAt: new Date().toISOString(),
       });
       setSnackbar({ open: true, message: "Banner added successfully!", severity: "success" });
       setTimeout(() => navigate(-1), 1500);

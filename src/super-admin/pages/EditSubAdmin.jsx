@@ -24,12 +24,21 @@ import SaveIcon from "@mui/icons-material/Save";
 import { genericApi } from "../../api/genericApi";
 import { subAdminApi } from "../../api/subAdminApi";
 
+const readFileAsDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 const EditSubAdmin = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     roleName: "",
     scope: "platform",
     storeId: "",
@@ -49,7 +58,7 @@ const EditSubAdmin = () => {
   const fetchRoles = useCallback(async () => {
     try {
       const response = await genericApi.getAll("roles");
-      const results = response?.data?.data || [];
+      const results = response?.data?.results || response?.data?.data || response?.data || [];
       if (results.length > 0) {
         setRoles(results.filter((role) => role.name !== "Super Admin").map(r => ({ id: r._id, name: r.name })));
       } else {
@@ -72,6 +81,7 @@ const EditSubAdmin = () => {
           ...prev,
           name: admin["Name"] || admin.name || "",
           email: admin["Email"] || admin["Email ID"] || admin.email || "",
+          phone: admin.phone || admin["Mobile Number"] || admin.Phone || "",
           roleName: admin["role Name"] || admin.roleName || admin.role || "",
           scope: admin.scope || "platform",
           storeId: admin.storeId || "",
@@ -91,7 +101,7 @@ const EditSubAdmin = () => {
     const fetchStores = async () => {
       try {
         const response = await genericApi.getAll("storeList");
-        const results = response?.data?.data || [];
+        const results = response?.data?.results || response?.data?.data || response?.data || [];
         setStores(
           results.map((store) => ({
             id: store._id || store.id,
@@ -108,22 +118,32 @@ const EditSubAdmin = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((current) => ({
+      ...current,
+      [name]: value,
+      ...(name === "scope" && value !== "store" ? { storeId: "" } : {}),
+    }));
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData({ ...formData, image: file });
-      setImagePreview(URL.createObjectURL(file));
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        setFormData((current) => ({ ...current, image: file }));
+        setImagePreview(dataUrl);
+      } catch (error) {
+        console.error("Unable to process image:", error);
+        alert("Failed to read the image file.");
+      }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email) {
-      alert("Please fill in name and email.");
+    if (!formData.name || !formData.email || !formData.phone) {
+      alert("Please fill in name, email, and phone.");
       return;
     }
 
@@ -133,17 +153,24 @@ const EditSubAdmin = () => {
     }
 
     try {
+      const assignedStore = stores.find((store) => store.id === formData.storeId);
       const payload = {
           "Name": formData.name,
           "Email": formData.email,
+          "phone": formData.phone,
           "role Name": formData.roleName || "Manager",
           "scope": formData.scope,
           "storeId": formData.scope === "store" ? formData.storeId : "",
+          "storeName": formData.scope === "store" ? assignedStore?.name || "" : "",
           "status": formData.status || "Active",
       };
       
       if (formData.password) {
           payload["password"] = formData.password;
+      }
+
+      if (imagePreview) {
+          payload["Image"] = imagePreview;
       }
 
       await subAdminApi.update(id, payload);
@@ -251,6 +278,21 @@ const EditSubAdmin = () => {
                 type="email"
                 placeholder="admin@example.com"
                 value={formData.email}
+                onChange={handleInputChange}
+                variant="outlined"
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" fontWeight="700" color="#1b2559" sx={{ mb: 1 }}>
+                Mobile Number
+              </Typography>
+              <TextField
+                fullWidth
+                name="phone"
+                placeholder="9876543210"
+                value={formData.phone}
                 onChange={handleInputChange}
                 variant="outlined"
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}

@@ -22,7 +22,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
-import { storeWorkspaceApi } from "../../api/storeWorkspaceApi";
+import { matchesStoreRecord } from "../utils/storeWorkspace";
 
 const StoreAddProductBanner = () => {
   const { store } = useOutletContext();
@@ -43,13 +43,15 @@ const StoreAddProductBanner = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await storeWorkspaceApi.getCatalogProducts(store.id);
-        const rows = response?.data?.data || [];
+        const response = await genericApi.getAll("storeProducts");
+        const rows = response?.data?.results || [];
         setProducts(
-          rows.map((product) => ({
-            id: product.id,
-            name: product.productName || "Unnamed Product"
-          }))
+          rows
+            .filter((product) => matchesStoreRecord(product, store))
+            .map((product) => ({
+              id: String(product._id || product.id || ""),
+              name: product["Product Name"] || product.productName || "Unnamed Product",
+            }))
         );
       } catch (err) {
         console.error("Products Error:", err);
@@ -96,10 +98,16 @@ const StoreAddProductBanner = () => {
 
     setIsSubmitting(true);
     try {
+      const selectedProduct = products.find((product) => product.id === formData.productId);
       await genericApi.create("product_banners", {
-        ...formData,
         storeId: store.id,
-        imageUrl: imageFile.name
+        Store: store.name,
+        title: formData.title,
+        productId: formData.productId,
+        productName: selectedProduct?.name || "",
+        imageUrl: imagePreview || null,
+        status: "Active",
+        createdAt: new Date().toISOString(),
       });
       setSnackbar({ open: true, message: "Secondary banner added successfully!", severity: "success" });
       setTimeout(() => navigate(-1), 1500);

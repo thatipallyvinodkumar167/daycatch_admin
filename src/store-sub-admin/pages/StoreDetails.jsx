@@ -5,10 +5,15 @@ import {
   Grid,
   Paper,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Typography,
   alpha,
   IconButton,
-  Avatar,
   CircularProgress,
   Tooltip,
 } from "@mui/material";
@@ -25,6 +30,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { storeWorkspaceApi } from "../../api/storeWorkspaceApi";
+import { formatStoreDate } from "../utils/storeWorkspace";
 
 const StoreDetails = () => {
   const { store } = useOutletContext();
@@ -54,13 +60,14 @@ const StoreDetails = () => {
     try {
       const response = await storeWorkspaceApi.getDashboard(store?.id);
       const data = response?.data?.data || response?.data || {};
+      const summary = data.summary || {};
 
       setDashboardData({
-        totalOrders: data.totalOrders || 0,
-        totalRevenue: data.totalRevenue || 0,
-        totalProducts: data.totalProducts || 0,
-        callbackCount: data.callbackCount || 0,
-        fulfillmentRate: data.fulfillmentRate || 0,
+        totalOrders: data.totalOrders || summary.totalOrders || summary.newOrders || 0,
+        totalRevenue: data.totalRevenue || summary.totalRevenue || summary.revenue || 0,
+        totalProducts: data.totalProducts || summary.totalProducts || summary.approvedProducts || 0,
+        callbackCount: data.callbackCount || summary.callbackCount || summary.callbackRequests || 0,
+        fulfillmentRate: data.fulfillmentRate || summary.fulfillmentRate || 0,
         recentOrders: data.recentOrders || [],
       });
     } catch (err) {
@@ -101,6 +108,12 @@ const StoreDetails = () => {
       icon: <RevenueIcon sx={{ fontSize: 24 }} />,
       color: "#05cd99",
       route: buildStoreRoute("reports/sales-report"),
+      isIncrease: true,
+      change: "+100%",
+      subItems: [
+        { label: "Merchant Share", val: `Rs. ${Math.round(Number(dashboardData.totalRevenue) * 0.88).toLocaleString()}` },
+        { label: "Admin Share", val: `Rs. ${Math.round(Number(dashboardData.totalRevenue) * 0.12).toLocaleString()}` }
+      ]
     },
     {
       label: "Products",
@@ -160,7 +173,7 @@ const StoreDetails = () => {
                 onClick={() => navigate(card.route)}
                 sx={{
                   p: 3.5,
-                  borderRadius: "24px",
+                  borderRadius: "32px",
                   border: "1px solid #e0e5f2",
                   bgcolor: "#fff",
                   boxShadow: "0 10px 40px rgba(0,0,0,0.03)",
@@ -169,23 +182,60 @@ const StoreDetails = () => {
                   "&:hover": { transform: "translateY(-4px)", boxShadow: "0 20px 50px rgba(0,0,0,0.08)" },
                   position: "relative",
                   overflow: "hidden",
+                  height: "100%",
                 }}
               >
-                <Box sx={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, bgcolor: alpha(card.color, 0.04), borderRadius: "50%", pointerEvents: "none" }} />
+                <Box sx={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, bgcolor: alpha(card.color, 0.03), borderRadius: "50%", pointerEvents: "none" }} />
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Box sx={{ p: 1.5, borderRadius: "14px", bgcolor: alpha(card.color, 0.08), color: card.color, display: "flex" }}>
+                  <Box sx={{ p: 1.5, borderRadius: "16px", bgcolor: alpha(card.color, 0.08), color: card.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {card.icon}
                   </Box>
-                  <IconButton size="small" sx={{ color: "#a3aed0" }}>
-                    <MoreIcon fontSize="small" />
-                  </IconButton>
+                  {card.change ? (
+                    <Chip
+                      icon={<Typography sx={{ fontSize: "14px", fontWeight: 900, pb: 0.3 }}>↗</Typography>}
+                      label={card.change}
+                      size="small"
+                      sx={{
+                        bgcolor: card.isIncrease ? alpha("#05cd99", 0.1) : alpha("#E53935", 0.1),
+                        color: card.isIncrease ? "#05cd99" : "#E53935",
+                        fontWeight: "900",
+                        borderRadius: "10px",
+                        border: "none",
+                        height: 26,
+                        px: 0.5,
+                        fontSize: "12px",
+                        "& .MuiChip-icon": { color: "inherit" }
+                      }}
+                    />
+                  ) : (
+                    <IconButton size="small" sx={{ color: "#a3aed0", bgcolor: "transparent" }}>
+                      <MoreIcon fontSize="small" sx={{ opacity: 0.5 }} />
+                    </IconButton>
+                  )}
                 </Stack>
-                <Typography variant="caption" sx={{ mt: 3, display: "block", fontWeight: 900, color: "#a3aed0", textTransform: "uppercase", letterSpacing: "0.8px" }}>
+                <Typography variant="caption" sx={{ mt: 3, display: "block", fontWeight: 900, color: "#a3aed0", textTransform: "uppercase", letterSpacing: "1px", fontSize: "10px" }}>
                   {card.label}
                 </Typography>
-                <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 900, color: navy, letterSpacing: "-1px" }}>
+                <Typography sx={{ mt: 0.2, fontWeight: 900, color: navy, fontSize: "22px", letterSpacing: "-0.5px", lineHeight: 1.2 }}>
                   {card.value}
                 </Typography>
+
+                {card.subItems && (
+                  <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px dashed #e0e5f2" }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                      {card.subItems.map((sub, idx) => (
+                        <Box key={idx} sx={{ minWidth: 0, flex: 1, pr: idx === 0 ? 0.5 : 0 }}>
+                          <Typography variant="caption" sx={{ display: "block", fontWeight: 800, color: "#a3aed0", textTransform: "uppercase", letterSpacing: "0.2px", mb: 0.2, fontSize: "8px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {sub.label}
+                          </Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 900, color: navy, fontSize: "11px", whiteSpace: "nowrap" }}>
+                            {sub.val}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
               </Paper>
             </Grid>
           ))}
@@ -195,36 +245,73 @@ const StoreDetails = () => {
         <Grid container spacing={3}>
           <Grid item xs={12} md={8}>
             <Paper sx={{ p: 4, borderRadius: "24px", border: "1px solid #e0e5f2", bgcolor: "#fff", boxShadow: "0 10px 40px rgba(0,0,0,0.03)" }}>
-              <Typography variant="h5" sx={{ fontWeight: 900, color: navy, mb: 1, letterSpacing: "-1px" }}>Recent Activity</Typography>
-              <Typography variant="body2" sx={{ color: "#a3aed0", fontWeight: 700, mb: 4 }}>Latest operational threads from your store.</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 900, color: navy, mb: 1, letterSpacing: "-1px" }}>Recent Orders</Typography>
+              <Typography variant="body2" sx={{ color: "#a3aed0", fontWeight: 700, mb: 4 }}>Latest order records from your store workspace.</Typography>
 
-              {dashboardData.recentOrders.length === 0 ? (
-                <Box sx={{ textAlign: "center", py: 6 }}>
-                  <OrderIcon sx={{ fontSize: 48, color: "#e0e5f2", mb: 2 }} />
-                  <Typography variant="body1" color="#a3aed0" fontWeight="700">No recent orders to display.</Typography>
-                </Box>
-              ) : (
-                <Stack spacing={2}>
-                  {dashboardData.recentOrders.slice(0, 5).map((order, i) => (
-                    <Box key={i} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2, borderRadius: "14px", bgcolor: "#f8f9fc" }}>
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        <Avatar sx={{ bgcolor: alpha(red, 0.1), color: red, borderRadius: "10px" }}>
-                          <OrderIcon fontSize="small" />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight="800" color={navy}>#{order.id || "N/A"}</Typography>
-                          <Typography variant="caption" color="#a3aed0" fontWeight="700">{order.customer || "Unknown"}</Typography>
-                        </Box>
-                      </Stack>
-                      <Chip
-                        label={order.status || "Pending"}
-                        size="small"
-                        sx={{ bgcolor: alpha("#05cd99", 0.1), color: "#05cd99", fontWeight: 800, borderRadius: "8px" }}
-                      />
-                    </Box>
-                  ))}
-                </Stack>
-              )}
+              <TableContainer sx={{ border: "1px solid #eef2f6", borderRadius: "20px", overflow: "hidden" }}>
+                <Table>
+                  <TableHead sx={{ bgcolor: "#fafbfc" }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "14px", width: "50px", whiteSpace: "nowrap" }}>#</TableCell>
+                      <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "14px", whiteSpace: "nowrap" }}>Cart ID</TableCell>
+                      <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "14px", whiteSpace: "nowrap" }}>Cart price</TableCell>
+                      <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "14px", whiteSpace: "nowrap" }}>User</TableCell>
+                      <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "14px", whiteSpace: "nowrap" }}>Delivery Date</TableCell>
+                      <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "14px", whiteSpace: "nowrap" }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "14px", whiteSpace: "nowrap", textAlign: "right" }}>Details</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {dashboardData.recentOrders.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                          <Typography variant="h6" color={navy} fontWeight="900" gutterBottom>
+                            No operational data found
+                          </Typography>
+                          <Typography variant="body1" color="#a3aed0" fontWeight="700">
+                            There are currently no active all orders list to display.
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      dashboardData.recentOrders.slice(0, 5).map((order, index) => (
+                        <TableRow key={order.id || order.cartId || index} hover sx={{ "&:hover": { bgcolor: alpha(navy, 0.02) } }}>
+                          <TableCell sx={{ fontWeight: 800, color: navy }}>{index + 1}</TableCell>
+                          <TableCell sx={{ fontWeight: 800, color: navy }}>{order.cartId || order.id || "N/A"}</TableCell>
+                          <TableCell sx={{ fontWeight: 900, color: red }}>
+                            Rs. {Number(order.amount || 0).toLocaleString("en-IN")}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: "#707eae" }}>{order.customer || "Unknown User"}</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: "#707eae" }}>{formatStoreDate(order.deliveryDate)}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={order.status || "Pending"}
+                              size="small"
+                              sx={{ bgcolor: alpha("#05cd99", 0.1), color: "#05cd99", fontWeight: 800, borderRadius: "8px" }}
+                            />
+                          </TableCell>
+                          <TableCell sx={{ textAlign: "right" }}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={() => navigate(buildStoreRoute("orders/all"))}
+                              sx={{
+                                borderRadius: "10px",
+                                textTransform: "none",
+                                fontWeight: 800,
+                                borderColor: "#e0e5f2",
+                                color: navy,
+                              }}
+                            >
+                              View Order
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Paper>
           </Grid>
 

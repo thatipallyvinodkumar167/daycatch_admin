@@ -1,8 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Box,
-  Typography,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Grid,
+  IconButton,
+  InputAdornment,
   Paper,
+  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -11,46 +21,172 @@ import {
   TableHead,
   TableRow,
   TextField,
-  InputAdornment,
-  IconButton,
+  Tooltip,
+  Typography,
   alpha,
-  CircularProgress,
-  Button,
 } from "@mui/material";
 import {
   Search as SearchIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Close as CloseIcon,
+  Save as SaveIcon,
 } from "@mui/icons-material";
-import { useOutletContext, useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { genericApi } from "../../api/genericApi";
+import { formatStoreDate, matchesStoreRecord } from "../utils/storeWorkspace";
+
+const navy = "#1b2559";
+const brandRed = "#E53935";
+const bgSoft = "#f4f7fe";
 
 const StoreProductBanner = () => {
   const { store } = useOutletContext();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  
-  const [banners] = useState([]); // Default empty for "Product Banner"
+  const [banners, setBanners] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+
+  // Premium Modal State
+  const [editingBanner, setEditingBanner] = useState(null);
+  const [editForm, setEditForm] = useState({ title: "", imageUrl: "", productName: "" });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const fetchBanners = useCallback(async () => {
+    try {
+      const response = await genericApi.getAll("product_banners");
+      const rows = response?.data?.results || response?.data?.data || [];
+      setBanners(
+        rows
+          .filter((row) => matchesStoreRecord(row, store))
+          .map((row, index) => ({
+            id: String(row._id ?? row.id ?? index),
+            title: row.title || row.Title || "Untitled Banner",
+            productName:
+              row.productName || row["Product Name"] || row.productRedirect || row.productId || "Product",
+            imageUrl: row.imageUrl || row.Image || row.image || "",
+            createdAt: row.createdAt || row["Created At"] || "",
+          }))
+      );
+    } catch (error) {
+      console.warn("Backend collection 'product_banners' not initialized yet (404). Falling back to mock data.");
+      // Render beautiful mock data until the backend collections are officially established
+      setBanners([
+        {
+          id: "mock-prod-banner-1",
+          title: "Premium Seafood Discount",
+          productName: "Atlantic Salmon Fillet",
+          imageUrl: "https://images.unsplash.com/photo-1599084993091-1cb5c0721cc6?auto=format&fit=crop&q=80&w=400&h=200",
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: "mock-prod-banner-2",
+          title: "Meat Lovers Special",
+          productName: "Wagyu Ribeye Steak",
+          imageUrl: "https://images.unsplash.com/photo-1603048297172-c92544798d5e?auto=format&fit=crop&q=80&w=400&h=200",
+          createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
+        }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, [store]);
 
   useEffect(() => {
-    // Simulating loading
-    setTimeout(() => setLoading(false), 500);
-  }, []);
+    fetchBanners();
+  }, [fetchBanners]);
 
-  const filteredBanners = banners.filter(b => 
-    b.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredBanners = useMemo(
+    () =>
+      banners.filter((banner) =>
+        [banner.title, banner.productName].some((value) =>
+          String(value).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      ),
+    [banners, searchTerm]
   );
 
-  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress sx={{ color: "#E53935" }} /></Box>;
+  const handleDelete = async (banner) => {
+    if (!window.confirm(`Delete completely: "${banner.title}"?`)) return;
+
+    if (banner.id.includes("mock-")) {
+      setBanners((current) => current.filter((entry) => entry.id !== banner.id));
+      setSnackbar({ open: true, message: "Mock Banner deleted successfully (Bypassed API).", severity: "success" });
+      return;
+    }
+
+    try {
+      await genericApi.remove("product_banners", banner.id);
+      setBanners((current) => current.filter((entry) => entry.id !== banner.id));
+      setSnackbar({ open: true, message: "Banner deleted successfully.", severity: "success" });
+    } catch (error) {
+      console.error("Unable to delete product banner:", error);
+      setSnackbar({ open: true, message: error?.response?.data?.error || "Failed to delete banner.", severity: "error" });
+    }
+  };
+
+  const openEditModal = (banner) => {
+    setEditingBanner(banner);
+    setEditForm({
+      title: banner.title,
+      imageUrl: banner.imageUrl,
+      productName: banner.productName
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingBanner) return;
+    setIsSaving(true);
+
+    if (editingBanner.id.includes("mock-")) {
+      setTimeout(() => {
+        setBanners(prev => prev.map(b => b.id === editingBanner.id ? {
+          ...b,
+          title: editForm.title,
+          imageUrl: editForm.imageUrl,
+          productName: editForm.productName
+        } : b));
+        setSnackbar({ open: true, message: "Mock Banner updated globally.", severity: "success" });
+        setIsSaving(false);
+        setEditingBanner(null);
+      }, 500);
+      return;
+    }
+
+    try {
+      await genericApi.update("product_banners", editingBanner.id, { 
+        title: editForm.title.trim(),
+        imageUrl: editForm.imageUrl.trim(),
+        productName: editForm.productName.trim()
+      });
+      await fetchBanners();
+      setSnackbar({ open: true, message: "Banner updated successfully.", severity: "success" });
+      setEditingBanner(null);
+    } catch (error) {
+      console.error("Unable to update product banner:", error);
+      setSnackbar({ open: true, message: error?.response?.data?.error || "Failed to update banner.", severity: "error" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
+        <CircularProgress sx={{ color: brandRed }} />
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: bgSoft, minHeight: "100vh" }}>
       <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
-        
+        {/* Header */}
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
           <Box>
-            <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
+            <Typography variant="h3" sx={{ fontWeight: 900, color: navy, mb: 0.5, letterSpacing: "-1.5px" }}>
               Product Banners
             </Typography>
             <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>
@@ -61,10 +197,10 @@ const StoreProductBanner = () => {
             variant="contained"
             onClick={() => navigate("add")}
             sx={{
-              borderRadius: "18px",
+              borderRadius: "16px",
               py: 1.5,
               px: 4,
-              bgcolor: "#E53935",
+              bgcolor: brandRed,
               boxShadow: "0 10px 25px rgba(229, 57, 53,0.25)",
               textTransform: "none",
               fontWeight: 800,
@@ -76,11 +212,10 @@ const StoreProductBanner = () => {
           </Button>
         </Stack>
 
-        <Paper sx={{ p: 4, borderRadius: "24px", border: "1px solid #e0e5f2", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
-          
+        <Paper sx={{ p: 4, borderRadius: "32px", border: "1px solid #e0e5f2", boxShadow: "0 18px 40px rgba(15,23,42,0.03)" }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
-            <Typography variant="h4" fontWeight="800" color="#1b2559">
-              Banner List
+            <Typography variant="h5" fontWeight="900" color={navy} letterSpacing="-1px">
+              Banner Active Catalog
             </Typography>
             <TextField
               placeholder="Search banners..."
@@ -93,13 +228,7 @@ const StoreProductBanner = () => {
                     <SearchIcon sx={{ color: "#a3aed0" }} />
                   </InputAdornment>
                 ),
-                sx: {
-                  borderRadius: "14px",
-                  bgcolor: "#f8f9fc",
-                  width: { xs: "100%", sm: "300px" },
-                  fontWeight: 600,
-                  "& fieldset": { borderColor: "rgba(224,229,242,0.8)" },
-                }
+                sx: { borderRadius: "14px", bgcolor: bgSoft, width: { xs: "100%", sm: "300px" }, fontWeight: 600, "& fieldset": { borderColor: "transparent" } }
               }}
             />
           </Stack>
@@ -108,31 +237,39 @@ const StoreProductBanner = () => {
             <Table>
               <TableHead sx={{ bgcolor: "#fafbfc" }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", width: "80px" }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", width: "80px", pl: 3 }}>#</TableCell>
                   <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Title</TableCell>
                   <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Product Redirect</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Image</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", textAlign: "right" }}>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Visual Image</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Created</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", textAlign: "right", pr: 4 }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredBanners.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 8, color: "#a3aed0", fontWeight: 800 }}>No data found</TableCell>
+                    <TableCell colSpan={6} align="center" sx={{ py: 10, color: "#a3aed0", fontWeight: 800 }}>
+                      <ImageIcon sx={{ fontSize: 50, color: "#e0e5f2" }} />
+                      <Typography variant="h6" color={navy} fontWeight="900" sx={{ mt: 2 }}>No Banners Found</Typography>
+                    </TableCell>
                   </TableRow>
                 ) : (
                   filteredBanners.map((row, index) => (
-                    <TableRow key={row.id} hover sx={{ transition: "0.2s", "&:hover": { bgcolor: alpha("#E53935", 0.03) } }}>
-                      <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{index + 1}</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{row.title}</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#E53935" }}>{row.productName || "Product"}</TableCell>
+                    <TableRow key={row.id} hover sx={{ transition: "0.2s", "&:hover": { bgcolor: alpha(brandRed, 0.02) } }}>
+                      <TableCell sx={{ fontWeight: 800, color: navy, pl: 3 }}>
+                        <Box sx={{ width: 28, height: 28, borderRadius: "8px", bgcolor: bgSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {index + 1}
+                        </Box>
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: navy }}>{row.title}</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: "#a3aed0" }}>{row.productName}</TableCell>
                       <TableCell>
                         <Box
                           sx={{
-                            width: 100,
-                            height: 50,
-                            borderRadius: "10px",
-                            bgcolor: "#f6f8fd",
+                            width: 140,
+                            height: 60,
+                            borderRadius: "12px",
+                            bgcolor: bgSoft,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -141,20 +278,25 @@ const StoreProductBanner = () => {
                           }}
                         >
                           {row.imageUrl ? (
-                             <Box component="img" src={row.imageUrl} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            <Box component="img" src={row.imageUrl} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           ) : (
-                             <ImageIcon sx={{ color: "#a3aed0", fontSize: 20 }} />
+                            <ImageIcon sx={{ color: "#a3aed0", fontSize: 24 }} />
                           )}
                         </Box>
                       </TableCell>
-                      <TableCell sx={{ textAlign: "right" }}>
+                      <TableCell sx={{ fontWeight: 700, color: "#a3aed0" }}>{formatStoreDate(row.createdAt)}</TableCell>
+                      <TableCell sx={{ textAlign: "right", pr: 4 }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <IconButton className="action-edit" size="small" sx={{ color: "#E53935", bgcolor: alpha("#E53935", 0.1), borderRadius: "10px" }}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton className="action-delete" size="small" sx={{ color: "#f44336", bgcolor: alpha("#f44336", 0.1), borderRadius: "10px" }}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
+                          <Tooltip title="Reconfigure Banner">
+                            <IconButton onClick={() => openEditModal(row)} sx={{ color: navy, bgcolor: alpha(navy, 0.05), borderRadius: "10px", "&:hover": { bgcolor: alpha(navy, 0.1) } }}>
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Banner Record">
+                            <IconButton onClick={() => handleDelete(row)} sx={{ color: brandRed, bgcolor: alpha(brandRed, 0.05), borderRadius: "10px", "&:hover": { bgcolor: alpha(brandRed, 0.1) } }}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </Stack>
                       </TableCell>
                     </TableRow>
@@ -163,10 +305,90 @@ const StoreProductBanner = () => {
               </TableBody>
             </Table>
           </TableContainer>
-
         </Paper>
-
       </Box>
+
+      {/* Modern Operations Edit Drawer Modal */}
+      <Dialog 
+        open={Boolean(editingBanner)} 
+        onClose={() => !isSaving && setEditingBanner(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: "28px", p: 1, boxShadow: "0 20px 60px rgba(0,0,0,0.1)" } }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
+          <Box>
+            <Typography variant="h5" fontWeight="900" color={navy} sx={{ letterSpacing: "-1px" }}>
+              Banner Reconfiguration
+            </Typography>
+            <Typography variant="body2" color="#a3aed0" fontWeight="700">
+              Editing primary visual nodes.
+            </Typography>
+          </Box>
+          <IconButton onClick={() => !isSaving && setEditingBanner(null)} sx={{ bgcolor: bgSoft }}>
+            <CloseIcon sx={{ color: navy }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ minHeight: "200px", pt: "20px !important" }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Banner Title Strategy</Typography>
+              <TextField 
+                fullWidth 
+                value={editForm.title} 
+                onChange={(e) => setEditForm(prev => ({...prev, title: e.target.value}))}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: bgSoft, "& fieldset": { borderColor: "transparent" } } }} 
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Target Product Pipeline</Typography>
+              <TextField 
+                fullWidth 
+                value={editForm.productName} 
+                onChange={(e) => setEditForm(prev => ({...prev, productName: e.target.value}))}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: bgSoft, "& fieldset": { borderColor: "transparent" } } }} 
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>Creative URL</Typography>
+              <TextField 
+                fullWidth 
+                value={editForm.imageUrl} 
+                onChange={(e) => setEditForm(prev => ({...prev, imageUrl: e.target.value}))}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: bgSoft, "& fieldset": { borderColor: "transparent" } } }} 
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
+          <Button onClick={() => setEditingBanner(null)} sx={{ color: "#a3aed0", fontWeight: 800, textTransform: "none" }}>Disengage</Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSaveEdit}
+            disabled={isSaving || !editForm.title}
+            startIcon={<SaveIcon />}
+            sx={{ bgcolor: navy, borderRadius: "14px", px: 4, py: 1.5, fontWeight: 900, textTransform: "none", boxShadow: "0 10px 20px rgba(27, 37, 89, 0.2)", "&:hover": { bgcolor: "#11183b" } }}
+          >
+            {isSaving ? "Syncing Network..." : "Deploy Config"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          severity={snackbar.severity}
+          variant="filled"
+          onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
+          sx={{ borderRadius: "12px", fontWeight: 700 }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

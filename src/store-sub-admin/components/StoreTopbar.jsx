@@ -22,7 +22,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
-import { clearAuthSession, getAuthSession } from "../../utils/authSession";
+import { clearAuthSession } from "../../utils/authSession";
 import { shellToolbarSx, shellTopbarSx } from "../../utils/adminShell";
 
 function StoreTopbar({ onToggleSidebar, store }) {
@@ -30,11 +30,10 @@ function StoreTopbar({ onToggleSidebar, store }) {
   const theme = useTheme();
   const primaryColor = theme.palette.primary.main;
   const [anchorEl, setAnchorEl] = useState(null);
-  const session = getAuthSession();
 
-  const userName = store?.owner || store?.name || "Store Panel";
-  const userEmail = store?.email || "No email available";
-  const userRole = session.role || "Store / Sub-Admin";
+  const userName = store?.name || store?.owner || "Store Panel";
+  const userEmail = store?.email || store?.phone || "No store contact available";
+  const userRole = store?.owner ? `Managed by ${store.owner}` : "Store Workspace";
   const initials = userName.substring(0, 2).toUpperCase() || "DC";
 
   const handleProfileOpen = (event) => setAnchorEl(event.currentTarget);

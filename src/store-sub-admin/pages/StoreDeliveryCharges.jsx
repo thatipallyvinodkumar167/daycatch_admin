@@ -4,6 +4,10 @@ import {
   Box,
   Button,
   Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   ListItemText,
   MenuItem,
@@ -47,6 +51,8 @@ function StoreDeliveryCharges() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAreas, setSelectedAreas] = useState([]);
   const [tableData, setTableData] = useState([]);
+  const [editingArea, setEditingArea] = useState(null);
+  const [editChargeValue, setEditChargeValue] = useState("");
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   useEffect(() => {
@@ -106,25 +112,40 @@ function StoreDeliveryCharges() {
     setSelectedAreas(typeof value === "string" ? value.split(",") : value);
   };
 
-  const handleEditCharge = async (row) => {
-    const nextCharge = window.prompt("Enter delivery charge", row.charge ?? "");
-    if (nextCharge === null) return;
+  const handleOpenEdit = (row) => {
+    setEditingArea(row);
+    setEditChargeValue(row.charge ?? "");
+  };
 
-    const parsedCharge = Number(nextCharge);
+  const handleCloseEdit = () => {
+    if (saving) return;
+    setEditingArea(null);
+    setEditChargeValue("");
+  };
+
+  const handleEditCharge = async () => {
+    const parsedCharge = Number(editChargeValue);
     if (!Number.isFinite(parsedCharge) || parsedCharge < 0) {
       setSnackbar({ open: true, message: "Enter a valid delivery charge.", severity: "error" });
       return;
     }
 
     try {
-      await genericApi.update("area", row.id, { "Delivery Charge": parsedCharge });
+      setSaving(true);
+      await genericApi.update("area", editingArea.id, { "Delivery Charge": parsedCharge });
       setTableData((current) =>
-        current.map((item) => (item.id === row.id ? { ...item, charge: parsedCharge } : item))
+        current.map((item) =>
+          item.id === editingArea.id ? { ...item, charge: parsedCharge } : item
+        )
       );
+      setEditingArea(null);
+      setEditChargeValue("");
       setSnackbar({ open: true, message: "Delivery charge updated.", severity: "success" });
     } catch (error) {
       console.error("Unable to update delivery charge:", error);
       setSnackbar({ open: true, message: "Failed to update delivery charge.", severity: "error" });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -139,44 +160,6 @@ function StoreDeliveryCharges() {
     } catch (error) {
       console.error("Unable to delete area:", error);
       setSnackbar({ open: true, message: "Failed to remove area.", severity: "error" });
-    }
-  };
-
-  const handleBulkUpdate = async () => {
-    if (selectedAreas.length === 0) {
-      setSnackbar({ open: true, message: "Select at least one area first.", severity: "error" });
-      return;
-    }
-
-    const nextCharge = window.prompt("Enter delivery charge for selected areas");
-    if (nextCharge === null) return;
-
-    const parsedCharge = Number(nextCharge);
-    if (!Number.isFinite(parsedCharge) || parsedCharge < 0) {
-      setSnackbar({ open: true, message: "Enter a valid delivery charge.", severity: "error" });
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const rowsToUpdate = tableData.filter((row) => selectedAreas.includes(row.society));
-      await Promise.all(
-        rowsToUpdate.map((row) =>
-          genericApi.update("area", row.id, { "Delivery Charge": parsedCharge })
-        )
-      );
-
-      setTableData((current) =>
-        current.map((row) =>
-          selectedAreas.includes(row.society) ? { ...row, charge: parsedCharge } : row
-        )
-      );
-      setSnackbar({ open: true, message: "Delivery charges updated.", severity: "success" });
-    } catch (error) {
-      console.error("Unable to update selected areas:", error);
-      setSnackbar({ open: true, message: "Failed to update selected areas.", severity: "error" });
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -206,7 +189,7 @@ function StoreDeliveryCharges() {
 
         <Paper sx={{ p: { xs: 3, md: 5 }, borderRadius: "24px", boxShadow: "0 18px 40px rgba(15,23,42,0.04)", border: "1px solid #e0e5f2", bgcolor: "#fff" }}>
           <Stack spacing={4}>
-            {/* Area Selector + Action */}
+            {/* Area Selector */}
             <Stack direction="row" spacing={3} alignItems="flex-end" flexWrap="wrap" useFlexGap>
               <Box sx={{ minWidth: "300px", flex: 1 }}>
                 <Typography variant="caption" fontWeight="900" color="#a3aed0" sx={{ display: "block", mb: 1, textTransform: "uppercase", letterSpacing: "0.5px" }}>
@@ -219,7 +202,7 @@ function StoreDeliveryCharges() {
                     value={selectedAreas}
                     onChange={handleAreaChange}
                     renderValue={(selected) => {
-                      if (selected.length === 0) return <em>All selected</em>;
+                      if (selected.length === 0) return <em>All areas</em>;
                       return selected.join(", ");
                     }}
                     sx={{
@@ -237,25 +220,6 @@ function StoreDeliveryCharges() {
                   </Select>
                 </FormControl>
               </Box>
-
-              <Button
-                variant="contained"
-                disabled={saving}
-                onClick={handleBulkUpdate}
-                sx={{
-                  borderRadius: "14px",
-                  py: 1.8,
-                  px: 4,
-                  bgcolor: "#E53935",
-                  boxShadow: "0 10px 25px rgba(229, 57, 53, 0.25)",
-                  textTransform: "none",
-                  fontWeight: 900,
-                  fontSize: "15px",
-                  "&:hover": { bgcolor: "#d32f2f" },
-                }}
-              >
-                {saving ? "Updating..." : "Update Delivery Charges"}
-              </Button>
             </Stack>
 
             {/* Table Section */}
@@ -315,7 +279,7 @@ function StoreDeliveryCharges() {
                           </TableCell>
                           <TableCell sx={{ textAlign: "right", px: 3 }}>
                             <Stack direction="row" spacing={1} justifyContent="flex-end">
-                              <IconButton className="action-edit" size="small" onClick={() => handleEditCharge(row)} sx={{ color: "#1b2559", bgcolor: alpha("#1b2559", 0.06), borderRadius: "10px" }}>
+                              <IconButton className="action-edit" size="small" onClick={() => handleOpenEdit(row)} sx={{ color: "#1b2559", bgcolor: alpha("#1b2559", 0.06), borderRadius: "10px" }}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
                               <IconButton className="action-delete" size="small" onClick={() => handleDeleteArea(row)} sx={{ color: "#E53935", bgcolor: alpha("#E53935", 0.06), borderRadius: "10px" }}>
@@ -349,6 +313,102 @@ function StoreDeliveryCharges() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={Boolean(editingArea)}
+        onClose={handleCloseEdit}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            borderRadius: "24px",
+            boxShadow: "0 18px 40px rgba(15,23,42,0.08)",
+            border: "1px solid #e0e5f2",
+          },
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography variant="h5" sx={{ fontWeight: 900, color: "#1b2559" }}>
+            Edit Area
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Stack spacing={2.5}>
+            <Box>
+              <Typography variant="caption" sx={{ display: "block", mb: 1, color: "#a3aed0", fontWeight: 900, letterSpacing: "0.5px", textTransform: "uppercase" }}>
+                City
+              </Typography>
+              <TextField
+                fullWidth
+                value={editingArea?.city || ""}
+                InputProps={{ readOnly: true }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }}
+              />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ display: "block", mb: 1, color: "#a3aed0", fontWeight: 900, letterSpacing: "0.5px", textTransform: "uppercase" }}>
+                Society
+              </Typography>
+              <TextField
+                fullWidth
+                value={editingArea?.society || ""}
+                InputProps={{ readOnly: true }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }}
+              />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ display: "block", mb: 1, color: "#a3aed0", fontWeight: 900, letterSpacing: "0.5px", textTransform: "uppercase" }}>
+                Delivery Charge
+              </Typography>
+              <TextField
+                fullWidth
+                type="number"
+                value={editChargeValue}
+                onChange={(event) => setEditChargeValue(event.target.value)}
+                inputProps={{ min: 0 }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }}
+              />
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Stack direction="row" spacing={1.5} justifyContent="flex-end" sx={{ width: "100%" }}>
+            <Button
+              onClick={handleCloseEdit}
+              disabled={saving}
+              sx={{
+                borderRadius: "14px",
+                bgcolor: "#f4f7fe",
+                color: "#1b2559",
+                fontWeight: 800,
+                px: 2.5,
+                py: 1.2,
+                textTransform: "none",
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleEditCharge}
+              disabled={saving}
+              sx={{
+                borderRadius: "14px",
+                bgcolor: "#E53935",
+                color: "#fff",
+                fontWeight: 900,
+                px: 2.75,
+                py: 1.2,
+                textTransform: "none",
+                boxShadow: "0 10px 25px rgba(229, 57, 53, 0.25)",
+                "&:hover": { bgcolor: "#d32f2f" },
+              }}
+            >
+              {saving ? "Saving..." : "Update Charge"}
+            </Button>
+          </Stack>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
