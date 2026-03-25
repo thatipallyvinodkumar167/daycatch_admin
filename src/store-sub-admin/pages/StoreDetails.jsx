@@ -42,6 +42,10 @@ const StoreDetails = () => {
 
   const navy = "#1b2559";
   const red = "#E53935";
+  const buildStoreRoute = useCallback(
+    (path) => `/stores/details/${encodeURIComponent(store?.id || "")}/${path}`,
+    [store?.id]
+  );
 
   const fetchDashboardData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -89,28 +93,28 @@ const StoreDetails = () => {
       value: dashboardData.totalOrders,
       icon: <OrderIcon sx={{ fontSize: 24 }} />,
       color: red,
-      route: "../orders",
+      route: buildStoreRoute("orders/all"),
     },
     {
       label: "Total Revenue",
       value: `Rs. ${Number(dashboardData.totalRevenue).toLocaleString()}`,
       icon: <RevenueIcon sx={{ fontSize: 24 }} />,
       color: "#05cd99",
-      route: "../reports",
+      route: buildStoreRoute("reports/sales-report"),
     },
     {
       label: "Products",
       value: dashboardData.totalProducts,
       icon: <ProductIcon sx={{ fontSize: 24 }} />,
       color: "#ffb547",
-      route: "../products",
+      route: buildStoreRoute("products"),
     },
     {
       label: "Fulfillment",
       value: `${dashboardData.fulfillmentRate}%`,
       icon: <PerformanceIcon sx={{ fontSize: 24 }} />,
       color: navy,
-      route: "../orders",
+      route: buildStoreRoute("orders/all"),
     },
   ];
 
@@ -140,7 +144,7 @@ const StoreDetails = () => {
             </Tooltip>
             <Button
               variant="contained"
-              onClick={() => navigate("../orders")}
+              onClick={() => navigate(buildStoreRoute("orders/all"))}
               sx={{ borderRadius: "14px", bgcolor: red, fontWeight: 900, textTransform: "none", px: 3, py: 1.5, fontSize: "15px", boxShadow: "0 10px 20px rgba(229,57,53,0.2)", "&:hover": { bgcolor: "#d32f2f" } }}
             >
               View Orders
@@ -167,7 +171,7 @@ const StoreDetails = () => {
                   overflow: "hidden",
                 }}
               >
-                <Box sx={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, bgcolor: alpha(card.color, 0.04), borderRadius: "50%" }} />
+                <Box sx={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, bgcolor: alpha(card.color, 0.04), borderRadius: "50%", pointerEvents: "none" }} />
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box sx={{ p: 1.5, borderRadius: "14px", bgcolor: alpha(card.color, 0.08), color: card.color, display: "flex" }}>
                     {card.icon}
@@ -226,17 +230,17 @@ const StoreDetails = () => {
 
           <Grid item xs={12} md={4}>
             <Paper sx={{ p: 4, borderRadius: "24px", bgcolor: navy, color: "#fff", boxShadow: "0 20px 50px rgba(27,37,89,0.2)", position: "relative", overflow: "hidden", height: "100%" }}>
-              <Box sx={{ position: "absolute", top: -30, right: -30, width: 150, height: 150, bgcolor: alpha("#fff", 0.06), borderRadius: "50%" }} />
-              <Box sx={{ position: "absolute", bottom: -40, left: -40, width: 180, height: 180, bgcolor: alpha("#fff", 0.04), borderRadius: "50%" }} />
+              <Box sx={{ position: "absolute", top: -30, right: -30, width: 150, height: 150, bgcolor: alpha("#fff", 0.06), borderRadius: "50%", pointerEvents: "none" }} />
+              <Box sx={{ position: "absolute", bottom: -40, left: -40, width: 180, height: 180, bgcolor: alpha("#fff", 0.04), borderRadius: "50%", pointerEvents: "none" }} />
 
               <Typography variant="h5" sx={{ fontWeight: 900, mb: 1, position: "relative", letterSpacing: "-1px" }}>Quick Actions</Typography>
               <Typography variant="body2" sx={{ mb: 4, opacity: 0.7, fontWeight: 600, position: "relative" }}>Navigate your store control nodes.</Typography>
 
               <Stack spacing={2} sx={{ position: "relative" }}>
                 {[
-                  { label: "Notifications", icon: <NotificationIcon />, route: "../send-notifications" },
-                  { label: "Callbacks", icon: <CallbackIcon />, route: "../callback-requests" },
-                  { label: "Products", icon: <ProductIcon />, route: "../products" },
+                  { label: "Notifications", icon: <NotificationIcon />, route: buildStoreRoute("notifications/users") },
+                  { label: "Callbacks", icon: <CallbackIcon />, route: buildStoreRoute("callback/users") },
+                  { label: "Products", icon: <ProductIcon />, route: buildStoreRoute("products") },
                 ].map((action, i) => (
                   <Button
                     key={i}
@@ -251,6 +255,8 @@ const StoreDetails = () => {
                       textTransform: "none",
                       borderRadius: "12px",
                       py: 1.5,
+                      position: "relative",
+                      zIndex: 1,
                       justifyContent: "flex-start",
                       "&:hover": { bgcolor: alpha("#fff", 0.08), borderColor: "rgba(255,255,255,0.4)" }
                     }}
@@ -261,8 +267,8 @@ const StoreDetails = () => {
                 <Button
                   fullWidth
                   variant="contained"
-                  onClick={() => navigate("../orders")}
-                  sx={{ bgcolor: red, color: "#fff", fontWeight: 900, textTransform: "none", borderRadius: "12px", py: 1.5, boxShadow: "0 10px 20px rgba(229,57,53,0.3)", "&:hover": { bgcolor: "#d32f2f" } }}
+                  onClick={() => navigate(buildStoreRoute("orders/all"))}
+                  sx={{ bgcolor: red, color: "#fff", fontWeight: 900, textTransform: "none", borderRadius: "12px", py: 1.5, position: "relative", zIndex: 1, boxShadow: "0 10px 20px rgba(229,57,53,0.3)", "&:hover": { bgcolor: "#d32f2f" } }}
                 >
                   View All Orders
                 </Button>
