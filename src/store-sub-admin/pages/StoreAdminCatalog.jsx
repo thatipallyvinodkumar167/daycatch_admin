@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
@@ -76,11 +76,11 @@ const StoreAdminCatalog = () => {
   const [persistedProducts, setPersistedProducts] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [adminResponse, storeResponse] = await Promise.all([
         genericApi.getAll("Adminproducts"),
-        storeWorkspaceApi.getCatalogProducts(store.id),
+        storeWorkspaceApi.getCatalogProducts(store?.id),
       ]);
 
       const adminProducts = (adminResponse?.data?.results || []).map(mapAdminProduct);
@@ -97,13 +97,13 @@ const StoreAdminCatalog = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [store?.id]);
 
   useEffect(() => {
     if (store?.id) {
       fetchData();
     }
-  }, [store?.id]);
+  }, [fetchData]);
 
   const availableProducts = useMemo(
     () =>

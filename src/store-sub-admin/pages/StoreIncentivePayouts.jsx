@@ -27,7 +27,6 @@ import {
   History as HistoryIcon
 } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
-import { genericApi } from "../../api/genericApi";
 
 const StoreIncentivePayouts = () => {
   const { store } = useOutletContext();

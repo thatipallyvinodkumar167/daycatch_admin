@@ -18,10 +18,9 @@ import {
   IconButton,
   Tooltip,
   Button,
-  LinearProgress,
   CircularProgress
 } from "@mui/material";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -29,10 +28,8 @@ import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import PersonIcon from "@mui/icons-material/Person";
 import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import HubIcon from "@mui/icons-material/Hub";
-import InsightIcon from "@mui/icons-material/Insights";
 import SpeedIcon from "@mui/icons-material/Speed";
 import { getAllOrders } from "../api/ordersApi";
 import { getAllUsers } from "../api/usersApi";

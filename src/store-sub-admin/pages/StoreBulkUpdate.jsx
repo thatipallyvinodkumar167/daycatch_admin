@@ -17,10 +17,7 @@ import {
   CloudUpload as UploadIcon,
   Description as FileIcon,
   Download as DownloadIcon,
-  InfoOutlined as InfoIcon,
-  PriceCheck as PriceIcon,
-  Inventory2 as StockIcon,
-  ShoppingCartOutlined as OrderIcon
+  InfoOutlined as InfoIcon
 } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
 

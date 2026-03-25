@@ -18,7 +18,6 @@ import {
   LinearProgress,
   CircularProgress
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
@@ -30,7 +29,6 @@ import {
 import { genericApi } from "../../api/genericApi";
 
 const StoreApproval = () => {
-  const navigate = useNavigate();
   const [stores, setStores] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);

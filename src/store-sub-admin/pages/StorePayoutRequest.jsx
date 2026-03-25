@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Box,
@@ -35,7 +35,7 @@ const StorePayoutRequest = () => {
   const [requesting, setRequesting] = useState(false);
   const [history, setHistory] = useState([]);
 
-  const fetchPayoutData = async () => {
+  const fetchPayoutData = useCallback(async () => {
     setLoading(true);
     try {
       const [balanceResponse, payoutResponse] = await Promise.all([
@@ -64,13 +64,13 @@ const StorePayoutRequest = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [store]);
 
   useEffect(() => {
     if (store?.id || store?.name) {
       fetchPayoutData();
     }
-  }, [store?.id, store?.name]);
+  }, [fetchPayoutData]);
 
   const handleRequestPayout = async () => {
     if (earnings < 100 || requesting) return;

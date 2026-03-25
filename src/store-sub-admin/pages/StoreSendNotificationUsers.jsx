@@ -11,7 +11,6 @@ import {
   FormControl,
   Select,
   Alert,
-  Chip,
   Snackbar,
   IconButton,
   Fade,
@@ -22,13 +21,12 @@ import {
   Close as CloseIcon,
   PhotoCamera as PhotoCameraIcon,
 } from "@mui/icons-material";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
 
 const StoreSendNotificationUsers = () => {
   const { store } = useOutletContext();
-  const navigate = useNavigate();
-  
+
   const fileInputRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });

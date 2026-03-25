@@ -23,13 +23,12 @@ import {
   PhotoCamera as PhotoCameraIcon,
   Speed as SpeedIcon,
 } from "@mui/icons-material";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
 
 const StoreSendNotificationDriver = () => {
   const { store } = useOutletContext();
-  const navigate = useNavigate();
-  
+
   const fileInputRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });

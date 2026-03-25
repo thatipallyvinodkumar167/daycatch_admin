@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Container } from "@mui/material";
+import { Box } from "@mui/material";
 import DashboardCards from "../../components/DashboardCards";
 
 function Dashboard() {

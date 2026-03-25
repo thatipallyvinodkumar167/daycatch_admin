@@ -30,14 +30,11 @@ import {
   Phone as PhoneIcon,
   Lock as LockIcon,
   ShoppingBag as OrdersIcon,
-  Add as AddIcon,
   DeliveryDining as DeliveryIcon
 } from "@mui/icons-material";
-import { useOutletContext, useNavigate } from "react-router-dom";
-import { genericApi } from "../../api/genericApi";
+import { useNavigate } from "react-router-dom";
 
 const StoreDeliveryBoyList = () => {
-  const { store } = useOutletContext();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);

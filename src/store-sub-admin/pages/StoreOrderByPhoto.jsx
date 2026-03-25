@@ -12,7 +12,6 @@ import {
   TableRow,
   Avatar,
   IconButton,
-  Button,
   alpha,
   CircularProgress,
   Tooltip,
@@ -25,11 +24,9 @@ import {
   Close as RejectIcon,
   Visibility as ViewIcon,
   Search as SearchIcon,
-  Person as PersonIcon,
-  LocationOn as LocationIcon
+  Person as PersonIcon
 } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
-import { genericApi } from "../../api/genericApi";
 
 const StoreOrderByPhoto = () => {
   const { store } = useOutletContext();

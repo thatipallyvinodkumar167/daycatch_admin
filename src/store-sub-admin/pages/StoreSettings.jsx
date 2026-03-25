@@ -7,7 +7,6 @@ import {
   Grid,
   TextField,
   Button,
-  alpha,
   InputAdornment,
   Avatar
 } from "@mui/material";
@@ -18,10 +17,8 @@ import {
   MonetizationOn as IncentiveIcon,
   Save as SaveIcon
 } from "@mui/icons-material";
-import { useOutletContext } from "react-router-dom";
 
 const StoreSettings = () => {
-  const { store } = useOutletContext();
   const [settings, setSettings] = useState({
     openingTime: "06:00",
     closingTime: "09:00",

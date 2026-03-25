@@ -24,7 +24,6 @@ import {
   Image as ImageIcon
 } from "@mui/icons-material";
 import { useOutletContext, useNavigate } from "react-router-dom";
-import { genericApi } from "../../api/genericApi";
 
 const StoreProductBanner = () => {
   const { store } = useOutletContext();

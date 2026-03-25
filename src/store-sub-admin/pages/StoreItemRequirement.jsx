@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Stack,
@@ -10,24 +10,19 @@ import {
   TableRow,
   TextField,
   Typography,
-  useTheme,
   alpha,
   Paper,
 } from "@mui/material";
-import { useNavigate, useOutletContext } from "react-router-dom";
-import { genericApi } from "../../api/genericApi";
+import { useOutletContext } from "react-router-dom";
 
 function StoreItemRequirement() {
   const { store } = useOutletContext();
-  const navigate = useNavigate();
-  const theme = useTheme();
-  
   // Date state (dd-mm-yyyy format display, but yyyy-mm-dd for input)
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const [selectedDate, setSelectedDate] = useState(todayStr);
   
-  const [tableData, setTableData] = useState([]);
+  const tableData = [];
 
   return (
     <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>

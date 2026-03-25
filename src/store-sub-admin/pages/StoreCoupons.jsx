@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   alpha,
   Box,
@@ -47,7 +47,7 @@ function StoreCoupons() {
   const [coupons, setCoupons] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
-  const fetchCoupons = async () => {
+  const fetchCoupons = useCallback(async () => {
     try {
       const response = await genericApi.getAll("coupons");
       const rows = response?.data?.results || [];
@@ -76,13 +76,13 @@ function StoreCoupons() {
       console.error("Error fetching coupons:", error);
       setCoupons([]);
     }
-  };
+  }, [store]);
 
   useEffect(() => {
     if (store?.id || store?.name) {
       fetchCoupons();
     }
-  }, [store?.id, store?.name]);
+  }, [fetchCoupons]);
 
   const orderPanelSx = {
     borderRadius: "24px",

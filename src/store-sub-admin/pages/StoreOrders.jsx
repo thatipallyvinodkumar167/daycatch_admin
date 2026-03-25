@@ -12,30 +12,16 @@ import {
   TableRow,
   TextField,
   InputAdornment,
-  IconButton,
   Button,
   alpha,
   CircularProgress,
-  Chip,
-  Avatar,
-  AvatarGroup,
-  Tooltip
 } from "@mui/material";
 import {
   Search as SearchIcon,
-  Visibility as ViewIcon,
   FilterList as FilterIcon,
-  LocalShipping as ShippingIcon,
-  Payment as PaymentIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-  Pending as PendingIcon,
-  Person as PersonIcon,
-  Description as InvoiceIcon,
-  AssignTurnedIn as AssignIcon
+  LocalShipping as ShippingIcon
 } from "@mui/icons-material";
 import { useOutletContext, useLocation } from "react-router-dom";
-import { genericApi } from "../../api/genericApi";
 
 const StoreOrders = ({ viewType, title }) => {
   const { store } = useOutletContext();
@@ -59,26 +45,6 @@ const StoreOrders = ({ viewType, title }) => {
     };
     fetchOrders();
   }, [viewType, location.pathname]);
-
-  const StatusChip = ({ status }) => {
-    const s = String(status).toLowerCase();
-    let config = { label: status, color: "#707eae", bg: alpha("#707eae", 0.1), icon: <PendingIcon sx={{ fontSize: 16 }} /> };
-    
-    if (s.includes("pending")) config = { label: "Pending", color: "#E53935", bg: alpha("#E53935", 0.08), icon: <PendingIcon sx={{ fontSize: 16 }} /> };
-    if (s.includes("confirm")) config = { label: "Confirmed", color: "#01b574", bg: alpha("#01b574", 0.08), icon: <CheckCircleIcon sx={{ fontSize: 16 }} /> };
-    if (s.includes("delivery") || s.includes("out")) config = { label: "Out For Delivery", color: "#ffb547", bg: alpha("#ffb547", 0.1), icon: <ShippingIcon sx={{ fontSize: 16 }} /> };
-    if (s.includes("cancel") || s.includes("fail")) config = { label: "Cancelled", color: "#ee5d50", bg: alpha("#ee5d50", 0.08), icon: <CancelIcon sx={{ fontSize: 16 }} /> };
-    if (s.includes("complete")) config = { label: "Completed", color: "#05cd99", bg: alpha("#05cd99", 0.1), icon: <CheckCircleIcon sx={{ fontSize: 16 }} /> };
-
-    return (
-      <Chip 
-        label={config.label} 
-        icon={config.icon}
-        size="small" 
-        sx={{ bgcolor: config.bg, color: config.color, fontWeight: 800, borderRadius: "10px", "& .MuiChip-icon": { color: "inherit" } }} 
-      />
-    );
-  };
 
   const getTableColumns = () => {
      // Columns based on User Request

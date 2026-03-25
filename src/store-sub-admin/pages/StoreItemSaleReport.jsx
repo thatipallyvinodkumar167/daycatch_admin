@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Stack,
@@ -9,19 +9,14 @@ import {
   TableHead,
   TableRow,
   Typography,
-  useTheme,
   alpha,
   Paper,
 } from "@mui/material";
-import { useNavigate, useOutletContext } from "react-router-dom";
-import { genericApi } from "../../api/genericApi";
+import { useOutletContext } from "react-router-dom";
 
 function StoreItemSaleReport() {
   const { store } = useOutletContext();
-  const navigate = useNavigate();
-  const theme = useTheme();
-  
-  const [tableData, setTableData] = useState([]);
+  const [tableData] = useState([]);
 
   return (
     <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>

@@ -47,7 +47,10 @@ function StoreSidebar({ store, open }) {
     setOpenMenu((current) => (current === key ? null : key));
   };
 
-  const isRouteActive = (route) => Boolean(route) && currentPath === route;
+  const isRouteActive = React.useCallback(
+    (route) => Boolean(route) && currentPath === route,
+    [currentPath]
+  );
 
   React.useEffect(() => {
     const activeGroup = STORE_MENU_GROUPS.find((item) => {
@@ -61,7 +64,7 @@ function StoreSidebar({ store, open }) {
     if (activeGroup?.key) {
       setOpenMenu(activeGroup.key);
     }
-  }, [currentPath, store, isRouteActive]);
+  }, [store, isRouteActive]);
 
   const activeMenuSx = (isActive) => ({
     ...getShellMenuItemSx(isActive, primaryColor),

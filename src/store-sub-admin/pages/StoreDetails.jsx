@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -9,25 +9,19 @@ import {
   alpha,
   IconButton,
   Avatar,
-  Divider,
   CircularProgress,
   Tooltip
 } from "@mui/material";
 import Chip from "@mui/material/Chip";
 import {
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
   ShoppingCart as OrderIcon,
   Payments as RevenueIcon,
   Inventory2 as ProductIcon,
   SupportAgent as CallbackIcon,
-  ArrowForward as ArrowIcon,
   NotificationsActive as NotificationIcon,
-  FiberManualRecord as DotIcon,
   Refresh as RefreshIcon,
   MoreVert as MoreIcon,
-  Speed as PerformanceIcon,
-  WarningAmber as WarningIcon
+  Speed as PerformanceIcon
 } from "@mui/icons-material";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { storeWorkspaceApi } from "../../api/storeWorkspaceApi";
@@ -85,12 +79,12 @@ function StoreDashboard() {
     boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
   };
 
-  const fetchDashboardData = async (isRefresh = false) => {
+  const fetchDashboardData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
     try {
-      const response = await storeWorkspaceApi.getDashboard(store.id);
+      const response = await storeWorkspaceApi.getDashboard(store?.id);
       const data = response?.data?.data || response?.data || {};
 
       setDashboardData({
@@ -112,13 +106,13 @@ function StoreDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [store?.id]);
 
   useEffect(() => {
     if (store?.id) {
       fetchDashboardData();
     }
-  }, [store?.id]);
+  }, [fetchDashboardData]);
 
   if (loading) {
     return (
