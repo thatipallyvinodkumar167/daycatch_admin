@@ -103,7 +103,8 @@ const StoreAdminCatalog = () => {
     if (store?.id) {
       fetchData();
     }
-  }, [fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchData, store?.id]);
 
   const availableProducts = useMemo(
     () =>
@@ -111,7 +112,6 @@ const StoreAdminCatalog = () => {
         if (!product.name.toLowerCase().includes(searchTerm.toLowerCase())) {
           return false;
         }
-
         return !selectedProducts.some((selected) => productsMatch(selected, product));
       }),
     [catalogProducts, searchTerm, selectedProducts]
@@ -214,7 +214,7 @@ const StoreAdminCatalog = () => {
   return (
     <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
+        <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
               Admin Catalog
@@ -223,13 +223,13 @@ const StoreAdminCatalog = () => {
               Select which global products {store.name} carries.
             </Typography>
           </Box>
-        </Stack>
+        </Box>
 
         <Grid container spacing={4}>
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 4, borderRadius: "24px", border: "1px solid #e0e5f2", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", height: "100%" }}>
               <Typography variant="h5" fontWeight="900" color="#1b2559" sx={{ mb: 1 }}>Select Products</Typography>
-              <Typography variant="body2" color="#707eae" fontWeight="600" sx={{ mb: 4 }}>Select the products you have available in stock.</Typography>
+              <Typography variant="body2" color="#a3aed0" fontWeight="700" sx={{ mb: 4 }}>Select the products you have available in stock.</Typography>
 
               <TextField
                 fullWidth
@@ -287,7 +287,7 @@ const StoreAdminCatalog = () => {
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 4, borderRadius: "24px", border: "1px solid #e0e5f2", boxShadow: "0 10px 40px rgba(0,0,0,0.03)", height: "100%" }}>
               <Typography variant="h5" fontWeight="900" color="#1b2559" sx={{ mb: 1 }}>Selected Products</Typography>
-              <Typography variant="body2" color="#707eae" fontWeight="600" sx={{ mb: 4 }}>Products currently assigned to your store.</Typography>
+              <Typography variant="body2" color="#a3aed0" fontWeight="700" sx={{ mb: 4 }}>Products currently assigned to your store.</Typography>
 
               <TableContainer sx={{ border: "1px solid #eef2f6", borderRadius: "20px", overflow: "hidden" }}>
                 <Table>
@@ -317,7 +317,7 @@ const StoreAdminCatalog = () => {
                             <Button
                               variant="text"
                               onClick={() => handleRemove(row)}
-                              sx={{ color: "#ee5d50", fontWeight: 800, textTransform: "none" }}
+                              sx={{ color: "#E53935", fontWeight: 800, textTransform: "none" }}
                             >
                               Remove
                             </Button>
@@ -335,7 +335,7 @@ const StoreAdminCatalog = () => {
                 onClick={handleConfirmSelection}
                 disabled={saving}
                 startIcon={<UpdateIcon />}
-                sx={{ mt: 4, py: 2, borderRadius: "18px", bgcolor: "#05cd99", fontWeight: 900, fontSize: "16px", boxShadow: "0 10px 25px rgba(5,205,153,0.25)", "&:hover": { bgcolor: "#04b486" } }}
+                sx={{ mt: 4, py: 2, borderRadius: "14px", bgcolor: "#E53935", fontWeight: 900, fontSize: "16px", boxShadow: "0 10px 25px rgba(229,57,53,0.25)", "&:hover": { bgcolor: "#d32f2f" } }}
               >
                 {saving ? "Updating..." : "Confirm Selection"}
               </Button>

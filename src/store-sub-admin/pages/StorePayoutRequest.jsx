@@ -70,7 +70,8 @@ const StorePayoutRequest = () => {
     if (store?.id || store?.name) {
       fetchPayoutData();
     }
-  }, [fetchPayoutData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchPayoutData, store?.id, store?.name]);
 
   const handleRequestPayout = async () => {
     if (earnings < 100 || requesting) return;

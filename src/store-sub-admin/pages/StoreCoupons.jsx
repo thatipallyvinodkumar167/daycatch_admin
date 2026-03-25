@@ -24,7 +24,7 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   Search as SearchIcon,
-  LocalOffer as CouponIcon
+  LocalOffer as CouponIcon,
 } from "@mui/icons-material";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
@@ -33,10 +33,8 @@ import { formatStoreDate, matchesStoreRecord } from "../utils/storeWorkspace";
 const getCouponStatus = (coupon) => {
   if (coupon.status) return coupon.status;
   if (!coupon.toDate) return "Active";
-
   const expiryDate = new Date(coupon.toDate);
   if (Number.isNaN(expiryDate.getTime())) return "Active";
-
   return expiryDate < new Date() ? "Expired" : "Active";
 };
 
@@ -51,7 +49,6 @@ function StoreCoupons() {
     try {
       const response = await genericApi.getAll("coupons");
       const rows = response?.data?.results || [];
-
       setCoupons(
         rows
           .filter((row) => matchesStoreRecord(row, store))
@@ -82,7 +79,8 @@ function StoreCoupons() {
     if (store?.id || store?.name) {
       fetchCoupons();
     }
-  }, [fetchCoupons]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchCoupons, store?.id, store?.name]);
 
   const orderPanelSx = {
     borderRadius: "24px",
@@ -117,10 +115,8 @@ function StoreCoupons() {
   const handleQuickEdit = async (coupon) => {
     const nextName = window.prompt("Coupon name", coupon.name);
     if (nextName === null) return;
-
     const nextCode = window.prompt("Coupon code", coupon.code);
     if (nextCode === null) return;
-
     try {
       await genericApi.update("coupons", coupon.id, {
         "Coupon Name": nextName.trim() || coupon.name,
@@ -137,14 +133,15 @@ function StoreCoupons() {
   return (
     <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
-        
+
+        {/* Page Header */}
         <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 900, color: "#1b2559", mb: 0.5, letterSpacing: "-1.5px" }}>
-               Store Coupons
+              Store Coupons
             </Typography>
             <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
-               <CouponIcon sx={{ fontSize: 18 }} /> Incentive Console • Promotional Strategy
+              <CouponIcon sx={{ fontSize: 18 }} /> Incentive Console • Promotional Strategy
             </Typography>
           </Box>
           <Button
@@ -168,7 +165,7 @@ function StoreCoupons() {
 
         <Paper sx={{ p: 4, ...orderPanelSx }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }} flexWrap="wrap" useFlexGap>
-            <Typography variant="h4" fontWeight="800" color="#1b2559">
+            <Typography variant="h5" sx={{ fontWeight: 900, color: "#1b2559", letterSpacing: "-1px" }}>
               Coupon List
             </Typography>
             <TextField
@@ -193,18 +190,18 @@ function StoreCoupons() {
             />
           </Stack>
 
-          <TableContainer sx={{ borderRadius: "16px", border: "1px solid #e0e5f2", overflow: "hidden" }}>
+          <TableContainer sx={{ borderRadius: "16px", border: "1px solid #eef2f6", overflow: "hidden" }}>
             <Table>
-              <TableHead sx={{ bgcolor: "#f8f9fc" }}>
+              <TableHead sx={{ bgcolor: "#fafbfc" }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", width: "60px" }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Coupon Name</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Code</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Discount</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Valid Till</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Min Cart Value</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0" }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", textAlign: "right" }}>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", width: "60px" }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Coupon Name</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Code</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Discount</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Valid Till</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Min Cart</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", textAlign: "right" }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
