@@ -16,7 +16,6 @@ import {
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
-  AddPhotoAlternateOutlined as AddPhotoIcon,
   PhotoCamera as PhotoCameraIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
@@ -28,14 +27,12 @@ const StoreAddProduct = ({ isEdit = false }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const mainImageRef = useRef(null);
-  const galleryImagesRef = useRef(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   const [mainImage, setMainImage] = useState(null);
   const [mainPreview, setMainPreview] = useState(null);
-  const [galleryPreviews, setGalleryPreviews] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
 
@@ -132,15 +129,6 @@ const StoreAddProduct = ({ isEdit = false }) => {
     const reader = new FileReader();
     reader.onloadend = () => setMainPreview(reader.result);
     reader.readAsDataURL(file);
-  };
-
-  const handleGalleryChange = (e) => {
-    const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => setGalleryPreviews(prev => [...prev, reader.result]);
-      reader.readAsDataURL(file);
-    });
   };
 
   const handleSubmit = async (e) => {
