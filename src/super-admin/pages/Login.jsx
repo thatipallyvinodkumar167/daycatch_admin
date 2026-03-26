@@ -15,6 +15,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Visibility, VisibilityOff, Email, Lock } from '@mui/icons-material';
 import api from '../../api/api';
+import { genericApi } from '../../api/genericApi';
 import logo from '../../assets/logo.png';
 import { getAssignedStorePath, setAuthSession } from "../../utils/authSession";
 
@@ -35,9 +36,30 @@ const LoginPage = () => {
 
       const { token, data } = response.data;
       const { user } = data;
+      
+      const role = user?.["role Name"] || user?.roleName || user?.role || user?.role_name || user?.user_type || "";
+      const isStoreAdmin = role.toLowerCase().includes("store") || role.toLowerCase().includes("branch");
+      
+      if (isStoreAdmin && !user.storeId) {
+          try {
+              const res = await genericApi.getAll("storeList");
+              const results = res.data?.results || res.data || [];
+              const userEmail = (user.email || user.Email || "").toLowerCase();
+              const myStore = results.find(s => (s.Email || s.email || "").toLowerCase() === userEmail);
+              if (myStore) {
+                  user.storeId = myStore._id || myStore.id;
+                  user.storeName = myStore["Store Name"] || myStore.name;
+              }
+          } catch (e) { console.error("Redirection bridge failure:", e); }
+      }
+      
+      if (isStoreAdmin) {
+          user.scope = "store";
+      }
+
       setAuthSession({ token, user });
 
-      const nextPath = user?.scope === "store" && user?.storeId ? getAssignedStorePath() : "/";
+      const nextPath = isStoreAdmin && user?.storeId ? getAssignedStorePath() : "/";
       window.location.assign(nextPath);
     } catch (error) {
       console.error('Login error:', error);

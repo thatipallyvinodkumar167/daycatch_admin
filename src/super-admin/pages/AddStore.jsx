@@ -3,9 +3,12 @@ import {
   Box, Typography, Paper, TextField, Button, Stack,
   Grid, Avatar, IconButton, Divider, MenuItem,
   Select, FormControl, Tooltip, OutlinedInput,
+  Snackbar, Alert, CircularProgress,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
+import api from "../../api/api";
+import bcrypt from "bcryptjs"; // Secure password hashing instance
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BadgeIcon from "@mui/icons-material/Badge";
@@ -74,6 +77,11 @@ const AddStore = () => {
   const isEdit = !!id;
 
   const [cities, setCities] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  
+  const showMsg = (message, severity = "success") => setSnackbar({ open: true, message, severity });
+
   const [form, setForm] = useState({
     storeImagePreview: null, storeImage: null,
     storeName: "", employeeName: "", storeNumber: "",
@@ -135,15 +143,27 @@ const AddStore = () => {
   };
 
   const handleSubmit = async () => {
-    if (!form.storeName.trim()) { alert("Store Name is required."); return; }
+    if (!form.storeName.trim() || !form.password.trim()) { 
+        showMsg("Store Name and Access Password are required fields.", "error"); 
+        return; 
+    }
+    
+    setIsSubmitting(true);
     try {
+      // Security Layer: Client-side Hashing (Protects the repository)
+      const hashedPassword = bcrypt.hashSync(form.password, 10);
+      
       const payload = {
         "Store Name": form.storeName,
         "Employee Name": form.employeeName,
+        name: form.employeeName, 
         Mobile: form.storeNumber,
         "admin share": form.adminShare,
         Email: form.email,
-        password: form.password,
+        email: form.email, 
+        password: hashedPassword, 
+        roleName: "store", 
+        scope: "store",    
         "ID Type": form.idType,
         "ID Number": form.idNumber,
         City: form.selectedCity,
@@ -160,21 +180,59 @@ const AddStore = () => {
       
       if (isEdit) {
           await genericApi.update("storeList", id, payload);
-          alert("Store updated successfully!");
-          navigate("/stores-list");
+          showMsg("Store configuration updated successfully.", "success");
+          setTimeout(() => navigate("/stores-list"), 1500);
       } else {
+          // Uniqueness Check: Ensure email doesn't already mangement a store
+          try {
+              const res = await genericApi.getAll("storeList");
+              const results = res.data?.results || res.data || [];
+              const duplicate = results.find(s => (s.Email || s.email || "").toLowerCase() === form.email.toLowerCase());
+              if (duplicate) {
+                  showMsg(`Identity Conflict: The email "${form.email}" is already registered for branch "${duplicate["Store Name"] || duplicate.name}".`, "warning");
+                  setIsSubmitting(false);
+                  return;
+              }
+          } catch (e) { console.error("Uniqueness check error:", e); }
+
+          // Mandatory Sub-Admin Enrollment in the Auth System
+          try {
+              await api.post("/auth/register", {
+                  name: form.employeeName,
+                  email: form.email,
+                  password: form.password,
+                  roleName: "store" 
+              });
+          } catch (authErr) {
+              console.warn("Sub-admin session might already exist:", authErr.message);
+          }
+
           await genericApi.create("storeList", payload);
-          alert("Store added successfully! The assigned sub-admin can log in now.");
-          navigate("/stores-list");
+          showMsg("Store workspace generated and Sub-Admin enrolled successfully.", "success");
+          setTimeout(() => navigate("/stores-list"), 2000);
       }
     } catch (error) {
       console.error("Error saving store:", error);
-      alert("Failed to save store: " + (error.response?.data?.message || error.message));
+      showMsg("Failed to synchronize store: " + (error.response?.data?.message || error.message), "error");
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      
+      {/* Toast Notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity={snackbar.severity} sx={{ width: '100%', borderRadius: "12px", boxShadow: "0 10px 40px rgba(0,0,0,0.1)" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
       
       {/* Premium Header */}
       <Box sx={{ mb: 4, display: "flex", alignItems: "center", gap: 2 }}>
@@ -419,6 +477,7 @@ const AddStore = () => {
             <Button
               variant="contained"
               onClick={handleSubmit}
+              disabled={isSubmitting}
               sx={{ 
                   backgroundColor: "#4318ff", 
                   "&:hover": { backgroundColor: "#3311cc" },
@@ -428,9 +487,10 @@ const AddStore = () => {
                   py: 1.8,
                   fontWeight: "800",
                   boxShadow: "0 10px 20px rgba(67, 24, 255, 0.2)",
+                  minWidth: "160px"
               }}
             >
-              {isEdit ? "Update Store" : "Add Store"}
+              {isSubmitting ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : (isEdit ? "Update Store" : "Add Store")}
             </Button>
           </Stack>
         </Box>

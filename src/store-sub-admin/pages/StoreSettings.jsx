@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Avatar,
@@ -21,6 +21,7 @@ import {
   ShoppingBag as OrderIcon,
 } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
+import { genericApi } from "../../api/genericApi";
 import { storeWorkspaceApi } from "../../api/storeWorkspaceApi";
 
 const DEFAULT_SETTINGS = {
@@ -34,6 +35,80 @@ const DEFAULT_SETTINGS = {
   driverIncentive: "",
 };
 
+const normalizeSettings = (data = {}) => ({
+  openingTime: data.openingTime || data["Start Time"] || DEFAULT_SETTINGS.openingTime,
+  closingTime: data.closingTime || data["End Time"] || DEFAULT_SETTINGS.closingTime,
+  interval: String(data.interval ?? data["Slot Interval"] ?? DEFAULT_SETTINGS.interval),
+  freeDeliveryLimit: String(data.freeDeliveryLimit ?? data["Free Delivery Limit"] ?? DEFAULT_SETTINGS.freeDeliveryLimit),
+  deliveryCharge: String(data.deliveryCharge ?? data["Delivery Charge"] ?? DEFAULT_SETTINGS.deliveryCharge),
+  minOrderValue: String(data.minOrderValue ?? data["Minimum Order Value"] ?? DEFAULT_SETTINGS.minOrderValue),
+  maxOrderValue: String(data.maxOrderValue ?? data["Maximum Order Value"] ?? DEFAULT_SETTINGS.maxOrderValue),
+  driverIncentive: String(data.driverIncentive ?? data["Driver Incentive"] ?? DEFAULT_SETTINGS.driverIncentive),
+});
+
+const buildWorkspacePayload = (settings) => ({
+  openingTime: settings.openingTime,
+  closingTime: settings.closingTime,
+  interval: Number(settings.interval || 0),
+  freeDeliveryLimit: Number(settings.freeDeliveryLimit || 0),
+  deliveryCharge: Number(settings.deliveryCharge || 0),
+  minOrderValue: Number(settings.minOrderValue || 0),
+  maxOrderValue: Number(settings.maxOrderValue || 0),
+  driverIncentive: Number(settings.driverIncentive || 0),
+});
+
+const buildStoreRecordPayload = (settings) => ({
+  "Start Time": settings.openingTime,
+  "End Time": settings.closingTime,
+  "Slot Interval": Number(settings.interval || 0),
+  "Free Delivery Limit": Number(settings.freeDeliveryLimit || 0),
+  "Delivery Charge": Number(settings.deliveryCharge || 0),
+  "Minimum Order Value": Number(settings.minOrderValue || 0),
+  "Maximum Order Value": Number(settings.maxOrderValue || 0),
+  "Driver Incentive": Number(settings.driverIncentive || 0),
+});
+
+const sanitizeIntegerValue = (value = "") => value.replace(/[^\d]/g, "");
+
+const sanitizeCurrencyValue = (value = "") => {
+  const cleanedValue = value.replace(/[^\d.]/g, "");
+  const [wholePart = "", ...decimalParts] = cleanedValue.split(".");
+  const decimalPart = decimalParts.join("").slice(0, 2);
+
+  if (!cleanedValue.includes(".")) {
+    return wholePart;
+  }
+
+  return `${wholePart}.${decimalPart}`;
+};
+
+const preventInvalidNumberInput = (event) => {
+  if (["e", "E", "+", "-"].includes(event.key)) {
+    event.preventDefault();
+  }
+};
+
+const SETTING_CARD_SX = {
+  borderRadius: "24px",
+  border: "1px solid #e0e5f2",
+  bgcolor: "#fff",
+  boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
+};
+
+const SettingCard = ({ title, icon: Icon, children }) => (
+  <Paper sx={{ p: 4, ...SETTING_CARD_SX, height: "100%" }}>
+    <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
+      <Avatar sx={{ bgcolor: "#eef2ff", color: "#1b2559", width: 48, height: 48, borderRadius: "12px" }}>
+        <Icon />
+      </Avatar>
+      <Typography variant="h5" fontWeight="900" color="#1b2559">
+        {title}
+      </Typography>
+    </Stack>
+    {children}
+  </Paper>
+);
+
 const StoreSettings = () => {
   const { store } = useOutletContext();
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -44,6 +119,23 @@ const StoreSettings = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setSettings((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleIntegerChange = (e) => {
+    const { name, value } = e.target;
+    setSettings((current) => ({ ...current, [name]: sanitizeIntegerValue(value) }));
+  };
+
+  const handleCurrencyChange = (e) => {
+    const { name, value } = e.target;
+    setSettings((current) => ({ ...current, [name]: sanitizeCurrencyValue(value) }));
+  };
+
+  const numericFieldSx = {
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "12px",
+      bgcolor: "#fafbff",
+    },
   };
 
   const showSnackbar = (severity, message) => {
@@ -61,24 +153,17 @@ const StoreSettings = () => {
       try {
         const response = await storeWorkspaceApi.getSettings(store.id);
         const data = response?.data?.data || {};
-        setSettings({
-          openingTime: data.openingTime || DEFAULT_SETTINGS.openingTime,
-          closingTime: data.closingTime || DEFAULT_SETTINGS.closingTime,
-          interval: String(data.interval ?? DEFAULT_SETTINGS.interval),
-          freeDeliveryLimit:
-            data.freeDeliveryLimit != null ? String(data.freeDeliveryLimit) : DEFAULT_SETTINGS.freeDeliveryLimit,
-          deliveryCharge:
-            data.deliveryCharge != null ? String(data.deliveryCharge) : DEFAULT_SETTINGS.deliveryCharge,
-          minOrderValue:
-            data.minOrderValue != null ? String(data.minOrderValue) : DEFAULT_SETTINGS.minOrderValue,
-          maxOrderValue:
-            data.maxOrderValue != null ? String(data.maxOrderValue) : DEFAULT_SETTINGS.maxOrderValue,
-          driverIncentive:
-            data.driverIncentive != null ? String(data.driverIncentive) : DEFAULT_SETTINGS.driverIncentive,
-        });
+        setSettings(normalizeSettings(data));
       } catch (error) {
-        console.error("Failed to load store settings:", error);
-        showSnackbar("error", "Unable to load store settings.");
+        try {
+          const fallbackResponse = await genericApi.getOne("storeList", store.id);
+          const fallbackRecord = fallbackResponse?.data || {};
+          setSettings(normalizeSettings(fallbackRecord));
+        } catch (fallbackError) {
+          console.error("Failed to load store settings:", error);
+          console.error("Fallback store settings load failed:", fallbackError);
+          showSnackbar("error", "Unable to load store settings.");
+        }
       } finally {
         setLoading(false);
       }
@@ -95,29 +180,19 @@ const StoreSettings = () => {
 
     setSaving(true);
     try {
-      const payload = {
-        openingTime: settings.openingTime,
-        closingTime: settings.closingTime,
-        interval: Number(settings.interval || 0),
-        freeDeliveryLimit: Number(settings.freeDeliveryLimit || 0),
-        deliveryCharge: Number(settings.deliveryCharge || 0),
-        minOrderValue: Number(settings.minOrderValue || 0),
-        maxOrderValue: Number(settings.maxOrderValue || 0),
-        driverIncentive: Number(settings.driverIncentive || 0),
-      };
+      const payload = buildWorkspacePayload(settings);
+      let nextSettings;
 
-      const response = await storeWorkspaceApi.updateSettings(store.id, payload);
-      const data = response?.data?.data || payload;
-      setSettings({
-        openingTime: data.openingTime || payload.openingTime,
-        closingTime: data.closingTime || payload.closingTime,
-        interval: String(data.interval ?? payload.interval),
-        freeDeliveryLimit: String(data.freeDeliveryLimit ?? payload.freeDeliveryLimit),
-        deliveryCharge: String(data.deliveryCharge ?? payload.deliveryCharge),
-        minOrderValue: String(data.minOrderValue ?? payload.minOrderValue),
-        maxOrderValue: String(data.maxOrderValue ?? payload.maxOrderValue),
-        driverIncentive: String(data.driverIncentive ?? payload.driverIncentive),
-      });
+      try {
+        const response = await storeWorkspaceApi.updateSettings(store.id, payload);
+        nextSettings = normalizeSettings(response?.data?.data || payload);
+      } catch (workspaceError) {
+        const fallbackResponse = await genericApi.update("storeList", store.id, buildStoreRecordPayload(settings));
+        nextSettings = normalizeSettings(fallbackResponse?.data || buildStoreRecordPayload(settings));
+        console.warn("Workspace settings endpoint failed, saved through storeList fallback instead.", workspaceError);
+      }
+
+      setSettings(nextSettings);
       showSnackbar("success", "Store settings saved successfully.");
     } catch (error) {
       console.error("Failed to save store settings:", error);
@@ -131,30 +206,6 @@ const StoreSettings = () => {
       setSaving(false);
     }
   };
-
-  const orderPanelSx = useMemo(
-    () => ({
-      borderRadius: "24px",
-      border: "1px solid #e0e5f2",
-      bgcolor: "#fff",
-      boxShadow: "0 20px 50px rgba(0,0,0,0.05)",
-    }),
-    []
-  );
-
-  const SettingCard = ({ title, icon: Icon, children }) => (
-    <Paper sx={{ p: 4, ...orderPanelSx, height: "100%" }}>
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
-        <Avatar sx={{ bgcolor: "#eef2ff", color: "#1b2559", width: 48, height: 48, borderRadius: "12px" }}>
-          <Icon />
-        </Avatar>
-        <Typography variant="h5" fontWeight="900" color="#1b2559">
-          {title}
-        </Typography>
-      </Stack>
-      {children}
-    </Paper>
-  );
 
   if (loading) {
     return (
@@ -204,19 +255,45 @@ const StoreSettings = () => {
                   <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>
                     Opening Aperture
                   </Typography>
-                  <TextField fullWidth type="time" name="openingTime" value={settings.openingTime} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
+                  <TextField
+                    fullWidth
+                    type="time"
+                    name="openingTime"
+                    value={settings.openingTime}
+                    onChange={handleChange}
+                    inputProps={{ step: 300 }}
+                    sx={numericFieldSx}
+                  />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>
                     Closing Aperture
                   </Typography>
-                  <TextField fullWidth type="time" name="closingTime" value={settings.closingTime} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
+                  <TextField
+                    fullWidth
+                    type="time"
+                    name="closingTime"
+                    value={settings.closingTime}
+                    onChange={handleChange}
+                    inputProps={{ step: 300 }}
+                    sx={numericFieldSx}
+                  />
                 </Grid>
                 <Grid item xs={12}>
                   <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>
                     Fulfillment Interval (Mins)
                   </Typography>
-                  <TextField fullWidth type="number" name="interval" value={settings.interval} onChange={handleChange} placeholder="30" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
+                  <TextField
+                    fullWidth
+                    type="text"
+                    name="interval"
+                    value={settings.interval}
+                    onChange={handleIntegerChange}
+                    onKeyDown={preventInvalidNumberInput}
+                    placeholder="30"
+                    inputProps={{ inputMode: "numeric", maxLength: 4 }}
+                    sx={numericFieldSx}
+                  />
                 </Grid>
               </Grid>
             </SettingCard>
@@ -229,13 +306,35 @@ const StoreSettings = () => {
                   <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>
                     Free Delivery Threshold (Rs.)
                   </Typography>
-                  <TextField fullWidth name="freeDeliveryLimit" value={settings.freeDeliveryLimit} onChange={handleChange} placeholder="enter minimum cart value" InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
+                  <TextField
+                    fullWidth
+                    type="text"
+                    name="freeDeliveryLimit"
+                    value={settings.freeDeliveryLimit}
+                    onChange={handleCurrencyChange}
+                    onKeyDown={preventInvalidNumberInput}
+                    placeholder="enter minimum cart value"
+                    inputProps={{ inputMode: "decimal" }}
+                    InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }}
+                    sx={numericFieldSx}
+                  />
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>
                     Standard Dispatch Fee
                   </Typography>
-                  <TextField fullWidth name="deliveryCharge" value={settings.deliveryCharge} onChange={handleChange} placeholder="enter delivery charge" InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
+                  <TextField
+                    fullWidth
+                    type="text"
+                    name="deliveryCharge"
+                    value={settings.deliveryCharge}
+                    onChange={handleCurrencyChange}
+                    onKeyDown={preventInvalidNumberInput}
+                    placeholder="enter delivery charge"
+                    inputProps={{ inputMode: "decimal" }}
+                    InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }}
+                    sx={numericFieldSx}
+                  />
                 </Box>
               </Stack>
             </SettingCard>
@@ -248,13 +347,35 @@ const StoreSettings = () => {
                   <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>
                     Minimum Payload
                   </Typography>
-                  <TextField fullWidth name="minOrderValue" value={settings.minOrderValue} onChange={handleChange} placeholder="Enter minimum order value" InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
+                  <TextField
+                    fullWidth
+                    type="text"
+                    name="minOrderValue"
+                    value={settings.minOrderValue}
+                    onChange={handleCurrencyChange}
+                    onKeyDown={preventInvalidNumberInput}
+                    placeholder="Enter minimum order value"
+                    inputProps={{ inputMode: "decimal" }}
+                    InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }}
+                    sx={numericFieldSx}
+                  />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>
                     Maximum Payload
                   </Typography>
-                  <TextField fullWidth name="maxOrderValue" value={settings.maxOrderValue} onChange={handleChange} placeholder="Enter maximum order value" InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
+                  <TextField
+                    fullWidth
+                    type="text"
+                    name="maxOrderValue"
+                    value={settings.maxOrderValue}
+                    onChange={handleCurrencyChange}
+                    onKeyDown={preventInvalidNumberInput}
+                    placeholder="Enter maximum order value"
+                    inputProps={{ inputMode: "decimal" }}
+                    InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }}
+                    sx={numericFieldSx}
+                  />
                 </Grid>
               </Grid>
             </SettingCard>
@@ -266,7 +387,18 @@ const StoreSettings = () => {
                 <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1 }}>
                   Incentive Node (Rs) Per Order
                 </Typography>
-                <TextField fullWidth name="driverIncentive" value={settings.driverIncentive} onChange={handleChange} placeholder="Driver Incentive Per Order" InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }} />
+                <TextField
+                  fullWidth
+                  type="text"
+                  name="driverIncentive"
+                  value={settings.driverIncentive}
+                  onChange={handleCurrencyChange}
+                  onKeyDown={preventInvalidNumberInput}
+                  placeholder="Driver Incentive Per Order"
+                  inputProps={{ inputMode: "decimal" }}
+                  InputProps={{ startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }}
+                  sx={numericFieldSx}
+                />
               </Box>
             </SettingCard>
           </Grid>
