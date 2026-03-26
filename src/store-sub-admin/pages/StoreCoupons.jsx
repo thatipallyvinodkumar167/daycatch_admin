@@ -72,7 +72,13 @@ function StoreCoupons() {
   
   // Edit Modal State
   const [editingCoupon, setEditingCoupon] = useState(null);
-  const [editForm, setEditForm] = useState({ name: "", code: "", discountValue: "" });
+  const [editForm, setEditForm] = useState({ 
+    name: "", 
+    code: "", 
+    discountValue: "",
+    fromDate: "",
+    toDate: ""
+  });
   const [isSaving, setIsSaving] = useState(false);
 
   const fetchCoupons = useCallback(async () => {
@@ -102,7 +108,6 @@ function StoreCoupons() {
       );
     } catch (error) {
       console.warn("Backend collection 'coupons' not initialized yet (404). Falling back to mock data.");
-      // Fallback to mock data if collection does not exist yet to prevent UI breakage
       setCoupons([
         {
           id: "mock-1",
@@ -111,7 +116,8 @@ function StoreCoupons() {
           discountType: "percentage",
           discountValue: 50,
           minCartValue: 500,
-          toDate: new Date(Date.now() + 86400000 * 30).toISOString(),
+          fromDate: new Date().toISOString().substring(0, 16),
+          toDate: new Date(Date.now() + 86400000 * 30).toISOString().substring(0, 16),
           status: "Active"
         },
         {
@@ -121,7 +127,8 @@ function StoreCoupons() {
           discountType: "fixed",
           discountValue: 200,
           minCartValue: 1500,
-          toDate: new Date(Date.now() - 86400000).toISOString(),
+          fromDate: new Date(Date.now() - 86400000 * 5).toISOString().substring(0, 16),
+          toDate: new Date(Date.now() - 86400000).toISOString().substring(0, 16),
           status: "Expired"
         }
       ]);
@@ -134,7 +141,6 @@ function StoreCoupons() {
     if (store?.id || store?.name) {
       fetchCoupons();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchCoupons, store?.id, store?.name]);
 
   const filteredCoupons = useMemo(
@@ -152,7 +158,6 @@ function StoreCoupons() {
   const handleDelete = async (couponId) => {
     if (!window.confirm("Are you sure you want to completely delete this coupon?")) return;
     
-    // Check if it's our mock fallback string
     if (couponId.includes("mock-")) {
       setCoupons((prev) => prev.filter(c => c.id !== couponId));
       setSnackbar({ open: true, message: "Mock Coupon deleted successfully.", severity: "success" });
@@ -165,16 +170,26 @@ function StoreCoupons() {
       setSnackbar({ open: true, message: "Coupon deleted successfully.", severity: "success" });
     } catch (error) {
       console.error("Unable to delete coupon:", error);
-      setSnackbar({ open: true, message: error?.response?.data?.error || "Failed to delete coupon.", severity: "error" });
+      setSnackbar({ open: true, message: "Failed to delete coupon.", severity: "error" });
     }
   };
 
   const openEditModal = (coupon) => {
     setEditingCoupon(coupon);
+    // Cleanup dates for datetime-local input
+    const cleanDate = (d) => {
+        if (!d) return "";
+        try {
+            return new Date(d).toISOString().substring(0, 16);
+        } catch { return ""; }
+    };
+
     setEditForm({
       name: coupon.name,
       code: coupon.code,
-      discountValue: coupon.discountValue
+      discountValue: coupon.discountValue,
+      fromDate: cleanDate(coupon.fromDate),
+      toDate: cleanDate(coupon.toDate)
     });
   };
 
@@ -182,14 +197,26 @@ function StoreCoupons() {
     if (!editingCoupon) return;
     setIsSaving(true);
     
-    // Intercept Mock Updates
+    const updatePayload = {
+        "Coupon Name": editForm.name.trim(),
+        "Coupon Code": editForm.code.trim(),
+        "Discount Value": Number(editForm.discountValue),
+        "From Date": editForm.fromDate,
+        "To Date": editForm.toDate,
+        fromDate: editForm.fromDate, // Sync legacy fields
+        toDate: editForm.toDate
+    };
+
     if (editingCoupon.id.includes("mock-")) {
       setTimeout(() => {
         setCoupons(prev => prev.map(c => c.id === editingCoupon.id ? { 
           ...c, 
           name: editForm.name, 
           code: editForm.code, 
-          discountValue: Number(editForm.discountValue) 
+          discountValue: Number(editForm.discountValue),
+          fromDate: editForm.fromDate,
+          toDate: editForm.toDate,
+          status: getCouponStatus({ toDate: editForm.toDate })
         } : c));
         setSnackbar({ open: true, message: "Mock Coupon updated globally.", severity: "success" });
         setIsSaving(false);
@@ -199,17 +226,13 @@ function StoreCoupons() {
     }
 
     try {
-      await genericApi.update("coupons", editingCoupon.id, {
-        "Coupon Name": editForm.name.trim(),
-        "Coupon Code": editForm.code.trim(),
-        "Discount Value": Number(editForm.discountValue)
-      });
+      await genericApi.update("coupons", editingCoupon.id, updatePayload);
       await fetchCoupons();
-      setSnackbar({ open: true, message: "Coupon updated successfully.", severity: "success" });
+      setSnackbar({ open: true, message: "Coupon profile synced successfully.", severity: "success" });
       setEditingCoupon(null);
     } catch (error) {
       console.error("Unable to update coupon:", error);
-      setSnackbar({ open: true, message: error?.response?.data?.error || "Failed to update coupon.", severity: "error" });
+      setSnackbar({ open: true, message: "Sync failed. Retry required.", severity: "error" });
     } finally {
       setIsSaving(false);
     }
@@ -349,7 +372,7 @@ function StoreCoupons() {
         </Paper>
       </Box>
 
-      {/* Industry Level Edit Modal */}
+      {/* Edit Modal */}
       <Dialog 
         open={Boolean(editingCoupon)} 
         onClose={() => !isSaving && setEditingCoupon(null)}
@@ -400,6 +423,35 @@ function StoreCoupons() {
                 InputProps={{
                   startAdornment: <Typography fontWeight="900" color={navy} sx={{ mr: 1, opacity: 0.5 }}>{editingCoupon?.discountType === "fixed" ? "Rs." : "%"}</Typography>
                 }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: bgSoft, "& fieldset": { borderColor: "transparent" } } }} 
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>From Date</Typography>
+              <TextField 
+                fullWidth 
+                type="datetime-local"
+                value={editForm.fromDate} 
+                onChange={(e) => {
+                    setEditForm(prev => ({...prev, fromDate: e.target.value}));
+                    if (e.target.value) e.target.blur();
+                }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: bgSoft, "& fieldset": { borderColor: "transparent" } } }} 
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>To Date (Expiry)</Typography>
+              <TextField 
+                fullWidth 
+                type="datetime-local"
+                value={editForm.toDate} 
+                inputProps={{ min: editForm.fromDate }}
+                onChange={(e) => {
+                    setEditForm(prev => ({...prev, toDate: e.target.value}));
+                    if (e.target.value) e.target.blur();
+                }}
+                error={editForm.fromDate && editForm.toDate && editForm.toDate < editForm.fromDate}
+                helperText={editForm.fromDate && editForm.toDate && editForm.toDate < editForm.fromDate ? "Expiry cannot be earlier" : ""}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: bgSoft, "& fieldset": { borderColor: "transparent" } } }} 
               />
             </Grid>

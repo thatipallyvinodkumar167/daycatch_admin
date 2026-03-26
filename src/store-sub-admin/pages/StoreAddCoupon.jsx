@@ -290,7 +290,10 @@ const StoreAddCoupon = () => {
                           type="datetime-local"
                           name="fromDate"
                           value={formData.fromDate}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                              setFormData({ ...formData, fromDate: e.target.value });
+                              if (e.target.value) e.target.blur();
+                          }}
                           sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }}
                         />
                       </Box>
@@ -300,9 +303,21 @@ const StoreAddCoupon = () => {
                           fullWidth
                           type="datetime-local"
                           name="toDate"
+                          inputProps={{ min: formData.fromDate }}
                           value={formData.toDate}
-                          onChange={handleChange}
-                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "#fafbff" } }}
+                          onChange={(e) => {
+                              setFormData({ ...formData, toDate: e.target.value });
+                              if (e.target.value) e.target.blur();
+                          }}
+                          sx={{ 
+                            "& .MuiOutlinedInput-root": { 
+                                borderRadius: "12px", 
+                                bgcolor: "#fafbff",
+                                "&.Mui-error": { borderColor: "#E53935" } 
+                            } 
+                          }}
+                          error={formData.fromDate && formData.toDate && formData.toDate < formData.fromDate}
+                          helperText={formData.fromDate && formData.toDate && formData.toDate < formData.fromDate ? "Expiry cannot be before start date" : ""}
                         />
                       </Box>
                       <Grid container spacing={2}>
