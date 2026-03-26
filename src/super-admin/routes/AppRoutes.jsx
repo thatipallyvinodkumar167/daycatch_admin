@@ -183,6 +183,7 @@ const AppRoutes = () => {
         <Route path="banners/product/add" element={<StoreAddProductBanner />} />
         <Route path="products" element={<StoreProductList />} />
         <Route path="products/add" element={<StoreAddProduct />} />
+        <Route path="products/edit/:id" element={<StoreAddProduct isEdit={true} />} />
         <Route path="catalog/products" element={<StoreAdminCatalog />} />
         <Route path="catalog/update-pricing" element={<StoreUpdatePricing />} />
         <Route path="catalog/update-stock" element={<StoreUpdateStock />} />
