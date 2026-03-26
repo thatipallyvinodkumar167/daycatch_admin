@@ -201,8 +201,10 @@ const AppRoutes = () => {
         <Route path="orders/payment-failed" element={<StoreOrders viewType="payment_failed" title="Payment Failed Orders" />} />
         <Route path="orders/completed" element={<StoreOrders viewType="completed" title="Completed Orders" />} />
         <Route path="orders/missed" element={<StoreOrders viewType="missed" title="Missed Orders" />} />
+        <Route path="orders/day-wise" element={<StoreOrders viewType="day_wise" title="Day Wise Orders" />} />
         <Route path="orders/today" element={<StoreOrders viewType="today" title="Today's Orders" />} />
         <Route path="orders/next-day" element={<StoreOrders viewType="next_day" title="Next Day's Orders" />} />
+        <Route path="orders/details/:id" element={<OrderDetails />} />
         <Route path="order-by-photo" element={<StoreOrderByPhoto />} />
         <Route path="delivery/boys" element={<StoreDeliveryBoyList />} />
         <Route path="delivery/boys/add" element={<StoreAddDeliveryBoy />} />

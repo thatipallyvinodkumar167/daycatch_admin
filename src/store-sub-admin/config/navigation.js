@@ -84,7 +84,7 @@ export const STORE_MENU_GROUPS = [
       { label: "Payment Failed Orders", route: "orders/payment-failed" },
       { label: "Completed orders", route: "orders/completed" },
       { label: "Missed Orders", route: "orders/missed" },
-      { label: "Day Wise Orders", route: null },
+      { label: "Day Wise Orders", route: "orders/day-wise" },
       { label: "Today Orders", route: "orders/today" },
       { label: "Next-Day Orders", route: "orders/next-day" },
     ],
