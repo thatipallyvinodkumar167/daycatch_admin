@@ -179,36 +179,51 @@ const StoreAddDealProduct = () => {
                     />
                   </Box>
 
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                        From Date
-                      </Typography>
-                      <TextField
-                        fullWidth
-                        name="fromDate"
-                        type="datetime-local"
-                        value={formData.fromDate}
-                        onChange={handleChange}
-                        InputLabelProps={{ shrink: true }}
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
-                      />
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
+                          From Date
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          name="fromDate"
+                          type="datetime-local"
+                          value={formData.fromDate}
+                          onChange={(e) => {
+                              setFormData({ ...formData, fromDate: e.target.value });
+                              if (e.target.value) e.target.blur();
+                          }}
+                          InputLabelProps={{ shrink: true }}
+                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
+                          To Date
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          name="toDate"
+                          type="datetime-local"
+                          inputProps={{ min: formData.fromDate }}
+                          value={formData.toDate}
+                          onChange={(e) => {
+                              setFormData({ ...formData, toDate: e.target.value });
+                              if (e.target.value) e.target.blur();
+                          }}
+                          error={formData.fromDate && formData.toDate && formData.toDate < formData.fromDate}
+                          helperText={formData.fromDate && formData.toDate && formData.toDate < formData.fromDate ? "Expiry cannot be earlier" : ""}
+                          InputLabelProps={{ shrink: true }}
+                          sx={{ 
+                            "& .MuiOutlinedInput-root": { 
+                                borderRadius: "16px", 
+                                bgcolor: "#fafbfc",
+                                "&.Mui-error": { borderColor: "#E53935" }
+                            } 
+                          }}
+                        />
+                      </Grid>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="caption" fontWeight="800" color="#a3aed0" sx={{ mb: 1, display: "block", textTransform: "uppercase" }}>
-                        To Date
-                      </Typography>
-                      <TextField
-                        fullWidth
-                        name="toDate"
-                        type="datetime-local"
-                        value={formData.toDate}
-                        onChange={handleChange}
-                        InputLabelProps={{ shrink: true }}
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "16px", bgcolor: "#fafbfc" } }}
-                      />
-                    </Grid>
-                  </Grid>
 
                   <Button
                     type="submit"
@@ -219,15 +234,15 @@ const StoreAddDealProduct = () => {
                     sx={{
                       py: 2.2,
                       borderRadius: "20px",
-                      bgcolor: "#ee5d50",
+                      bgcolor: "#E53935",
                       fontWeight: 900,
                       textTransform: "none",
                       fontSize: "17px",
-                      boxShadow: "0 14px 28px rgba(238,93,80,0.22)",
+                      boxShadow: "0 14px 28px rgba(229, 57, 53, 0.22)",
                       "&:hover": { bgcolor: "#d32f2f" },
                     }}
                   >
-                    {isSubmitting ? "Saving..." : editingDeal ? "Update Deal" : "Activate Deal"}
+                    {isSubmitting ? "Saving Identity..." : editingDeal ? "Update Deal" : "Activate Deal Product"}
                   </Button>
                 </Stack>
               </Paper>

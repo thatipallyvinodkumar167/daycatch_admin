@@ -148,12 +148,12 @@ const StoreDealProducts = () => {
               borderRadius: "12px",
               py: 1.5,
               px: 4,
-              bgcolor: "#1b2559",
-              boxShadow: "0 10px 20px rgba(27, 37, 89, 0.2)",
+              bgcolor: "#E53935",
+              boxShadow: "0 10px 20px rgba(229, 57, 53, 0.25)",
               textTransform: "none",
               fontWeight: 800,
               fontSize: "15px",
-              "&:hover": { bgcolor: "#111c44" },
+              "&:hover": { bgcolor: "#d32f2f" },
             }}
           >
             + Create Deal

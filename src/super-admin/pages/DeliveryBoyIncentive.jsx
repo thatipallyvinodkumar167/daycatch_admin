@@ -37,7 +37,6 @@ import {
   extractApiResults,
   formatBankUpiLabel,
   normalizeIncentiveRecord,
-  resolvePerOrderIncentive,
 } from "../../utils/deliveryIncentiveUtils";
 
 const formatDateTime = (value) => {
@@ -79,31 +78,31 @@ const DeliveryBoyIncentive = () => {
       const [
         incentivesResponse,
         completedOrdersResponse,
-        incentiveConfigResponse,
+        storeSettingsResponse,
         deliveryBoyResponse,
       ] = await Promise.all([
         genericApi.getAll("deliveryboy_incentives", { limit: 500 }),
         genericApi.getAll("completed orders", { limit: 1000 }),
-        genericApi.getAll("driver incentive", { limit: 50 }),
+        genericApi.getAll("storeList", { limit: 500 }),
         getAllDeliveryBoys({ limit: 500 }),
       ]);
 
       const existingIncentives = extractApiResults(incentivesResponse);
       const completedOrders = extractApiResults(completedOrdersResponse);
-      const incentiveConfigs = extractApiResults(incentiveConfigResponse);
+      const storeDocuments = extractApiResults(storeSettingsResponse);
       const deliveryBoys = Array.isArray(deliveryBoyResponse.data?.data)
         ? deliveryBoyResponse.data.data
         : Array.isArray(deliveryBoyResponse.data)
           ? deliveryBoyResponse.data
           : [];
 
-      const resolvedPerOrderRate = resolvePerOrderIncentive(incentiveConfigs);
       const syncedAt = new Date().toISOString();
       const recordsToSync = buildSyncedIncentiveRecords({
         existingRecords: existingIncentives,
         deliveryBoys,
         completedOrders,
-        perOrderIncentive: resolvedPerOrderRate,
+        perOrderIncentive: 0,
+        storeDocuments,
         syncedAt,
       });
 
@@ -134,11 +133,16 @@ const DeliveryBoyIncentive = () => {
         }
       }
 
-      setPerOrderRate(resolvedPerOrderRate);
-      setIncentives(
-        (persistedRecords.length ? persistedRecords : recordsToSync.map((item) => item.document))
-          .map((document) => normalizeIncentiveRecord(document))
+      const normalizedRecords = (
+        persistedRecords.length ? persistedRecords : recordsToSync.map((item) => item.document)
+      ).map((document) => normalizeIncentiveRecord(document));
+
+      const uniqueRates = Array.from(
+        new Set(normalizedRecords.map((item) => Number(item.perOrderIncentive || 0)))
       );
+
+      setPerOrderRate(uniqueRates.length === 1 ? uniqueRates[0] : 0);
+      setIncentives(normalizedRecords);
     } catch (error) {
       console.error("Error syncing incentives:", error);
       if (showFailureAlert) {
@@ -323,10 +327,10 @@ const DeliveryBoyIncentive = () => {
           </Avatar>
           <Box>
             <Typography variant="caption" color="#a3aed0" fontWeight="800" sx={{ letterSpacing: "1px" }}>
-              PER ORDER SLAB
+              STORE-CONTROLLED RATE
             </Typography>
             <Typography variant="h4" fontWeight="800" color="#1b2559">
-              Rs {perOrderRate.toLocaleString("en-IN")}
+              {perOrderRate > 0 ? `Rs ${perOrderRate.toLocaleString("en-IN")}` : "Store-wise"}
             </Typography>
           </Box>
         </Paper>

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Box } from "@mui/material";
 import { Outlet } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 
 import Topbar from "../components/Topbar";
 import Sidebar from "../components/Sidebar";
@@ -19,6 +20,10 @@ function AdminLayout() {
 
   return (
     <Box className="super-admin-shell" sx={{ display: "flex" }}>
+      <Helmet>
+        <title>DayCatch | Super Admin Dashboard</title>
+        <meta name="description" content="DayCatch ecosystem management terminal for super administrators." />
+      </Helmet>
       
       {/* TOPBAR */}
       <Topbar toggleSidebar={toggleSidebar} />

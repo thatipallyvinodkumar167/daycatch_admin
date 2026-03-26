@@ -144,14 +144,13 @@ const StoreOrderByPhoto = () => {
                   <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>User</TableCell>
                   <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Address</TableCell>
                   <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Date</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Accept/Reject</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase" }}>Accept/Reject Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredRequests.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 12 }}>
+                    <TableCell colSpan={5} align="center" sx={{ py: 12 }}>
                       <Stack alignItems="center" spacing={2.5}>
                         <Box sx={{ p: 3, borderRadius: "50%", bgcolor: alpha("#E53935", 0.05) }}>
                           <CameraIcon sx={{ color: "#E53935", fontSize: 56, opacity: 0.3 }} />
@@ -165,7 +164,7 @@ const StoreOrderByPhoto = () => {
                   </TableRow>
                 ) : (
                   filteredRequests.map((row, index) => (
-                    <TableRow key={row.id} hover>
+                    <TableRow key={row.id} hover sx={{ transition: "0.2s" }}>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559" }}>{index + 1}</TableCell>
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={2}>
@@ -177,12 +176,9 @@ const StoreOrderByPhoto = () => {
                         </Stack>
                       </TableCell>
                       <TableCell>
-                         <Typography variant="body2" fontWeight="700" color="#707eae" sx={{ maxWidth: "300px" }}>{row.address}</Typography>
+                         <Typography variant="body2" fontWeight="700" color="#707eae" sx={{ maxWidth: "320px" }}>{row.address}</Typography>
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#a3aed0" }}>{formatStoreDate(row.createdAt)}</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: row.status === "Accepted" ? "#05cd99" : row.status === "Rejected" ? "#ee5d50" : "#1b2559" }}>
-                        {row.status}
-                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#a3aed0", fontSize: "13px" }}>{formatStoreDate(row.createdAt)}</TableCell>
                       <TableCell>
                         <Stack direction="row" spacing={1.5}>
                           <Tooltip title="Accept Order">

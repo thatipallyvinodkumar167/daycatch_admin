@@ -70,6 +70,44 @@ export const resolvePerOrderIncentive = (configDocuments = []) => {
   );
 };
 
+export const resolveStoreControlledIncentive = (storeDocument = {}) =>
+  toNumber(
+    storeDocument?.["Driver Incentive"] ??
+      storeDocument?.driverIncentive ??
+      storeDocument?.Details?.["Driver Incentive"] ??
+      storeDocument?.Details?.driverIncentive,
+    0
+  );
+
+const extractStoreIdentity = (document = {}) => ({
+  id: document?.id || document?._id || document?.storeId || "",
+  name:
+    document?.["Store Name"] ||
+    document?.Store ||
+    document?.storeName ||
+    document?.name ||
+    "",
+});
+
+const buildStoreIncentiveIndex = (storeDocuments = []) => {
+  const index = new Map();
+
+  (Array.isArray(storeDocuments) ? storeDocuments : []).forEach((storeDocument) => {
+    const identity = extractStoreIdentity(storeDocument);
+    const incentive = resolveStoreControlledIncentive(storeDocument);
+    const entry = {
+      id: String(identity.id || ""),
+      name: identity.name || "",
+      driverIncentive: incentive,
+    };
+
+    const keys = [normalizeLookupKey(entry.id), normalizeLookupKey(entry.name)].filter(Boolean);
+    keys.forEach((key) => index.set(key, entry));
+  });
+
+  return index;
+};
+
 export const extractDeliveryBoyProfile = (driver = {}) => {
   const details = normalizeObject(driver.Details || driver.details);
 
@@ -128,10 +166,25 @@ const buildCompletedOrderIndex = (completedOrders = []) => {
       completedCount: 0,
       lastDeliveryDate: null,
       rawName: name,
+      storeName: "",
+      storeId: "",
     };
 
     current.completedCount += 1;
     current.rawName = current.rawName || name;
+    current.storeName =
+      current.storeName ||
+      order?.Store ||
+      order?.["Store Name"] ||
+      order?.storeName ||
+      order?.Details?.Store ||
+      "";
+    current.storeId =
+      current.storeId ||
+      order?.storeId ||
+      order?.StoreId ||
+      order?.storeID ||
+      "";
 
     const candidateDate =
       order["Delivery Date"] || order.deliveryDate || order.updatedAt || order.createdAt;
@@ -155,11 +208,13 @@ export const buildSyncedIncentiveRecords = ({
   deliveryBoys = [],
   completedOrders = [],
   perOrderIncentive = 0,
+  storeDocuments = [],
   syncedAt = new Date().toISOString(),
 }) => {
   const existingByKey = new Map();
   const deliveryBoyByKey = new Map();
   const completedOrderIndex = buildCompletedOrderIndex(completedOrders);
+  const storeIncentiveIndex = buildStoreIncentiveIndex(storeDocuments);
   const keys = new Set();
 
   (Array.isArray(existingRecords) ? existingRecords : []).forEach((record) => {
@@ -185,12 +240,32 @@ export const buildSyncedIncentiveRecords = ({
       const driverProfile = deliveryBoyByKey.get(key) || {};
       const completedSummary = completedOrderIndex.get(key) || {};
       const normalizedExisting = normalizeIncentiveRecord(existingRecord);
+      const normalizedExistingDetails = normalizeObject(existingRecord?.Details);
+      const resolvedStoreName =
+        driverProfile.store ||
+        completedSummary.storeName ||
+        normalizedExistingDetails.Store ||
+        "";
+      const resolvedStoreId =
+        normalizedExistingDetails.storeId ||
+        completedSummary.storeId ||
+        "";
+      const matchedStoreSetting =
+        storeIncentiveIndex.get(normalizeLookupKey(resolvedStoreId)) ||
+        storeIncentiveIndex.get(normalizeLookupKey(resolvedStoreName)) ||
+        null;
+      const resolvedPerOrderIncentive = matchedStoreSetting
+        ? matchedStoreSetting.driverIncentive
+        : toNumber(
+            existingRecord?.["Per Order Incentive"] ?? perOrderIncentive,
+            0
+          );
 
       const completedCount = Math.max(
         toNumber(completedSummary.completedCount, 0),
         toNumber(existingRecord?.["Orders Delivered"], 0)
       );
-      const computedTotal = completedCount * toNumber(perOrderIncentive, 0);
+      const computedTotal = completedCount * resolvedPerOrderIncentive;
       const paidIncentive = normalizedExisting.paidIncentive;
       const outstandingFloor = paidIncentive + normalizedExisting.pendingIncentive;
       const totalIncentive = Math.max(
@@ -220,7 +295,7 @@ export const buildSyncedIncentiveRecords = ({
         "Paid Incentive": paidIncentive,
         "Pending Incentive": pendingIncentive,
         "Orders Delivered": completedCount,
-        "Per Order Incentive": toNumber(perOrderIncentive, 0),
+        "Per Order Incentive": resolvedPerOrderIncentive,
         "Settlement Status": settlementStatus,
         "Sync Source": "completed orders",
         "Last Synced At": syncedAt,
@@ -229,15 +304,14 @@ export const buildSyncedIncentiveRecords = ({
           existingRecord?.["Last Delivery Date"] ||
           null,
         Details: {
-          ...normalizeObject(existingRecord?.Details),
+          ...normalizedExistingDetails,
           City:
             driverProfile.city ||
-            normalizeObject(existingRecord?.Details).City ||
+            normalizedExistingDetails.City ||
             "",
           Store:
-            driverProfile.store ||
-            normalizeObject(existingRecord?.Details).Store ||
-            "",
+            resolvedStoreName || normalizedExistingDetails.Store || "",
+          storeId: resolvedStoreId || normalizedExistingDetails.storeId || "",
         },
         History: normalizeIncentiveHistory(
           existingRecord?.History || existingRecord?.history || []

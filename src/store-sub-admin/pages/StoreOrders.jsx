@@ -10,17 +10,18 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
-  InputAdornment,
+  Avatar,
+  IconButton,
   Button,
   alpha,
   CircularProgress,
-  IconButton,
-  Tooltip,
+  TextField,
+  InputAdornment,
   Chip,
-  Collapse,
-  Avatar,
-  AvatarGroup,
+  Tooltip,
+  Snackbar,
+  Alert,
+  Dialog,
   Grid,
 } from "@mui/material";
 import {
@@ -28,12 +29,16 @@ import {
   LocalShipping as ShippingIcon,
   Visibility as ViewIcon,
   Refresh as RefreshIcon,
-  CheckCircleOutline as ApproveIcon,
-  CancelOutlined as RejectIcon,
-  KeyboardArrowDown as ExpandIcon,
-  KeyboardArrowUp as CollapseIcon,
-  PlayArrow as ProcessIcon,
-  CalendarMonth as CalendarIcon,
+  CheckCircle as ApproveIcon,
+  Cancel as RejectIcon,
+  Phone as PhoneIcon,
+  ShoppingBag as OrdersIcon,
+  Person as PersonIcon,
+  Store as StoreIcon,
+  TwoWheeler as BikeIcon,
+  Payments as CashIcon,
+  Close as CloseIcon,
+  Sync as SyncIcon,
 } from "@mui/icons-material";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { getAllOrders } from "../../api/ordersApi";
@@ -45,12 +50,11 @@ const StoreOrders = ({ viewType, title }) => {
   const { store } = useOutletContext();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [orders, setOrders] = useState([]);
-  const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   const navy = "#1b2559";
   const red = "#E53935";
@@ -62,18 +66,16 @@ const StoreOrders = ({ viewType, title }) => {
     try {
       const params = { storeId: store?.id };
       
-      if (viewType && viewType !== "all") {
-        if (viewType === "today") {
-          params.deliveryDate = new Date().toISOString().split('T')[0];
-        } else if (viewType === "next_day") {
-          const nextDay = new Date();
-          nextDay.setDate(nextDay.getDate() + 1);
-          params.deliveryDate = nextDay.toISOString().split('T')[0];
-        } else if (viewType === "day_wise") {
-          params.deliveryDate = selectedDate;
-        } else {
-          params.status = viewType;
-        }
+      const statusMap = {
+        confirmed: "Accepted",
+        out_for_delivery: "Out For Delivery",
+        payment_failed: "Payment Failed",
+        completed: "Delivered",
+        missed: "Missed"
+      };
+      
+      if (viewType && viewType !== "all" && viewType !== "day_wise" && !["today", "next_day"].includes(viewType)) {
+          params.status = statusMap[viewType] || viewType;
       }
 
       // API selection based on viewType
@@ -92,7 +94,6 @@ const StoreOrders = ({ viewType, title }) => {
           const response = await genericApi.getAll(collectionName, params);
           list = response?.data?.results || response?.data || [];
       } catch (e) {
-          console.warn(`Collection ${collectionName} might not be initialized, falling back to general orders.`);
           const response = await getAllOrders(params);
           list = response?.data?.results || response?.data || [];
       }
@@ -104,54 +105,40 @@ const StoreOrders = ({ viewType, title }) => {
         cartId: order["Cart ID"] || order.cartId || order._id?.substring(0, 8) || "N/A",
         price: order["Cart price"] || order.amount || order.totalAmount || 0,
         user: order.User || order.user || order.customer || "User",
-        userPhone: order["User Phone"] || order.phone || "N/A",
+        userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
         date: order["Delivery Date"] || order.deliveryDate || order.createdAt || "",
-        timeSlot: order["Time Slot"] || order.timeSlot || "N/A",
-        address: order.Address || order.address || "N/A",
+        timeSlot: order["Time Slot"] || order.timeSlot || order.Details?.["Time Slot"] || order.Details?.timeSlot || "N/A",
+        address: order.Address || order.address || order.Details?.address || order.Details?.Address || "N/A",
         status: order.Status || order.status || "Pending",
-        reason: order["Cancelling Reason"] || order.cancelReason || "N/A",
-        items_count: (order.Products || order.products || []).length,
-        items_preview: (order.Products || order.products || []).map(p => ({
+        reason: order["Cancelling Reason"] || order.cancelReason || order.Details?.["Cancelling Reason"] || "N/A",
+        items_count: (order.Products || order.products || order.Details?.Products || []).length,
+        items_preview: (order.Products || order.products || order.Details?.Products || []).map(p => ({
             name: p.product_name || p.name || "Item",
             img: p.image || p.img || ""
         })),
-        dboy: order["Boy Name"] || order.deliveryBoyName || "Not Assigned",
+        dboy: order["Boy Name"] || order.deliveryBoyName || order.Details?.["Boy Name"] || "Not Assigned",
         payment: order.paymentStatus || order.paymentMethod || "COD",
         raw: order
       })));
     } catch (err) {
       console.error("Orders Sync Error:", err);
-      // Fallback for demonstration
       setOrders([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [store?.id, viewType, selectedDate]);
+  }, [store?.id, viewType]);
 
   useEffect(() => {
     if (store?.id) fetchOrders();
-  }, [fetchOrders, store?.id, selectedDate]); // Trigger on date change too
+  }, [fetchOrders, store?.id]);
 
   const handleUpdateStatus = async (order, newStatus) => {
     setActionLoading(order.id);
     try {
-        const sourceMapping = {
-            pending: "pending orders",
-            confirmed: "ongoingorders",
-            out_for_delivery: "out for orders"
-        };
-        const source = sourceMapping[viewType] || "orders";
+        const sourceMap = { pending: "pending orders", confirmed: "ongoingorders", out_for_delivery: "out for orders" };
+        const statusToColl = { Accepted: "ongoingorders", Cancelled: "cancelled orders", Delivered: "completed orders" };
         
-        const statusMap = {
-            Accepted: "ongoingorders",
-            Processing: "ongoingorders",
-            Cancelled: "cancelled orders",
-            Delivered: "completed orders"
-        };
-        
-        const target = statusMap[newStatus] || "orders";
-
         const payload = buildOrderPayload(order.raw, {
             Status: newStatus,
             status: newStatus,
@@ -159,15 +146,16 @@ const StoreOrders = ({ viewType, title }) => {
         });
 
         await moveOrderBetweenCollections({
-            sourceCollection: source,
-            targetCollection: target,
+            sourceCollection: sourceMap[viewType] || "orders",
+            targetCollection: statusToColl[newStatus] || "orders",
             order: { id: order.id },
             payload
         });
 
         setOrders(prev => prev.filter(o => o.id !== order.id));
+        setSnackbar({ open: true, message: `Order marked as ${newStatus}`, severity: "success" });
     } catch (e) {
-        console.error("Status Update Failed:", e);
+        setSnackbar({ open: true, message: "Action failed", severity: "error" });
     } finally {
         setActionLoading(null);
     }
@@ -178,191 +166,154 @@ const StoreOrders = ({ viewType, title }) => {
     o.user.toLowerCase().includes(searchTerm.toLowerCase())
   ), [orders, searchTerm]);
 
-  const getTableColumns = () => {
-     const common = [
-        { id: "expand", label: "", width: "50px" },
-        { id: "cartId", label: "Cart ID" },
-        { id: "price", label: "Cart price" },
-        { id: "user", label: "User" },
-        { id: "date", label: "Delivery Date" },
-        { id: "status", label: "Status" },
+  const stats = useMemo(() => {
+     return [
+        { label: "VOLUME", value: orders.length, icon: <OrdersIcon />, color: "#4318ff", bg: "#eef2ff" },
+        { label: "VALUE", value: `Rs. ${orders.reduce((acc, o) => acc + Number(o.price || 0), 0).toLocaleString()}`, icon: <CashIcon />, color: "#05cd99", bg: "#e6f9ed" },
+        { label: "STATE", value: (title || "Orders").split(" ")[0].toUpperCase(), icon: <ShippingIcon />, color: red, bg: alpha(red, 0.05) },
      ];
-     return [...common, { id: "actions", label: "Actions", align: "right" }];
-  };
+  }, [orders, title]);
 
-  const columns = getTableColumns();
-
-  if (loading) return (
-    <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "60vh", gap: 2 }}>
-      <CircularProgress sx={{ color: red }} />
-      <Typography variant="body2" fontWeight="700" color="#a3aed0">Syncing order threads...</Typography>
-    </Box>
-  );
+  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}><CircularProgress sx={{ color: red }} /></Box>;
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+    <Box sx={{ p: { xs: 2.5, md: 4 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
         
-        <Box sx={{ mb: 5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+        {/* Header Section */}
+        <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Box>
-            <Typography variant="h4" sx={{ fontWeight: 900, color: navy, mb: 0.5, letterSpacing: "-1.5px" }}>
-               {title || "Orders Management"}
+            <Typography variant="h3" sx={{ fontWeight: 900, color: navy, mb: 0.5, letterSpacing: "-1px" }}>
+               {title || "Orders Dashboard"}
             </Typography>
-            <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>
-               Managing fulfillment for {store?.name || "assigned store"}.
+            <Typography variant="body2" sx={{ color: "#a3aed0", fontWeight: 700 }}>
+               Fulfillment management pipeline for {store.name}
             </Typography>
           </Box>
-          <Stack direction="row" spacing={2} alignItems="center">
-             {viewType === "day_wise" && (
-                <TextField
-                   type="date"
-                   size="small"
-                   value={selectedDate}
-                   onChange={(e) => setSelectedDate(e.target.value)}
-                   InputProps={{
-                      startAdornment: <InputAdornment position="start"><CalendarIcon sx={{ color: navy }} /></InputAdornment>,
-                      sx: { borderRadius: "14px", bgcolor: "#fff", fontWeight: 800, border: "1px solid #e0e5f2", "& fieldset": { border: "none" } }
-                   }}
-                />
-             )}
-             <Tooltip title={refreshing ? "Refreshing..." : "Sync System"}>
-               <IconButton 
-                 onClick={() => fetchOrders(true)} 
-                 disabled={refreshing}
-                 sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
-               >
-                 <RefreshIcon sx={{ color: navy, animation: refreshing ? "spin 1.5s linear infinite" : "none" }} />
-               </IconButton>
-             </Tooltip>
-             <Button
-               variant="contained"
-               sx={{ borderRadius: "14px", bgcolor: red, fontWeight: 900, textTransform: "none", px: 4, py: 1.2, boxShadow: "0 10px 20px rgba(229, 57, 53, 0.2)", "&:hover": { bgcolor: "#d32f2f" } }}
-             >
-               Export
-             </Button>
-          </Stack>
+          <Tooltip title={refreshing ? "Refreshing..." : "Sync Threads"}>
+            <IconButton 
+                onClick={() => fetchOrders(true)} 
+                sx={{ bgcolor: "#fff", border: "1px solid #e0e5f2", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+            >
+                <SyncIcon sx={{ color: navy, animation: refreshing ? "spin 1s linear infinite" : "none" }} />
+            </IconButton>
+          </Tooltip>
         </Box>
 
-        <Paper sx={{ p: 4, borderRadius: "32px", border: "1px solid #e0e5f2", bgcolor: "#fff", boxShadow: "0 20px 50px rgba(0,0,0,0.03)" }}>
-          <Stack direction="row" justifyContent="flex-end" sx={{ mb: 4 }}>
+        {/* Intelligence Cards */}
+        <Grid container spacing={2.5} sx={{ mb: 4 }}>
+            {stats.map((stat, i) => (
+                <Grid item xs={12} sm={4} key={i}>
+                    <Paper sx={{ p: 2.5, borderRadius: "20px", display: "flex", alignItems: "center", gap: 2, border: "1px solid #e0e5f2" }}>
+                        <Avatar sx={{ bgcolor: stat.bg, color: stat.color, width: 48, height: 48, borderRadius: "14px" }}>
+                            {stat.icon}
+                        </Avatar>
+                        <Box>
+                            <Typography variant="caption" color="#a3aed0" fontWeight="900" sx={{ letterSpacing: "1px" }}>{stat.label}</Typography>
+                            <Typography variant="h5" fontWeight="900" color="#1b2559">{stat.value}</Typography>
+                        </Box>
+                    </Paper>
+                </Grid>
+            ))}
+        </Grid>
+
+        <Paper sx={{ p: { xs: 2, md: 3 }, borderRadius: "24px", border: "1px solid #e0e5f2", boxShadow: "0 25px 50px rgba(0,0,0,0.04)" }}>
+          <Stack direction="row" spacing={2} sx={{ mb: 3 }} justifyContent="space-between" alignItems="center">
             <TextField
-              placeholder="Search sequence or user..."
+              placeholder="Search Seq or User..."
               size="small"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
-                startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: "#a3aed0" }} /></InputAdornment>,
-                sx: { borderRadius: "16px", bgcolor: "#f8f9fc", width: { xs: "100%", sm: "320px" }, "& fieldset": { borderColor: "transparent" } }
+                startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: "#a3aed0", fontSize: 20 }} /></InputAdornment>,
+                sx: { borderRadius: "14px", bgcolor: "#f8f9fc", width: { xs: "100%", sm: "320px" }, fontSize: "14px", "& fieldset": { borderColor: "transparent" } }
               }}
             />
           </Stack>
 
           <TableContainer sx={{ border: "1px solid #eef2f6", borderRadius: "20px", overflow: "hidden" }}>
-            <Table>
+            <Table size="small">
               <TableHead sx={{ bgcolor: "#fafbfc" }}>
                 <TableRow>
-                  {columns.map((col) => (
-                    <TableCell key={col.id} sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", textTransform: "uppercase", textAlign: col.align || "left", pl: col.id === 'expand' ? 4 : 2 }}>
-                      {col.label}
-                    </TableCell>
-                  ))}
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", py: 2, pl: 3 }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", py: 2 }}>CART ID</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", py: 2 }}>VALUATION</TableCell>
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", py: 2 }}>CUSTOMER</TableCell>
+                  {viewType === "cancelled" && <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", py: 2 }}>AGENT</TableCell>}
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", py: 2 }}>SCHEDULE</TableCell>
+                  {viewType === "cancelled" && <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", py: 2 }}>FAILURE POINT</TableCell>}
+                  <TableCell sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", py: 2 }}>STATUS</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 900, color: "#a3aed0", fontSize: "11px", py: 2, pr: 3 }}>ACTIONS</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredOrders.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} align="center" sx={{ py: 12 }}>
-                      <Stack alignItems="center" spacing={2.5}>
-                        <Box sx={{ p: 3, borderRadius: "50%", bgcolor: alpha(red, 0.05) }}>
-                          <ShippingIcon sx={{ color: red, fontSize: 56, opacity: 0.5 }} />
-                        </Box>
-                        <Box>
-                           <Typography variant="h5" color={navy} fontWeight="900" gutterBottom>Operational sequence not found</Typography>
-                           <Typography variant="body1" sx={{ color: "#a3aed0", fontWeight: 700 }}>No orders detected for the specified criteria.</Typography>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
+                  <TableRow><TableCell colSpan={10} align="center" sx={{ py: 8 }}><Typography variant="body2" fontWeight="800" color="#a3aed0">Empty fulfillment queue.</Typography></TableCell></TableRow>
                 ) : (
-                  filteredOrders.map((row) => {
-                    const isExpanded = expandedOrderId === row.id;
+                  filteredOrders.map((row, index) => {
                     const isUpdating = actionLoading === row.id;
-
+                    const isFailed = row.status.toLowerCase().includes("cancel") || row.status.toLowerCase().includes("reject") || row.status.toLowerCase().includes("fail");
+                    
                     return (
-                        <React.Fragment key={row.id}>
-                            <TableRow hover sx={{ "&:hover": { bgcolor: alpha(navy, 0.01) }, borderBottom: "none" }}>
-                                <TableCell sx={{ pl: 4 }}>
-                                    <IconButton size="small" onClick={() => setExpandedOrderId(isExpanded ? null : row.id)}>
-                                        {isExpanded ? <CollapseIcon /> : <ExpandIcon />}
-                                    </IconButton>
-                                </TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: navy }}>{row.cartId}</TableCell>
-                                <TableCell sx={{ fontWeight: 900, color: red }}>Rs. {Number(row.price).toLocaleString()}</TableCell>
-                                <TableCell>
-                                    <Box>
-                                        <Typography variant="body2" fontWeight="800" color={navy}>{row.user}</Typography>
-                                        <Typography variant="caption" fontWeight="700" color="#a3aed0">{row.userPhone}</Typography>
-                                    </Box>
-                                </TableCell>
-                                <TableCell sx={{ fontWeight: 700, color: "#707eae" }}>{formatStoreDate(row.date)}</TableCell>
-                                <TableCell>
-                                    <Chip 
-                                        label={row.status.toUpperCase()} 
-                                        size="small" 
-                                        sx={{ 
-                                            fontWeight: 900, 
-                                            borderRadius: "10px", 
-                                            bgcolor: row.status.toLowerCase() === "pending" ? alpha("#ffb547", 0.1) : alpha("#05cd99", 0.1),
-                                            color: row.status.toLowerCase() === "pending" ? "#ffb547" : "#05cd99",
-                                            fontSize: "10px"
-                                        }} 
-                                    />
-                                </TableCell>
-                                <TableCell sx={{ textAlign: "right", pr: 4 }}>
-                                    <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                        {isUpdating ? <CircularProgress size={24} sx={{ m: 1, color: navy }} /> : (
+                        <TableRow key={row.id} hover sx={{ "&:hover": { bgcolor: "#f9fbff" } }}>
+                        <TableCell sx={{ fontWeight: 800, color: "#a3aed0", pl: 3 }}>{index + 1}</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: navy, fontSize: "13px" }}>{row.cartId}</TableCell>
+                        <TableCell sx={{ fontWeight: 900, color: red, fontSize: "13px" }}>₹{Number(row.price).toLocaleString()}</TableCell>
+                        <TableCell>
+                            <Stack direction="row" alignItems="center" spacing={1}>
+                                <Avatar sx={{ bgcolor: alpha(navy, 0.05), color: navy, borderRadius: "8px", width: 28, height: 28 }}><PersonIcon sx={{ fontSize: 16 }} /></Avatar>
+                                <Box>
+                                    <Typography variant="body2" fontWeight="800" color={navy} noWrap sx={{ maxWidth: "120px" }}>{row.user}</Typography>
+                                    <Typography variant="caption" fontWeight="700" color="#a3aed0">{row.userPhone}</Typography>
+                                </Box>
+                            </Stack>
+                        </TableCell>
+                        {viewType === "cancelled" && (
+                             <TableCell>
+                                <Stack direction="row" alignItems="center" spacing={0.5}>
+                                    <BikeIcon sx={{ color: "#a3aed0", fontSize: 14 }} />
+                                    <Typography variant="caption" fontWeight="800" color={navy}>{row.dboy}</Typography>
+                                </Stack>
+                            </TableCell>
+                        )}
+                        <TableCell>
+                            <Typography variant="caption" fontWeight="800" color="#707eae">{formatStoreDate(row.date)}</Typography>
+                            <Typography variant="caption" display="block" color="#a3aed0">{row.timeSlot}</Typography>
+                        </TableCell>
+                        {viewType === "cancelled" && (
+                            <TableCell sx={{ maxWidth: "180px" }}>
+                                <Typography variant="caption" fontWeight="800" color={red} sx={{ lineHeight: 1.2 }}>{row.reason}</Typography>
+                            </TableCell>
+                        )}
+                        <TableCell>
+                            <Chip 
+                                label={row.status.toUpperCase()} 
+                                size="small" 
+                                sx={{ 
+                                    fontWeight: 900, 
+                                    bgcolor: isFailed ? alpha(red, 0.05) : row.status.toLowerCase() === "pending" ? alpha("#ffb547", 0.05) : alpha("#05cd99", 0.05), 
+                                    color: isFailed ? red : row.status.toLowerCase() === "pending" ? "#ffb547" : "#05cd99",
+                                    borderRadius: "6px", px: 0.5, fontSize: "10px", height: "18px",
+                                    border: `1px solid ${isFailed ? alpha(red, 0.2) : row.status.toLowerCase() === "pending" ? alpha("#ffb547", 0.2) : alpha("#05cd99", 0.2)}`
+                                }} 
+                            />
+                        </TableCell>
+                        <TableCell align="right" sx={{ pr: 3 }}>
+                            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                                {isUpdating ? <CircularProgress size={20} sx={{ color: navy, m: 0.5 }} /> : (
+                                    <>
+                                        {viewType === "pending" && (
                                             <>
-                                                {viewType === "pending" && (
-                                                    <>
-                                                        <IconButton onClick={() => handleUpdateStatus(row, "Accepted")} sx={{ bgcolor: "#05cd99", color: "#fff", borderRadius: "10px" }}><ApproveIcon fontSize="small" /></IconButton>
-                                                        <IconButton onClick={() => handleUpdateStatus(row, "Cancelled")} sx={{ bgcolor: red, color: "#fff", borderRadius: "10px" }}><RejectIcon fontSize="small" /></IconButton>
-                                                    </>
-                                                )}
-                                                <IconButton onClick={() => navigate(`../details/${row.id}`, { relative: "path" })} sx={{ bgcolor: navy, color: "#fff", borderRadius: "10px" }}><ViewIcon fontSize="small" /></IconButton>
+                                                <IconButton disabled={isUpdating} onClick={() => handleUpdateStatus(row, "Accepted")} sx={{ bgcolor: alpha("#05cd99", 0.05), color: "#05cd99", borderRadius: "8px", width: 28, height: 28 }}><ApproveIcon sx={{ fontSize: 16 }} /></IconButton>
+                                                <IconButton disabled={isUpdating} onClick={() => handleUpdateStatus(row, "Cancelled")} sx={{ bgcolor: alpha(red, 0.05), color: red, borderRadius: "8px", width: 28, height: 28 }}><RejectIcon sx={{ fontSize: 16 }} /></IconButton>
                                             </>
                                         )}
-                                    </Stack>
-                                </TableCell>
-                            </TableRow>
-
-                            <TableRow>
-                                <TableCell colSpan={columns.length} sx={{ py: 0, borderBottom: isExpanded ? "1px solid #eef2f6" : "none" }}>
-                                    <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                                        <Box sx={{ p: 4, bgcolor: "#fafbfc", borderTop: "1px dashed #e0e5f2" }}>
-                                            <Grid container spacing={4}>
-                                                <Grid item xs={12} md={4}>
-                                                    <Typography variant="caption" fontWeight="900" color="#a3aed0" sx={{ mb: 1, display: "block" }}>DESTINATION</Typography>
-                                                    <Typography variant="body2" fontWeight="700" color={navy} sx={{ mb: 1 }}>{row.address}</Typography>
-                                                    <Typography variant="body2" fontWeight="800" color="#707eae">Slot: {row.timeSlot}</Typography>
-                                                </Grid>
-                                                <Grid item xs={12} md={4}>
-                                                    <Typography variant="caption" fontWeight="900" color="#a3aed0" sx={{ mb: 1, display: "block" }}>ITEMS ({row.items_count})</Typography>
-                                                    <AvatarGroup max={5} sx={{ justifyContent: "flex-start" }}>
-                                                        {row.items_preview.map((item, i) => (
-                                                            <Avatar key={i} src={item.img} sx={{ borderRadius: "10px", border: "2px solid #fff" }}>{item.name[0]}</Avatar>
-                                                        ))}
-                                                    </AvatarGroup>
-                                                </Grid>
-                                                <Grid item xs={12} md={4}>
-                                                    <Typography variant="caption" fontWeight="900" color="#a3aed0" sx={{ mb: 1, display: "block" }}>CONTROL</Typography>
-                                                    <Button variant="contained" startIcon={<ProcessIcon />} onClick={() => handleUpdateStatus(row, "Processing")} sx={{ bgcolor: navy, borderRadius: "12px", textTransform: "none", fontWeight: 900 }}>Start Process</Button>
-                                                </Grid>
-                                            </Grid>
-                                        </Box>
-                                    </Collapse>
-                                </TableCell>
-                            </TableRow>
-                        </React.Fragment>
+                                        <IconButton size="small" onClick={() => navigate(`../details/${row.id}`, { relative: "path" })} sx={{ color: navy, bgcolor: alpha(navy, 0.05), borderRadius: "8px", width: 28, height: 28 }}><ViewIcon sx={{ fontSize: 16 }} /></IconButton>
+                                    </>
+                                )}
+                            </Stack>
+                        </TableCell>
+                        </TableRow>
                     );
                   })
                 )}
@@ -371,6 +322,10 @@ const StoreOrders = ({ viewType, title }) => {
           </TableContainer>
         </Paper>
       </Box>
+
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
+        <Alert severity={snackbar.severity} variant="filled" sx={{ borderRadius: "16px", fontWeight: "900" }}>{snackbar.message}</Alert>
+      </Snackbar>
 
       <style>{`
         @keyframes spin {

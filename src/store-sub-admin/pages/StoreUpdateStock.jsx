@@ -218,7 +218,13 @@ const StoreUpdateStock = () => {
                           <IconButton
                             size="small"
                             onClick={() => handleReset(row.id)}
-                            sx={{ bgcolor: alpha("#ee5d50", 0.1), color: "#ee5d50", borderRadius: "12px", border: "1px solid rgba(238,93,80,0.2)" }}
+                            sx={{ 
+                                bgcolor: alpha("#E53935", 0.06), 
+                                color: "#E53935", 
+                                borderRadius: "12px", 
+                                border: "1px solid rgba(229, 57, 53, 0.1)",
+                                "&:hover": { bgcolor: "#E53935", color: "#fff" } 
+                            }}
                           >
                             <CloseIcon fontSize="small" />
                           </IconButton>

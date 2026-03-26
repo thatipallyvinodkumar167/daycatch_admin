@@ -155,7 +155,7 @@ const AddStore = () => {
         "Slot Interval": form.slotInterval,
         ...(form.storeImagePreview && { "Profile Pic": form.storeImagePreview }),
         ...(form.idImagePreview && { "ID Image": form.idImagePreview }),
-        status: isEdit ? undefined : "Pending",
+        status: isEdit ? undefined : "Active",
       };
       
       if (isEdit) {
@@ -164,8 +164,8 @@ const AddStore = () => {
           navigate("/stores-list");
       } else {
           await genericApi.create("storeList", payload);
-          alert("Store added successfully! It is now pending approval.");
-          navigate("/store-approval");
+          alert("Store added successfully! The assigned sub-admin can log in now.");
+          navigate("/stores-list");
       }
     } catch (error) {
       console.error("Error saving store:", error);

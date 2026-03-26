@@ -12,6 +12,7 @@ import {
   Stack,
   TextField,
   Typography,
+  alpha,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -19,6 +20,7 @@ import {
   Save as SaveIcon,
 } from "@mui/icons-material";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { addDeliveryBoy } from "../../api/deliveryBoyApi";
 import { genericApi } from "../../api/genericApi";
 
 const StoreAddDeliveryBoy = () => {
@@ -29,6 +31,7 @@ const StoreAddDeliveryBoy = () => {
   const [cities, setCities] = useState([]);
   const [idTypes, setIdTypes] = useState([]);
   const [idFileName, setIdFileName] = useState("");
+  const [idFileUrl, setIdFileUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   const [formData, setFormData] = useState({
@@ -37,7 +40,6 @@ const StoreAddDeliveryBoy = () => {
     password: "",
     city: store?.city || "",
     idType: "",
-    idNumber: "",
     address: store?.address || "",
   });
 
@@ -64,8 +66,6 @@ const StoreAddDeliveryBoy = () => {
         );
       } catch (error) {
         console.error("Delivery boy lookup error:", error);
-        setCities([]);
-        setIdTypes([]);
       }
     };
 
@@ -79,7 +79,12 @@ const StoreAddDeliveryBoy = () => {
 
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
-    setIdFileName(file ? file.name : "");
+    if (file) {
+        setIdFileName(file.name);
+        // In a real app, you'd upload this and get a URL. 
+        // For now, setting the name string as the backend seems to expect
+        setIdFileUrl(file.name); 
+    }
   };
 
   const handleSubmit = async () => {
@@ -90,11 +95,15 @@ const StoreAddDeliveryBoy = () => {
 
     setIsSubmitting(true);
     try {
-      await genericApi.create("deliveryboy", {
-        "Boy Name": formData.name,
+      await addDeliveryBoy({
+        boyName: formData.name,
+        boyMobile: formData.phone,
+        boyPassword: formData.password,
+        status: "Off duty", // Default starting status
+        storeId: store?.id || store?._id,
+        "Boy Name": formData.name, // Compatibility keys
         "Boy Phone": formData.phone,
         "Boy Password": formData.password,
-        Status: "Active",
         Orders: 0,
         "Total Earnings": 0,
         Rating: 0,
@@ -102,17 +111,16 @@ const StoreAddDeliveryBoy = () => {
           Store: store?.name || "",
           City: formData.city,
           "ID Type": formData.idType,
-          "ID Number": formData.idNumber,
           "ID Image": idFileName,
           Address: formData.address,
         },
       });
 
-      setSnackbar({ open: true, message: "Delivery boy added successfully.", severity: "success" });
+      setSnackbar({ open: true, message: "Delivery agent registered successfully.", severity: "success" });
       setTimeout(() => navigate(-1), 1000);
     } catch (error) {
-      console.error("Unable to create delivery boy:", error);
-      setSnackbar({ open: true, message: "Failed to add delivery boy.", severity: "error" });
+      console.error("Agent registration failure:", error);
+      setSnackbar({ open: true, message: "Registration failed. Check connectivity.", severity: "error" });
     } finally {
       setIsSubmitting(false);
     }
@@ -182,22 +190,30 @@ const StoreAddDeliveryBoy = () => {
                   </TextField>
                 </Box>
 
-                <Box>
-                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1.5, ml: 1 }}>ID Number</Typography>
-                  <TextField fullWidth name="idNumber" placeholder="Enter ID number" value={formData.idNumber} onChange={handleChange} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#f8f9fc" } }} />
-                </Box>
+
 
                 <Box>
-                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1.5, ml: 1 }}>ID Image</Typography>
-                  <Box sx={{ border: "2px dashed #e0e5f2", borderRadius: "16px", p: 3, textAlign: "center", bgcolor: "#fcfcfc" }}>
-                    <UploadIcon sx={{ color: "#d1d9e2", mb: 1 }} />
-                    <Typography variant="caption" sx={{ display: "block", mb: 1, color: "#a3aed0", fontWeight: 700 }}>
-                      {idFileName || "No file chosen"}
+                  <Typography variant="subtitle2" fontWeight="800" color="#1b2559" sx={{ mb: 1.5, ml: 1 }}>Boy ID Proof Image (Aadhar, PAN, etc.)</Typography>
+                  <Box 
+                    sx={{ 
+                      border: "2px dashed #e0e5f2", 
+                      borderRadius: "16px", 
+                      p: 4, 
+                      textAlign: "center", 
+                      bgcolor: "#fcfcfc",
+                      cursor: "pointer",
+                      "&:hover": { borderColor: "#E53935", bgcolor: alpha("#E53935", 0.02) }
+                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <UploadIcon sx={{ color: idFileName ? "#E53935" : "#d1d9e2", fontSize: 32, mb: 1.5 }} />
+                    <Typography variant="body2" sx={{ display: "block", mb: 1, color: "#1b2559", fontWeight: 800 }}>
+                      {idFileName || "Upload ID Proof Document"}
                     </Typography>
-                    <Button size="small" variant="outlined" sx={{ borderRadius: "10px", fontWeight: 800, textTransform: "none" }} onClick={() => fileInputRef.current?.click()}>
-                      Choose file
-                    </Button>
-                    <input ref={fileInputRef} type="file" hidden onChange={handleFileChange} />
+                    <Typography variant="caption" sx={{ color: "#a3aed0", fontWeight: 700 }}>
+                       Click to browse and select image file
+                    </Typography>
+                    <input ref={fileInputRef} type="file" hidden accept="image/*" onChange={handleFileChange} />
                   </Box>
                 </Box>
 

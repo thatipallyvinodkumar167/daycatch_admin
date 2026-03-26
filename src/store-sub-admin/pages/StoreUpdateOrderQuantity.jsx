@@ -31,8 +31,10 @@ const normalizeCatalogRow = (product) => ({
   id: product.id,
   name: product.productName || "Unnamed Product",
   productCode: product.productCode || product.id,
-  currentQty: Number(product.orderQuantity || 1),
-  newQty: Number(product.orderQuantity || 1),
+  currentMin: Number(product.minOrderQuantity || 1),
+  currentMax: Number(product.maxOrderQuantity || 100),
+  newMin: Number(product.minOrderQuantity || 1),
+  newMax: Number(product.maxOrderQuantity || 100),
 });
 
 const StoreUpdateOrderQuantity = () => {
@@ -62,10 +64,10 @@ const StoreUpdateOrderQuantity = () => {
     }
   }, [store?.id]);
 
-  const handleQtyChange = (id, value) => {
+  const handleQtyChange = (id, field, value) => {
     setProducts((current) =>
       current.map((product) =>
-        product.id === id ? { ...product, newQty: value === "" ? "" : Number(value) } : product
+        product.id === id ? { ...product, [field]: value === "" ? "" : Number(value) } : product
       )
     );
   };
@@ -73,33 +75,40 @@ const StoreUpdateOrderQuantity = () => {
   const handleReset = (id) => {
     setProducts((current) =>
       current.map((product) =>
-        product.id === id ? { ...product, newQty: product.currentQty } : product
+        product.id === id ? { ...product, newMin: product.currentMin, newMax: product.currentMax } : product
       )
     );
   };
 
   const handleUpdate = async (product) => {
-    const nextQty = Number(product.newQty);
+    const minQty = Number(product.newMin);
+    const maxQty = Number(product.newMax);
 
-    if (!Number.isFinite(nextQty) || nextQty < 1) {
-      setSnackbar({ open: true, message: "Order quantity must be at least 1.", severity: "error" });
+    if (!Number.isFinite(minQty) || minQty < 1) {
+      setSnackbar({ open: true, message: "Minimum quantity must be at least 1.", severity: "error" });
+      return;
+    }
+    if (!Number.isFinite(maxQty) || maxQty < minQty) {
+      setSnackbar({ open: true, message: "Max quantity cannot be less than min quantity.", severity: "error" });
       return;
     }
 
     setSavingId(product.id);
     try {
       const response = await storeWorkspaceApi.updateCatalogOrderQuantity(store.id, product.id, {
-        orderQuantity: nextQty,
+        minOrderQuantity: minQty,
+        maxOrderQuantity: maxQty,
+        orderQuantity: maxQty
       });
 
       const updated = normalizeCatalogRow(response?.data?.data || {});
       setProducts((current) =>
         current.map((row) => (row.id === product.id ? updated : row))
       );
-      setSnackbar({ open: true, message: "Order quantity updated successfully.", severity: "success" });
+      setSnackbar({ open: true, message: "Limits updated successfully.", severity: "success" });
     } catch (error) {
       console.error("Unable to update order quantity:", error);
-      setSnackbar({ open: true, message: "Failed to update order quantity.", severity: "error" });
+      setSnackbar({ open: true, message: "Failed to update limits.", severity: "error" });
     } finally {
       setSavingId("");
     }
@@ -132,7 +141,7 @@ const StoreUpdateOrderQuantity = () => {
               Update Order Quantity
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="600">
-              Manage the maximum purchase limits for products at {store.name}.
+              Set purchase limits for the product catalog at {store.name}.
             </Typography>
           </Box>
         </Stack>
@@ -187,20 +196,34 @@ const StoreUpdateOrderQuantity = () => {
                       </TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#707eae" }}>{row.productCode}</TableCell>
                       <TableCell>
-                        <Typography variant="caption" fontWeight="800" color="#E53935" sx={{ bgcolor: alpha("#E53935", 0.05), px: 1.5, py: 0.5, borderRadius: "10px", width: "fit-content" }}>
-                          Limit: {row.currentQty}
-                        </Typography>
+                        <Stack spacing={1}>
+                          <Typography variant="caption" fontWeight="800" color="#05cd99" sx={{ bgcolor: alpha("#05cd99", 0.05), px: 1.5, py: 0.5, borderRadius: "10px", width: "fit-content" }}>
+                             Min: {row.currentMin}
+                          </Typography>
+                          <Typography variant="caption" fontWeight="800" color="#4318ff" sx={{ bgcolor: alpha("#4318ff", 0.05), px: 1.5, py: 0.5, borderRadius: "10px", width: "fit-content" }}>
+                             Max: {row.currentMax}
+                          </Typography>
+                        </Stack>
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ width: "120px" }}>
-                          <TextField
-                            size="small"
-                            type="number"
-                            value={row.newQty}
-                            onChange={(event) => handleQtyChange(row.id, event.target.value)}
-                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "#f8f9fc" } }}
-                          />
-                        </Box>
+                        <Stack spacing={1.5} sx={{ py: 1, width: "160px" }}>
+                           <TextField
+                             size="small"
+                             type="number"
+                             label="Min Limit"
+                             value={row.newMin}
+                             onChange={(event) => handleQtyChange(row.id, "newMin", event.target.value)}
+                             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "#f8f9fc" } }}
+                           />
+                           <TextField
+                             size="small"
+                             type="number"
+                             label="Max Limit"
+                             value={row.newMax}
+                             onChange={(event) => handleQtyChange(row.id, "newMax", event.target.value)}
+                             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "#f8f9fc" } }}
+                           />
+                        </Stack>
                       </TableCell>
                       <TableCell sx={{ textAlign: "right" }}>
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
@@ -217,7 +240,13 @@ const StoreUpdateOrderQuantity = () => {
                           <IconButton
                             size="small"
                             onClick={() => handleReset(row.id)}
-                            sx={{ bgcolor: alpha("#ee5d50", 0.1), color: "#ee5d50", borderRadius: "12px", border: "1px solid rgba(238,93,80,0.2)" }}
+                            sx={{ 
+                                bgcolor: alpha("#E53935", 0.06), 
+                                color: "#E53935", 
+                                borderRadius: "12px", 
+                                border: "1px solid rgba(229, 57, 53, 0.1)",
+                                "&:hover": { bgcolor: "#E53935", color: "#fff" } 
+                            }}
                           >
                             <CloseIcon fontSize="small" />
                           </IconButton>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
 import { Box, CircularProgress } from "@mui/material";
 import { Outlet, useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import StoreSidebar from "../components/StoreSidebar";
 import StoreTopbar from "../components/StoreTopbar";
 import { SIDEBAR_WIDTH, TOPBAR_HEIGHT } from "../config/navigation";
@@ -109,6 +110,10 @@ function StoreLayout() {
 
   return (
     <StoreContext.Provider value={store}>
+      <Helmet>
+        <title>{`DayCatch | ${store?.name || "Store Admin"}`}</title>
+        <meta name="description" content={`Management workspace for ${store?.name || "DayCatch stores"}.`} />
+      </Helmet>
       <Box className="store-shell" sx={{ display: "flex" }}>
         <StoreTopbar
           store={store}

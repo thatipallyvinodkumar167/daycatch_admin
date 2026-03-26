@@ -79,7 +79,8 @@ const AddSubAdmin = () => {
         setStores(
           results.map((store) => ({
             id: store._id || store.id,
-            name: store["Store Name"] || store.name || "Unnamed Store"
+            name: store["Store Name"] || store.name || "Unnamed Store",
+            status: store.status || store.Status || "Active",
           }))
         );
       } catch (error) {
@@ -127,6 +128,7 @@ const AddSubAdmin = () => {
 
     try {
       const assignedStore = stores.find((store) => store.id === formData.storeId);
+      const assignedStoreStatus = String(assignedStore?.status || "Active").toLowerCase();
       const payload = {
           "Name": formData.name,
           "Email": formData.email,
@@ -141,8 +143,13 @@ const AddSubAdmin = () => {
       };
 
       await subAdminApi.create(payload);
-      
-      alert("Sub-Admin added successfully!");
+
+      const message =
+        formData.scope === "store" && !["active", "approved"].includes(assignedStoreStatus)
+          ? "Sub-Admin added successfully! Login will work after the assigned store is activated."
+          : "Sub-Admin added successfully!";
+
+      alert(message);
       navigate("/sub-admin");
     } catch (error) {
       console.error("Error adding sub-admin:", error);

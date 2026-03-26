@@ -43,8 +43,8 @@ const StoreApproval = () => {
       const results = response.data?.results || response.data || [];
 
       // Show only stores with status Pending
-      const pendingStores = results.filter(store =>
-        (store.status || "").toLowerCase() === "pending"
+      const pendingStores = results.filter((store) =>
+        String(store.status || store.Status || "").toLowerCase() === "pending"
       );
 
       const formattedData = pendingStores.map((store, index) => ({
@@ -55,7 +55,7 @@ const StoreApproval = () => {
         email: store.Email || store.email || "N/A",
         adminShare: store["admin share"] || store["Admin Share"] || "0%",
         ownerName: store["Employee Name"] || store["owner name"] || store.ownerName || "Anonymous Owner",
-        status: store.status || "Pending",
+        status: store.status || store.Status || "Pending",
         logo: store["Profile Pic"] || store.logo ||
           `https://ui-avatars.com/api/?name=${encodeURIComponent(store["Store Name"] || store.name || "S")}&background=4318ff&color=fff`
       }));
