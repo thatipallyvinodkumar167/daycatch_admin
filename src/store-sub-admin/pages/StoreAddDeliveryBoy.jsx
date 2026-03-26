@@ -31,7 +31,6 @@ const StoreAddDeliveryBoy = () => {
   const [cities, setCities] = useState([]);
   const [idTypes, setIdTypes] = useState([]);
   const [idFileName, setIdFileName] = useState("");
-  const [idFileUrl, setIdFileUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   const [formData, setFormData] = useState({
@@ -81,9 +80,6 @@ const StoreAddDeliveryBoy = () => {
     const file = event.target.files?.[0];
     if (file) {
         setIdFileName(file.name);
-        // In a real app, you'd upload this and get a URL. 
-        // For now, setting the name string as the backend seems to expect
-        setIdFileUrl(file.name); 
     }
   };
 

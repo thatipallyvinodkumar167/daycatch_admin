@@ -18,7 +18,6 @@ import {
 import {
   CheckCircle as CheckCircleIcon,
   CloudUpload as UploadIcon,
-  Description as FileIcon,
   Download as DownloadIcon,
   InfoOutlined as InfoIcon,
   PriceCheckOutlined as PricingIcon,

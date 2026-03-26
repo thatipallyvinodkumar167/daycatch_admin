@@ -31,7 +31,6 @@ import {
   TwoWheeler as BikeIcon,
   Phone as PhoneIcon,
   ShoppingBag as OrdersIcon,
-  DeliveryDining as DeliveryIcon,
   AssignmentInd as IdIcon,
   Close as CloseIcon,
   CheckCircle as ActiveIcon,
@@ -86,7 +85,7 @@ const StoreDeliveryBoyList = () => {
     if (store?.id || store?.name) {
       fetchBoys();
     }
-  }, [fetchBoys]);
+  }, [fetchBoys, store?.id, store?.name]);
 
   const handleDelete = async (boyId) => {
     if (!window.confirm("Permanently deactivate and remove this agent?")) return;
