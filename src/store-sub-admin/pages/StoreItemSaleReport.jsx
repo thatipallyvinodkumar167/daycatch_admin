@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   CircularProgress,
-  InputAdornment,
   Paper,
   Stack,
   Table,
@@ -11,11 +10,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
   Typography,
   alpha,
 } from "@mui/material";
-import { Search as SearchIcon } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
 import { formatStoreDate, matchesStoreRecord } from "../utils/storeWorkspace";
@@ -23,7 +20,6 @@ import { formatStoreDate, matchesStoreRecord } from "../utils/storeWorkspace";
 function StoreItemSaleReport() {
   const { store } = useOutletContext();
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
   const [tableData, setTableData] = useState([]);
 
   useEffect(() => {
@@ -53,13 +49,7 @@ function StoreItemSaleReport() {
     fetchSalesReport();
   }, [store]);
 
-  const filteredRows = useMemo(
-    () =>
-      tableData.filter((row) =>
-        row.productName.toLowerCase().includes(searchTerm.toLowerCase().trim())
-      ),
-    [searchTerm, tableData]
-  );
+  const rowsToDisplay = tableData;
 
   return (
     <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
@@ -80,26 +70,6 @@ function StoreItemSaleReport() {
             <Typography variant="h4" fontWeight="800" color="#1b2559">
               Item Sales Report (Last 30 Days)
             </Typography>
-            <TextField
-              placeholder="Search products..."
-              size="small"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "#a3aed0" }} />
-                  </InputAdornment>
-                ),
-                sx: {
-                  borderRadius: "14px",
-                  bgcolor: "#f8f9fc",
-                  width: { xs: "100%", sm: "280px" },
-                  fontWeight: 600,
-                  "& fieldset": { borderColor: "rgba(224,229,242,0.8)" },
-                },
-              }}
-            />
           </Stack>
 
           <TableContainer sx={{ borderRadius: "16px", border: "1px solid #e0e5f2", overflow: "hidden" }}>
@@ -119,14 +89,14 @@ function StoreItemSaleReport() {
                       <CircularProgress sx={{ color: "#E53935" }} />
                     </TableCell>
                   </TableRow>
-                ) : filteredRows.length === 0 ? (
+                ) : rowsToDisplay.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
                       <Typography variant="h6" color="#a3aed0" fontWeight="800">No data found</Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredRows.map((row, index) => (
+                  rowsToDisplay.map((row, index) => (
                     <TableRow key={row.id} hover sx={{ "&:last-child td, &:last-child th": { border: 0 }, transition: "0.2s", "&:hover": { bgcolor: alpha("#E53935", 0.03) } }}>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559", py: 2.5 }}>{index + 1}</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: "#1b2559", py: 2.5 }}>{row.productName}</TableCell>

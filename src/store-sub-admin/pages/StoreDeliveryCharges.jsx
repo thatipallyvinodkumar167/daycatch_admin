@@ -54,6 +54,7 @@ function StoreDeliveryCharges() {
   const [editingArea, setEditingArea] = useState(null);
   const [editChargeValue, setEditChargeValue] = useState("");
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [selectOpen, setSelectOpen] = useState(false);
 
   useEffect(() => {
     const fetchAreas = async () => {
@@ -107,9 +108,19 @@ function StoreDeliveryCharges() {
     [searchTerm, selectedAreas, tableData]
   );
 
+  const isAllSelected = areaOptions.length > 0 && selectedAreas.length === areaOptions.length;
+
   const handleAreaChange = (event) => {
     const { value } = event.target;
-    setSelectedAreas(typeof value === "string" ? value.split(",") : value);
+    
+    // Check if Select All was clicked
+    if (value[value.length - 1] === "all") {
+      setSelectedAreas(selectedAreas.length === areaOptions.length ? [] : areaOptions);
+    } else {
+      setSelectedAreas(typeof value === "string" ? value.split(",") : value);
+    }
+    // Auto-close on any interaction as requested
+    setSelectOpen(false);
   };
 
   const handleOpenEdit = (row) => {
@@ -199,10 +210,14 @@ function StoreDeliveryCharges() {
                   <Select
                     multiple
                     displayEmpty
+                    open={selectOpen}
+                    onOpen={() => setSelectOpen(true)}
+                    onClose={() => setSelectOpen(false)}
                     value={selectedAreas}
                     onChange={handleAreaChange}
                     renderValue={(selected) => {
                       if (selected.length === 0) return <em>All areas</em>;
+                      if (selected.length === areaOptions.length) return <strong>All areas selected</strong>;
                       return selected.join(", ");
                     }}
                     sx={{
@@ -211,6 +226,14 @@ function StoreDeliveryCharges() {
                       "& fieldset": { borderColor: "rgba(224,229,242,0.8)" },
                     }}
                   >
+                    <MenuItem value="all" sx={{ borderBottom: "1px solid #eef2f6", mb: 0.5, py: 1.5 }}>
+                      <Checkbox 
+                        checked={isAllSelected} 
+                        indeterminate={selectedAreas.length > 0 && selectedAreas.length < areaOptions.length}
+                        sx={{ color: "#E53935", "&.Mui-checked": { color: "#E53935" } }} 
+                      />
+                      <ListItemText primary="Select All" primaryTypographyProps={{ fontWeight: 900, color: "#1b2559" }} />
+                    </MenuItem>
                     {areaOptions.map((area) => (
                       <MenuItem key={area} value={area}>
                         <Checkbox checked={selectedAreas.indexOf(area) > -1} sx={{ color: "#E53935", "&.Mui-checked": { color: "#E53935" } }} />
@@ -414,4 +437,3 @@ function StoreDeliveryCharges() {
 }
 
 export default StoreDeliveryCharges;
-
