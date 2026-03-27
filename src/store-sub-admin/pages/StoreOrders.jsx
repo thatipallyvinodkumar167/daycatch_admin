@@ -12,38 +12,32 @@ import {
   TableRow,
   Avatar,
   IconButton,
-  alpha,
   CircularProgress,
   TextField,
-  InputAdornment,
   Chip,
   Tooltip,
+  Button,
+  Collapse,
+  LinearProgress,
+  alpha,
   Snackbar,
   Alert,
   Grid,
-  Button,
-  Collapse,
-  Divider,
-  LinearProgress,
-  AvatarGroup,
 } from "@mui/material";
 import {
-  Sync as SyncIcon,
   KeyboardArrowUp as KeyboardArrowUpIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
-  LocationOn as LocationOnIcon,
-  Store as StoreIcon,
   Refresh as RefreshIcon,
   ShoppingBasket as ShoppingBasketIcon,
   LocalShipping as LocalShippingIcon,
   DoneAll as DoneAllIcon,
-  TrendingUp as TrendingUpIcon,
   Print as PrintIcon,
-  FileDownload as FileDownloadIcon,
-  Search as SearchIcon,
   Article as InvoiceIcon,
   People as ReassignIcon,
   Visibility as VisibilityIcon,
+  Search as SearchIcon,
+  FileDownload as FileDownloadIcon,
+  TrendingUp as TrendingUpIcon,
 } from "@mui/icons-material";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { getAllOrders } from "../../api/ordersApi";
@@ -58,7 +52,6 @@ const StoreOrders = ({ viewType, title }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [orders, setOrders] = useState([]);
-  const [actionLoading, setActionLoading] = useState(null);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   
@@ -67,9 +60,7 @@ const StoreOrders = ({ viewType, title }) => {
   const [toDate, setToDate] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("all");
 
-  const navy = "#1b2559";
   const red = "#E53935";
-  const isMissedView = viewType === "missed";
 
   const fetchOrders = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -170,7 +161,6 @@ const StoreOrders = ({ viewType, title }) => {
   }, [fetchOrders, store?.id]);
 
   const handleUpdateStatus = async (order, newStatus) => {
-    setActionLoading(order.id);
     try {
         const sourceMap = { pending: "pending orders", confirmed: "ongoingorders", out_for_delivery: "out for orders" };
         const statusToColl = { Accepted: "ongoingorders", Cancelled: "cancelled orders", Delivered: "completed orders" };
@@ -192,8 +182,6 @@ const StoreOrders = ({ viewType, title }) => {
         setSnackbar({ open: true, message: `Order marked as ${newStatus}`, severity: "success" });
     } catch (e) {
         setSnackbar({ open: true, message: "Action failed", severity: "error" });
-    } finally {
-        setActionLoading(null);
     }
   };
 
@@ -470,7 +458,6 @@ const StoreOrders = ({ viewType, title }) => {
               ) : (
                 filteredOrders.map((row, index) => {
                   const isExpanded = expandedOrderId === row.id;
-                  const isUpdating = actionLoading === row.id;
                   const isFailed = row.status.toLowerCase().includes("cancel") || row.status.toLowerCase().includes("reject") || row.status.toLowerCase().includes("fail") || row.status.toLowerCase().includes("miss");
 
                   if (viewType === "today" || viewType === "next_day") {
