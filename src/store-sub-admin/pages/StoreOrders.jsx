@@ -45,6 +45,40 @@ import { genericApi } from "../../api/genericApi";
 import { formatStoreDate } from "../utils/storeWorkspace";
 import { buildOrderPayload, moveOrderBetweenCollections } from "../../utils/orderLifecycle";
 
+const normalizeStoreValue = (value) => String(value ?? "").trim().toLowerCase();
+
+const matchesStoreOrder = (order, store) => {
+  if (!store?.id && !store?.name) return true;
+
+  const targetStoreId = normalizeStoreValue(store?.id);
+  const targetStoreName = normalizeStoreValue(store?.name);
+  const candidates = [
+    order?.storeId,
+    order?.StoreId,
+    order?.["Store ID"],
+    order?.Store,
+    order?.store,
+    order?.storeName,
+    order?.["Store Name"],
+    order?.Details?.Store,
+    order?.Details?.store,
+    order?.["Select store"],
+  ];
+
+  return candidates.some((candidate) => {
+    const normalizedCandidate = normalizeStoreValue(candidate);
+    if (!normalizedCandidate) return false;
+
+    return (
+      (targetStoreId && normalizedCandidate === targetStoreId) ||
+      (targetStoreName &&
+        (normalizedCandidate === targetStoreName ||
+          normalizedCandidate.includes(targetStoreName) ||
+          targetStoreName.includes(normalizedCandidate)))
+    );
+  });
+};
+
 const StoreOrders = ({ viewType, title }) => {
   const { store } = useOutletContext();
   const navigate = useNavigate();
@@ -114,37 +148,30 @@ const StoreOrders = ({ viewType, title }) => {
       const normalizedList = Array.isArray(list) ? list : [];
       
       // Safety Filter: Ensure the sub-admin only sees their own branch data
-      const branchIsolatedList = normalizedList.filter(order => {
-          if (!store?.id) return true; // Super Admin fallback
-          const orderStoreId = order.storeId || order.StoreId || order["Store ID"] || "";
-          const orderStoreName = (order.storeName || order["Store Name"] || "").toLowerCase();
-          const targetStoreName = (store.name || "").toLowerCase();
-          
-          return orderStoreId === store.id || orderStoreName === targetStoreName;
-      });
+      const branchIsolatedList = normalizedList.filter((order) => matchesStoreOrder(order, store));
       
       setOrders(branchIsolatedList.map(order => ({
         id: order._id || order.id || "N/A",
         cartId: order["Cart ID"] || order.cartId || order._id?.substring(0, 8) || "N/A",
-        price: order["Cart price"] || order.amount || order.totalAmount || 0,
+        price: order["Cart price"] || order["Total Price"] || order.amount || order.totalAmount || 0,
         user: order.User || order.user || order.customer || "User",
         userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
         date: order["Delivery Date"] || order.deliveryDate || order.createdAt || "",
         timeSlot: order["Time Slot"] || order.timeSlot || order.Details?.["Time Slot"] || order.Details?.timeSlot || "N/A",
         address: order.Address || order.address || order.Details?.address || order.Details?.Address || "N/A",
         status: order.Status || order.status || "Pending",
-        reason: order["Cancelling Reason"] || order.cancelReason || order.Details?.["Cancelling Reason"] || "N/A",
-        items_count: (order.Products || order.products || order.Details?.Products || []).length,
-        items_preview: (order.Products || order.products || order.Details?.Products || []).map(p => ({
+        reason: order["Cancelling Reason"] || order.reason || order.cancelReason || order.Details?.["Cancelling Reason"] || "N/A",
+        items_count: (order.Products || order.products || order["Cart Products"] || order["cart product"] || order.Details?.Products || []).length,
+        items_preview: (order.Products || order.products || order["Cart Products"] || order["cart product"] || order.Details?.Products || []).map(p => ({
             name: p.product_name || p.name || "Item",
             img: p.image || p.img || ""
         })),
-        cartProducts: (order.Products || order.products || order.Details?.Products || []).map((p) => p.product_name || p.name || "Item"),
-        dboy: order["Boy Name"] || order.deliveryBoyName || order.Details?.["Boy Name"] || "Not Assigned",
-        storeName: order["Store Name"] || order.storeName || order.Details?.["Store Name"] || "Main Store",
+        cartProducts: (order.Products || order.products || order["Cart Products"] || order["cart product"] || order.Details?.Products || []).map((p) => p.product_name || p.name || p || "Item"),
+        dboy: order["Boy Name"] || order["Delivery Boy"] || order.Assign || order.deliveryBoyName || order.Details?.["Boy Name"] || "Not Assigned",
+        storeName: order["Store Name"] || order.storeName || order.Store || order.store || order.Details?.["Store Name"] || order.Details?.Store || "Main Store",
         orderStatus: order["Order Status"] || order.orderStatus || order.Details?.["Order Status"] || order.Status || order.status || "Missed",
         signature: order.Signature || order.signature || order.Details?.Signature || "N/A",
-        payment: order.paymentStatus || order.paymentMethod || "COD",
+        payment: order.paymentStatus || order.paymentMethod || order.payment || "COD",
         raw: order
       })));
     } catch (err) {
@@ -154,7 +181,7 @@ const StoreOrders = ({ viewType, title }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [store?.id, store?.name, viewType, fromDate, toDate, paymentFilter]);
+  }, [store, viewType, fromDate, toDate, paymentFilter]);
 
   useEffect(() => {
     if (store?.id) fetchOrders();
@@ -423,7 +450,8 @@ const StoreOrders = ({ viewType, title }) => {
                     <>
                         <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>CART PRICE</TableCell>
                         <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>USER</TableCell>
-                        <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>DELIVERY DATE</TableCell>                        <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>STATUS</TableCell>
+                        <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>DELIVERY DATE</TableCell>
+                        <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>STATUS</TableCell>
                         <TableCell align="right" sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", pr: 4 }}>DETAILS</TableCell>
                     </>
                 ) : viewType === "cancelled" ? (
@@ -446,7 +474,8 @@ const StoreOrders = ({ viewType, title }) => {
                     </>
                 )}
               </TableRow>
-            </TableHead>            <TableBody>
+            </TableHead>
+            <TableBody>
               {filteredOrders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={viewType === "completed" || viewType === "missed" || viewType === "day_wise" || viewType === "today" || viewType === "next_day" ? 11 : 7} align="center" sx={{ py: 10 }}>
