@@ -106,6 +106,7 @@ import SendNotificationUsers from "../pages/SendNotificationUsers";
 import ProfilePage from "../pages/Profile";
 import OrderDetails from "../pages/OrderDetails";
 import AddUser from "../pages/AddUser";
+import EditUser from "../pages/EditUser";
 import StoreDetails from "../../store-sub-admin/pages/StoreDetails.jsx";
 import StoreDeliveryCharges from "../../store-sub-admin/pages/StoreDeliveryCharges.jsx";
 import StoreItemRequirement from "../../store-sub-admin/pages/StoreItemRequirement.jsx";
@@ -365,6 +366,7 @@ const AppRoutes = () => {
         {/* users data */}
         <Route path="user-data" element={<UsersData />}/>
         <Route path="user-data/add" element={<AddUser />}/>
+        <Route path="user-data/edit/:id" element={<EditUser />}/>
         <Route path="wallet-history" element={<WalletHistory />}/>
 
         {/*Taxes  */}

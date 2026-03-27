@@ -89,7 +89,8 @@ function Sidebar({ open }) {
     return permissions[section] === true;
   };
 
-  const isChildActive = (paths) => paths.some(path => location.pathname === path);
+  const isChildActive = (paths) =>
+    paths.some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
 
   React.useEffect(() => {
     const path = location.pathname;
@@ -112,7 +113,9 @@ function Sidebar({ open }) {
       callback: ["/user-callback-request", "/store-callback-request", "/delivery-boy-callback-request"]
     };
 
-    const foundGroup = Object.keys(groups).find(key => groups[key].includes(path));
+    const foundGroup = Object.keys(groups).find((key) =>
+      groups[key].some((groupPath) => path === groupPath || path.startsWith(`${groupPath}/`))
+    );
     if (foundGroup) {
       setOpenMenu(foundGroup);
     }
@@ -128,7 +131,7 @@ function Sidebar({ open }) {
   };
 
   const subActiveMenu = (path) => {
-    const isActive = location.pathname === path;
+    const isActive = location.pathname === path || location.pathname.startsWith(`${path}/`);
     const primaryColor = theme.palette.primary.main;
     return getShellSubMenuItemSx(isActive, primaryColor);
   };
@@ -341,7 +344,7 @@ function Sidebar({ open }) {
             <Collapse in={openMenu === "users"} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
                 <ListItemButton sx={subActiveMenu("/user-data")} onClick={() => navigate("/user-data")}>
-                  <ListItemText primary="User Data" />
+                  <ListItemText primary="App Users" />
                 </ListItemButton>
                 <ListItemButton sx={subActiveMenu("/wallet-history")} onClick={() => navigate("/wallet-history")}>
                   <ListItemText primary="Wallet Recharge History" />

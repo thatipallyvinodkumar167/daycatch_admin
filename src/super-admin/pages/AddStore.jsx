@@ -3,7 +3,7 @@ import {
   Box, Typography, Paper, TextField, Button, Stack,
   Grid, Avatar, IconButton, Divider, MenuItem,
   Select, FormControl, Tooltip, OutlinedInput,
-  Snackbar, Alert, CircularProgress,
+  Snackbar, Alert, CircularProgress, Chip,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
@@ -16,7 +16,6 @@ import MapIcon from "@mui/icons-material/Map";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import PersonIcon from "@mui/icons-material/Person";
-import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -77,6 +76,7 @@ const AddStore = () => {
   const isEdit = !!id;
 
   const [cities, setCities] = useState([]);
+  const [areas, setAreas] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   
@@ -93,11 +93,52 @@ const AddStore = () => {
     startTime: "", endTime: "", slotInterval: "",
   });
 
+  const deliveryRangeKm = Math.max(0, Number(form.deliveryRange) || 0);
+  const locationSummary = [form.selectedCity, form.address].filter(Boolean).join(" | ");
+  const mapQuery = [form.address, form.selectedCity].filter(Boolean).join(", ");
+  const mapZoom =
+    deliveryRangeKm >= 20 ? 11 :
+    deliveryRangeKm >= 10 ? 12 :
+    deliveryRangeKm >= 5 ? 13 :
+    deliveryRangeKm >= 2 ? 14 : 15;
+  const mapEmbedSrc = mapQuery
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`
+    : "";
+  const radiusOverlaySize = Math.min(240, Math.max(84, 76 + deliveryRangeKm * 8));
+  const selectedCityKey = String(form.selectedCity || "").trim().toLowerCase();
+  const cityAreas = selectedCityKey
+    ? areas.filter((area) => String(area.cityName || "").trim().toLowerCase() === selectedCityKey)
+    : [];
+  const addressKey = String(form.address || "").trim().toLowerCase();
+  const anchorAreaIndex = cityAreas.findIndex((area) => addressKey.includes(String(area.name || "").trim().toLowerCase()));
+  const orderedCityAreas =
+    anchorAreaIndex > 0
+      ? [...cityAreas.slice(anchorAreaIndex), ...cityAreas.slice(0, anchorAreaIndex)]
+      : cityAreas;
+  const coverageAreaCount =
+    deliveryRangeKm > 0
+      ? Math.min(orderedCityAreas.length, Math.max(1, Math.round(deliveryRangeKm * 1.5)))
+      : 0;
+  const coveredAreas = orderedCityAreas.slice(0, coverageAreaCount);
+
   useEffect(() => {
     // Fetch Cities
     genericApi.getAll("cities").then(res => {
       const results = res.data?.results || res.data || [];
       setCities(results.map(c => c["City Name"] || c.name || c.Name || ""));
+    }).catch(() => {});
+
+    genericApi.getAll("area").then(res => {
+      const results = res.data?.results || res.data || [];
+      setAreas(
+        results
+          .map((area, index) => ({
+            id: area._id || area.id || `area-${index + 1}`,
+            name: area["Society Name"] || area.areaName || area.name || area.area || "",
+            cityName: area["City Name"] || area.cityName || area.city || "",
+          }))
+          .filter((area) => area.name)
+      );
     }).catch(() => {});
 
     // Fetch Store Data IF editing
@@ -294,13 +335,13 @@ const AddStore = () => {
               />
             </Grid>
             <Grid item xs={12} md={4}>
-              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>MOBILE NUMBER</Typography>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>STORE NUMBER</Typography>
               <TextField 
                 fullWidth 
-                placeholder="+91 XXXXX XXXXX" 
+                // placeholder="+91 XXXXX XXXXX" 
                 value={form.storeNumber} 
                 onChange={set("storeNumber")} 
-                InputProps={{ startAdornment: <PhoneIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
+                // InputProps={{ startAdornment: <PhoneIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
                 sx={fieldStyles} 
               />
             </Grid>
@@ -407,6 +448,7 @@ const AddStore = () => {
               <TextField 
                 fullWidth 
                 type="number" 
+                inputProps={{ min: 0, step: 0.5 }}
                 placeholder="Coverage radius" 
                 value={form.deliveryRange} 
                 onChange={set("deliveryRange")} 
@@ -414,7 +456,148 @@ const AddStore = () => {
                 sx={fieldStyles} 
               />
             </Grid>
-            <Grid item xs={12} md={8}>
+            <Grid item xs={12} md={4}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>DELIVERY COVERAGE MAP</Typography>
+              <Box
+                sx={{
+                  position: "relative",
+                  minHeight: 220,
+                  borderRadius: "18px",
+                  overflow: "hidden",
+                  border: "1px solid #e0e5f2",
+                  background: "#eef4ff",
+                }}
+              >
+                {mapEmbedSrc ? (
+                  <>
+                    <Box
+                      component="iframe"
+                      title="Store Coverage Map"
+                      src={mapEmbedSrc}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      sx={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        border: 0
+                      }}
+                    />
+
+                    {deliveryRangeKm > 0 ? (
+                      <>
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: radiusOverlaySize,
+                            height: radiusOverlaySize,
+                            borderRadius: "50%",
+                            border: "2px solid rgba(67, 24, 255, 0.52)",
+                            bgcolor: "rgba(67, 24, 255, 0.12)",
+                            boxShadow: "0 0 0 999px rgba(67, 24, 255, 0.02) inset",
+                            pointerEvents: "none",
+                            zIndex: 1
+                          }}
+                        />
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: Math.max(18, radiusOverlaySize * 0.18),
+                            height: Math.max(18, radiusOverlaySize * 0.18),
+                            borderRadius: "50%",
+                            bgcolor: "#4318ff",
+                            border: "4px solid rgba(255,255,255,0.9)",
+                            boxShadow: "0 8px 18px rgba(67, 24, 255, 0.28)",
+                            pointerEvents: "none",
+                            zIndex: 2
+                          }}
+                        />
+                      </>
+                    ) : null}
+                  </>
+                ) : (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      inset: 0,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 1.5,
+                      p: 3,
+                      background: "linear-gradient(180deg, #eef4ff 0%, #f9fbff 100%)",
+                    }}
+                  >
+                    <Avatar sx={{ width: 58, height: 58, bgcolor: "rgba(67, 24, 255, 0.12)", color: "#4318ff" }}>
+                      <MapIcon />
+                    </Avatar>
+                    <Typography variant="body2" fontWeight="800" color="#2b3674" textAlign="center">
+                      Enter the city and store address to load the live map preview.
+                    </Typography>
+                  </Box>
+                )}
+
+                <Box
+                  sx={{
+                    position: "absolute",
+                    left: 14,
+                    right: 14,
+                    bottom: 14,
+                    p: 1.5,
+                    borderRadius: "14px",
+                    bgcolor: "rgba(255, 255, 255, 0.92)",
+                    border: "1px solid rgba(224, 229, 242, 0.9)",
+                    backdropFilter: "blur(6px)"
+                  }}
+                >
+                  <Typography variant="caption" fontWeight="900" color="#4318ff" sx={{ display: "block", mb: 0.5 }}>
+                    {deliveryRangeKm > 0 ? `${deliveryRangeKm} KM DELIVERY RADIUS` : "LIVE MAP PREVIEW"}
+                  </Typography>
+                  <Typography variant="body2" fontWeight="700" color="#2b3674">
+                    {locationSummary || "Select a city and add the store address to visualize coverage."}
+                  </Typography>
+                  <Typography variant="caption" fontWeight="700" color="#7b89b0" sx={{ display: "block", mt: 0.5 }}>
+                    {coveredAreas.length
+                      ? `${coveredAreas.length} mapped area${coveredAreas.length > 1 ? "s" : ""} estimated for this location and range`
+                      : selectedCityKey
+                        ? "Enter a delivery range to estimate covered areas in this city."
+                        : "Choose a city to see available mapped areas."}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ mt: 1.5, display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {coveredAreas.length ? (
+                  coveredAreas.map((area) => (
+                    <Chip
+                      key={area.id}
+                      label={area.name}
+                      size="small"
+                      sx={{
+                        bgcolor: "rgba(67, 24, 255, 0.08)",
+                        color: "#4318ff",
+                        fontWeight: 800,
+                        borderRadius: "10px"
+                      }}
+                    />
+                  ))
+                ) : (
+                  <Typography variant="caption" color="#7b89b0" fontWeight="700">
+                    {selectedCityKey
+                      ? "No mapped coverage areas to show yet for this city and range."
+                      : "Select a city to preview mapped area coverage."}
+                  </Typography>
+                )}
+              </Box>
+            </Grid>
+            <Grid item xs={12}>
               <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>STORE PHYSICAL ADDRESS</Typography>
               <TextField 
                 fullWidth 
@@ -434,7 +617,7 @@ const AddStore = () => {
           {sectionLabel("Operational Settings", AccessTimeIcon)}
           <Grid container spacing={3}>
             <Grid item xs={12} md={4}>
-              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>ORDERS PER SLOT</Typography>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>ORDERS</Typography>
               <TextField 
                 fullWidth 
                 type="number" 
@@ -458,7 +641,7 @@ const AddStore = () => {
                     </Grid>
                     <Grid item xs={4}>
                         <TextField fullWidth type="number" placeholder="Min" value={form.slotInterval} onChange={set("slotInterval")} sx={fieldStyles} />
-                        <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>INTERVAL (MIN)</Typography>
+                        <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>Time Slot Interval(MIN)</Typography>
                     </Grid>
                 </Grid>
             </Grid>
