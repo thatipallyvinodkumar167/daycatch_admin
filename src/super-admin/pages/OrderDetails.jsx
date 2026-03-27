@@ -38,6 +38,157 @@ import {
 import { getOrder } from "../../api/ordersApi";
 import { genericApi } from "../../api/genericApi";
 
+const formatCurrency = (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
+const normalizeFlag = (value) => String(value || "").trim().toLowerCase();
+
+const getToneByLabel = (value) => {
+  const normalized = normalizeFlag(value);
+
+  if (
+    normalized.includes("failed") ||
+    normalized.includes("cancel") ||
+    normalized.includes("missed")
+  ) {
+    return {
+      color: "#E53935",
+      bg: alpha("#E53935", 0.1),
+      border: "1px solid rgba(229,57,53,0.2)",
+    };
+  }
+
+  if (normalized.includes("pending")) {
+    return {
+      color: "#ffb547",
+      bg: alpha("#ffb547", 0.12),
+      border: "1px solid rgba(255,181,71,0.2)",
+    };
+  }
+
+  return {
+    color: "#05cd99",
+    bg: alpha("#05cd99", 0.1),
+    border: "1px solid rgba(5,205,153,0.2)",
+  };
+};
+
+const inferPaymentStatus = (data = {}, collection = "") => {
+  const explicitStatus =
+    data.paymentStatus ||
+    data["Payment Status"] ||
+    data.payment_state ||
+    data.paymentState;
+
+  if (explicitStatus) {
+    return explicitStatus;
+  }
+
+  const statusCandidates = [
+    data.status,
+    data.Status,
+    data["Order Status"],
+    collection,
+  ]
+    .map(normalizeFlag)
+    .filter(Boolean);
+
+  if (statusCandidates.some((item) => item.includes("payment failed") || item === "failed" || item.includes("failed"))) {
+    return "Failed";
+  }
+
+  if (statusCandidates.some((item) => item.includes("pending"))) {
+    return "Pending";
+  }
+
+  return "Paid";
+};
+
+const normalizeOrderLineItems = (data = {}) => {
+  const sourceItems =
+    data.items ||
+    data.products ||
+    data.Products ||
+    data["Cart Products"] ||
+    data["cart product"] ||
+    data.Details?.Products ||
+    [];
+
+  return (Array.isArray(sourceItems) ? sourceItems : []).map((item) => {
+    if (typeof item === "string") {
+      return {
+        name: item,
+        qty: 1,
+        price: 0,
+        total: 0,
+        img: "",
+      };
+    }
+
+    const qty = Number(item.qty || item.quantity || 1);
+    const price = Number(item.price || item.amount || 0);
+
+    return {
+      name: item.product_name || item.name || "Product Name",
+      qty,
+      price,
+      total: Number(item.total || qty * price),
+      img: item.image || item.product_image || item.img || "",
+    };
+  });
+};
+
+const normalizeOrderDetails = (data, fallbackId, collection = "") => {
+  const productsPrice = parseFloat(
+    data.amount ||
+      data.totalPrice ||
+      data.cartPrice ||
+      data["Cart price"] ||
+      data["Total Price"] ||
+      0
+  );
+  const deliveryCharge = parseFloat(data.deliveryCharge || data["Delivery Charge"] || 0);
+  const products = normalizeOrderLineItems(data);
+
+  return {
+    cartId: data.cartId || data["Cart ID"] || data._id || fallbackId,
+    customerName: data.user || data.userName || data.User || data.customerName || data.customer || data.name || "N/A",
+    contact: data.phone || data.userPhone || data["User Phone"] || data.Details?.phone || data.mobile || "N/A",
+    email: data.email || data.userEmail || data.Details?.email || "N/A",
+    deliveryDate: (data.deliveryDate || data["Delivery Date"])
+      ? new Date(data.deliveryDate || data["Delivery Date"]).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "N/A",
+    timeSlot: data.timeSlot || data["Time Slot"] || data.Details?.["Time Slot"] || "N/A",
+    address: data.address || data.Address || data.Details?.address || data.shippingAddress || "N/A",
+    productsPrice,
+    deliveryCharge,
+    netTotal: productsPrice + deliveryCharge,
+    status: data.status || data.Status || data["Order Status"] || "Processing",
+    paymentMethod: data.paymentMethod || data.payment || data.PaymentMethod || "COD",
+    paymentStatus: inferPaymentStatus(data, collection),
+    store: {
+      name:
+        data.storeName ||
+        data["Store Name"] ||
+        data.Store ||
+        data.store?.name ||
+        data.Details?.Store ||
+        "Store",
+    },
+    deliveryBoy: {
+      name:
+        data.deliveryBoyName ||
+        data["Boy Name"] ||
+        data["Delivery Boy"] ||
+        data.Assign ||
+        "Not Assigned",
+    },
+    products,
+  };
+};
+
 const OrderDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -45,9 +196,8 @@ const OrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const queryParams = new URLSearchParams(location.search);
-  const collection = queryParams.get("collection") || "orders";
-
-  const isSubAdmin = location.pathname.includes("/stores/details/");
+  const collection = queryParams.get("collection") || location.state?.collection || "orders";
+  const prefetchedOrder = location.state?.order || null;
 
   const navy = "#1b2559";
   const red = "#E53935";
@@ -55,7 +205,7 @@ const OrderDetails = () => {
   const fetchOrderDetails = useCallback(async () => {
     try {
       setLoading(true);
-      let data = null;
+      let data = prefetchedOrder;
       
       try {
         if (collection === "orders") {
@@ -69,71 +219,19 @@ const OrderDetails = () => {
         console.warn(`API fetch failed for order ID ${id}:`, err);
       }
 
-      // If API fails or returns null, use mock fallback for demonstration if needed, 
-      // but here we expect data since the user saw it on dashboard.
       if (!data || Object.keys(data).length === 0) {
-        // Fallback for sub-admin testing
-        if (isSubAdmin) {
-           data = {
-              _id: id,
-              cartId: "CRT-" + id.substring(0,4).toUpperCase(),
-              amount: 1450,
-              customer: "Premium User",
-              phone: "+91 99887 76655",
-              email: "user@example.com",
-              deliveryDate: new Date().toISOString(),
-              timeSlot: "10:00 AM - 12:00 PM",
-              status: "Confirmed",
-              address: "Villa 502, Sky High Towers, Hyderabad, Telangana 500081",
-              paymentMethod: "UPI (Paid)",
-              items: [
-                { name: "Premium Basmati Rice", qty: 2, price: 500, total: 1000 },
-                { name: "Organic Cold Pressed Oil", qty: 1, price: 450, total: 450 }
-              ]
-           };
-        } else {
-           setOrder(null);
-           return;
-        }
+        setOrder(null);
+        return;
       }
 
-      const formatted = {
-        cartId: data.cartId || data["Cart ID"] || data._id || id,
-        customerName: data.user || data.userName || data.User || data.customerName || data.name || "N/A",
-        contact: data.phone || data.userPhone || data["User Phone"] || data.Details?.phone || data.mobile || "N/A",
-        email: data.email || data.userEmail || data.Details?.email || "N/A",
-        deliveryDate: data.deliveryDate ? new Date(data.deliveryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A",
-        timeSlot: data.timeSlot || "N/A",
-        address: data.address || data.Address || data.Details?.address || data.shippingAddress || "N/A",
-        productsPrice: parseFloat(data.amount || data.totalPrice || data.cartPrice || 0),
-        deliveryCharge: parseFloat(data.deliveryCharge || 0),
-        netTotal: parseFloat(data.amount || data.totalPrice || 0) + parseFloat(data.deliveryCharge || 0),
-        status: data.status || data["Status"] || "Processing",
-        paymentMethod: data.paymentMethod || data.PaymentMethod || "COD",
-        paymentStatus: data.paymentStatus || "Paid",
-        store: {
-            name: data.storeName || data.store?.name || "Premium Store",
-        },
-        deliveryBoy: {
-            name: data.deliveryBoyName || "Not Assigned",
-        },
-        products: (data.items || data.products || data["Cart Products"] || []).map(p => ({
-          name: p.product_name || p.name || "Product Name",
-          qty: p.qty || p.quantity || 1,
-          price: p.price || 0,
-          total: p.total || ((p.qty || 1) * (p.price || 0)),
-          img: p.image || p.product_image || ""
-        }))
-      };
-
-      setOrder(formatted);
+      setOrder(normalizeOrderDetails(data, id, collection));
     } catch (error) {
       console.error("Error processing order details:", error);
       setOrder(null);
     } finally {
       setLoading(false);
     }
-  }, [collection, id, isSubAdmin]);
+  }, [collection, id, prefetchedOrder]);
 
   useEffect(() => {
     fetchOrderDetails();
@@ -142,7 +240,7 @@ const OrderDetails = () => {
   if (loading) return (
     <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "80vh", gap: 3 }}>
       <CircularProgress size={60} thickness={4} sx={{ color: red }} />
-      <Typography variant="body1" fontWeight="700" color="#a3aed0">Fetching detailed audit...</Typography>
+      <Typography variant="body1" fontWeight="700" color="#a3aed0">Loading order details...</Typography>
     </Box>
   );
   
@@ -153,6 +251,9 @@ const OrderDetails = () => {
         <Button variant="contained" onClick={() => navigate(-1)} sx={{ bgcolor: navy, borderRadius: "14px", px: 4, py: 1.5 }}>Back to Fleet</Button>
     </Box>
   );
+
+  const orderTone = getToneByLabel(order.status);
+  const paymentTone = getToneByLabel(order.paymentStatus);
 
   return (
     <Box sx={{ p: { xs: 2, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
@@ -165,15 +266,15 @@ const OrderDetails = () => {
           </IconButton>
           <Box>
             <Typography variant="h3" fontWeight="900" color={navy} sx={{ letterSpacing: "-2px", mb: 0.5 }}>
-               Verification Audit
+               Order Details
             </Typography>
-            <Typography variant="body2" color="#a3aed0" fontWeight="700">Sequence Hash: {order.cartId}</Typography>
+            <Typography variant="body2" color="#a3aed0" fontWeight="700">Order ID: {order.cartId}</Typography>
           </Box>
         </Stack>
         <Stack direction="row" spacing={2}>
             <Tooltip title="Coming Soon">
                 <Button variant="outlined" startIcon={<HistoryIcon />} sx={{ borderRadius: "14px", border: "1px solid #e0e5f2", color: navy, bgcolor: "#fff", fontWeight: 800 }}>
-                   History log
+                   Order History
                 </Button>
             </Tooltip>
             <Button 
@@ -182,7 +283,7 @@ const OrderDetails = () => {
                 onClick={() => window.print()}
                 sx={{ bgcolor: red, borderRadius: "14px", fontWeight: 900, px: 4, boxShadow: "0 10px 20px rgba(229,57,53,0.2)", "&:hover": { bgcolor: "#d32f2f" } }}
             >
-                Print Ledger
+                Print Order
             </Button>
         </Stack>
       </Box>
@@ -194,10 +295,10 @@ const OrderDetails = () => {
             <Box sx={{ position: "absolute", top: -20, right: -20, width: 120, height: 120, bgcolor: alpha(red, 0.03), borderRadius: "50%" }} />
             
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
-                <Typography variant="h5" fontWeight="900" color={navy}>Order Intelligence</Typography>
+                <Typography variant="h5" fontWeight="900" color={navy}>Order Overview</Typography>
                 <Chip 
                   label={order.status.toUpperCase()} 
-                  sx={{ bgcolor: alpha("#05cd99", 0.08), color: "#05cd99", fontWeight: 900, borderRadius: "12px", border: "1px solid rgba(5,205,153,0.2)" }} 
+                  sx={{ bgcolor: orderTone.bg, color: orderTone.color, fontWeight: 900, borderRadius: "12px", border: orderTone.border }} 
                 />
             </Stack>
 
@@ -226,7 +327,7 @@ const OrderDetails = () => {
                 <Grid item xs={12} sm={4}>
                     <Box>
                         <Typography variant="caption" fontWeight="900" color="#a3aed0" sx={{ textTransform: "uppercase", letterSpacing: 1, mb: 2, display: "block" }}>
-                           Fulfillment Origin
+                           Store Details
                         </Typography>
                         <Stack spacing={1.5}>
                             <Stack direction="row" spacing={1.5} alignItems="center">
@@ -244,14 +345,14 @@ const OrderDetails = () => {
                 <Grid item xs={12} sm={4}>
                     <Box>
                         <Typography variant="caption" fontWeight="900" color="#a3aed0" sx={{ textTransform: "uppercase", letterSpacing: 1, mb: 2, display: "block" }}>
-                           Payment Node
+                           Payment Details
                         </Typography>
                         <Stack spacing={1.5}>
                             <Stack direction="row" spacing={1.5} alignItems="center">
-                                <Avatar sx={{ bgcolor: alpha("#05cd99", 0.05), color: "#05cd99" }}><VerifiedIcon fontSize="small" /></Avatar>
+                                <Avatar sx={{ bgcolor: paymentTone.bg, color: paymentTone.color }}><VerifiedIcon fontSize="small" /></Avatar>
                                 <Typography variant="subtitle1" fontWeight="800" color={navy}>{order.paymentMethod}</Typography>
                             </Stack>
-                            <Typography variant="body2" fontWeight="800" color="#05cd99" sx={{ pl: 1 }}>{order.paymentStatus}</Typography>
+                            <Typography variant="body2" fontWeight="800" color={paymentTone.color} sx={{ pl: 1 }}>{order.paymentStatus}</Typography>
                         </Stack>
                     </Box>
                 </Grid>
@@ -263,7 +364,7 @@ const OrderDetails = () => {
             <Box sx={{ p: 3.5, bgcolor: "#fafbfc", borderBottom: "1px solid #f1f1f1" }}>
                 <Stack direction="row" spacing={1.5} alignItems="center">
                     <LedgerIcon sx={{ color: navy }} />
-                    <Typography variant="h6" fontWeight="900" color={navy}>Itemized Ledger</Typography>
+                    <Typography variant="h6" fontWeight="900" color={navy}>Order Items</Typography>
                 </Stack>
             </Box>
             <TableContainer>
@@ -299,25 +400,115 @@ const OrderDetails = () => {
         <Grid item xs={12} lg={4}>
           <Stack spacing={4}>
             {/* Net Total Panel */}
-            <Paper sx={{ p: 4, borderRadius: "32px", bgcolor: navy, color: "#fff", boxShadow: "0 20px 50px rgba(27,37,89,0.2)", position: "relative", overflow: "hidden" }}>
+            <Paper sx={{ p: 2.5, borderRadius: "26px", bgcolor: navy, color: "#fff", boxShadow: "0 20px 50px rgba(27,37,89,0.2)", position: "relative", overflow: "hidden" }}>
                 <Box sx={{ position: "absolute", top: -30, right: -30, width: 140, height: 140, bgcolor: alpha("#fff", 0.05), borderRadius: "50%" }} />
-                <Typography variant="h6" fontWeight="900" sx={{ mb: 3 }}>Summary Balance</Typography>
-                <Stack spacing={2.5}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <Typography sx={{ opacity: 0.7, fontWeight: 700 }}>Gross Total</Typography>
-                        <Typography fontWeight="800">Rs. {Number(order.productsPrice).toLocaleString()}</Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <Typography sx={{ opacity: 0.7, fontWeight: 700 }}>Logistics Surcharge</Typography>
-                        <Typography fontWeight="800" color="#05cd99">+{order.deliveryCharge === 0 ? "FREE" : `Rs. ${order.deliveryCharge}`}</Typography>
-                    </Box>
-                    <Divider sx={{ bgcolor: "rgba(255,255,255,0.1)" }} />
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", pt: 1 }}>
+                <Stack spacing={1.75} sx={{ position: "relative", zIndex: 1 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                         <Box>
-                            <Typography variant="h5" fontWeight="900">Net Payable</Typography>
-                            <Typography variant="caption" sx={{ opacity: 0.5, fontWeight: 700 }}>(Inclusive of tax)</Typography>
+                            <Typography variant="caption" sx={{ opacity: 0.6, fontWeight: 900, letterSpacing: 1.2, display: "block", mb: 0.5 }}>
+                                ORDER SUMMARY
+                            </Typography>
+                            <Typography variant="subtitle1" fontWeight="900">Amount Breakdown</Typography>
                         </Box>
-                        <Typography variant="h3" fontWeight="900" color="#05cd99">Rs. {Number(order.netTotal).toLocaleString()}</Typography>
+                        <Chip
+                          label={order.paymentStatus || "Paid"}
+                          sx={{
+                            bgcolor: paymentTone.bg,
+                            color: paymentTone.color,
+                            fontWeight: 900,
+                            borderRadius: "12px",
+                            height: 28,
+                            border: paymentTone.border,
+                          }}
+                        />
+                    </Stack>
+
+                    <Stack spacing={1}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <Typography variant="body2" sx={{ opacity: 0.72, fontWeight: 700 }}>Items Total</Typography>
+                            <Typography variant="body2" fontWeight="900">{formatCurrency(order.productsPrice)}</Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <Typography variant="body2" sx={{ opacity: 0.72, fontWeight: 700 }}>Delivery Charge</Typography>
+                            {order.deliveryCharge === 0 ? (
+                              <Chip
+                                label="Free Delivery"
+                                size="small"
+                                sx={{
+                                  bgcolor: alpha("#05cd99", 0.12),
+                                  color: "#05cd99",
+                                  fontWeight: 900,
+                                  borderRadius: "10px",
+                                  height: 24,
+                                }}
+                              />
+                            ) : (
+                              <Typography variant="body2" fontWeight="900" color="#05cd99">{formatCurrency(order.deliveryCharge)}</Typography>
+                            )}
+                        </Box>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <Typography variant="body2" sx={{ opacity: 0.72, fontWeight: 700 }}>Payment Method</Typography>
+                            <Typography variant="body2" fontWeight="800">{order.paymentMethod}</Typography>
+                        </Box>
+                    </Stack>
+
+                    <Divider sx={{ bgcolor: "rgba(255,255,255,0.12)" }} />
+
+                    <Box
+                      sx={{
+                        p: 1.75,
+                        borderRadius: "18px",
+                        bgcolor: alpha("#fff", 0.06),
+                        border: "1px solid rgba(255,255,255,0.08)",
+                      }}
+                    >
+                        <Typography variant="caption" sx={{ opacity: 0.6, fontWeight: 900, letterSpacing: 1.1 }}>
+                            FINAL TOTAL
+                        </Typography>
+                        <Stack spacing={1.25} sx={{ mt: 0.75 }}>
+                            <Typography
+                              variant="h5"
+                              fontWeight="900"
+                              color="#05cd99"
+                              sx={{ whiteSpace: "nowrap", lineHeight: 1.1 }}
+                            >
+                              {formatCurrency(order.netTotal)}
+                            </Typography>
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              useFlexGap
+                              flexWrap="wrap"
+                              alignItems="center"
+                            >
+                                <Box
+                                  sx={{
+                                    px: 1.2,
+                                    py: 0.6,
+                                    borderRadius: "999px",
+                                    bgcolor: "rgba(255,255,255,0.06)",
+                                    border: "1px solid rgba(255,255,255,0.08)",
+                                  }}
+                                >
+                                  <Typography variant="caption" sx={{ opacity: 0.75, fontWeight: 800 }}>
+                                    Inclusive of tax
+                                  </Typography>
+                                </Box>
+                                <Box
+                                  sx={{
+                                    px: 1.2,
+                                    py: 0.6,
+                                    borderRadius: "999px",
+                                    bgcolor: "rgba(255,255,255,0.06)",
+                                    border: "1px solid rgba(255,255,255,0.08)",
+                                  }}
+                                >
+                                  <Typography variant="caption" sx={{ opacity: 0.9, fontWeight: 800 }}>
+                                    {order.deliveryCharge === 0 ? "Free delivery" : "Delivery included"}
+                                  </Typography>
+                                </Box>
+                            </Stack>
+                        </Stack>
                     </Box>
                 </Stack>
             </Paper>
@@ -329,7 +520,7 @@ const OrderDetails = () => {
                         <Box sx={{ p: 1.5, borderRadius: "14px", bgcolor: alpha(navy, 0.05), color: navy }}>
                             <LocationIcon />
                         </Box>
-                        <Typography variant="h6" fontWeight="900" color={navy}>Destination</Typography>
+                        <Typography variant="h6" fontWeight="900" color={navy}>Delivery Address</Typography>
                     </Stack>
                     <Typography variant="body2" color="#707eae" fontWeight="700" sx={{ lineHeight: 1.7 }}>
                         {order.address}
@@ -340,7 +531,7 @@ const OrderDetails = () => {
             {/* Agent Allocation */}
             <Paper sx={{ p: 4, borderRadius: "32px", border: "1px solid #e0e5f2", boxShadow: "0 10px 40px rgba(0,0,0,0.03)" }}>
                 <Typography variant="caption" fontWeight="900" color="#a3aed0" sx={{ textTransform: "uppercase", letterSpacing: 1, mb: 3, display: "block" }}>
-                    Fulfillment Agent
+                    Assigned Delivery Boy
                 </Typography>
                 <Stack direction="row" spacing={2} alignItems="center">
                     <Avatar sx={{ width: 56, height: 56, borderRadius: "16px", bgcolor: alpha(red, 0.05), color: red }}>

@@ -40,43 +40,106 @@ import {
   TrendingUp as TrendingUpIcon,
 } from "@mui/icons-material";
 import { useOutletContext, useNavigate } from "react-router-dom";
-import { getAllOrders } from "../../api/ordersApi";
-import { genericApi } from "../../api/genericApi";
+import { storeWorkspaceApi } from "../../api/storeWorkspaceApi";
 import { formatStoreDate } from "../utils/storeWorkspace";
-import { buildOrderPayload, moveOrderBetweenCollections } from "../../utils/orderLifecycle";
 
-const normalizeStoreValue = (value) => String(value ?? "").trim().toLowerCase();
+const getCollectionNameForView = (viewType) => {
+  if (viewType === "pending") return "pending orders";
+  if (viewType === "cancelled") return "cancelled orders";
+  if (viewType === "confirmed") return "ongoingorders";
+  if (viewType === "out_for_delivery") return "out for orders";
+  if (viewType === "payment_failed") return "payment failed orders";
+  if (viewType === "completed") return "completed orders";
+  if (viewType === "missed") return "missed orders";
+  if (viewType === "day_wise" || viewType === "today" || viewType === "next_day") return "day wise orders";
+  return "orders";
+};
 
-const matchesStoreOrder = (order, store) => {
-  if (!store?.id && !store?.name) return true;
+const getProductsSource = (order = {}) =>
+  order.Products ||
+  order.products ||
+  order["Cart Products"] ||
+  order["cart product"] ||
+  order.Details?.Products ||
+  [];
 
-  const targetStoreId = normalizeStoreValue(store?.id);
-  const targetStoreName = normalizeStoreValue(store?.name);
-  const candidates = [
-    order?.storeId,
-    order?.StoreId,
-    order?.["Store ID"],
-    order?.Store,
-    order?.store,
-    order?.storeName,
-    order?.["Store Name"],
-    order?.Details?.Store,
-    order?.Details?.store,
-    order?.["Select store"],
-  ];
+const mapOrderRecord = (order = {}) => {
+  const productsSource = getProductsSource(order);
 
-  return candidates.some((candidate) => {
-    const normalizedCandidate = normalizeStoreValue(candidate);
-    if (!normalizedCandidate) return false;
+  return {
+    id: order._id || order.id || "N/A",
+    cartId: order["Cart ID"] || order.cartId || order._id?.substring(0, 8) || "N/A",
+    price: order["Cart price"] || order["Total Price"] || order.amount || order.totalAmount || 0,
+    user: order.User || order.user || order.customer || "User",
+    userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+    date: order["Delivery Date"] || order.deliveryDate || order.createdAt || "",
+    timeSlot:
+      order["Time Slot"] ||
+      order.timeSlot ||
+      order.Details?.["Time Slot"] ||
+      order.Details?.timeSlot ||
+      "N/A",
+    address: order.Address || order.address || order.Details?.address || order.Details?.Address || "N/A",
+    status: order.Status || order.status || "Pending",
+    reason:
+      order["Cancelling Reason"] ||
+      order.reason ||
+      order.cancelReason ||
+      order.Details?.["Cancelling Reason"] ||
+      "N/A",
+    items_count: productsSource.length,
+    items_preview: productsSource.map((product) => ({
+      name: product.product_name || product.name || "Item",
+      img: product.image || product.img || "",
+      qty: product.qty || product.quantity || 1,
+    })),
+    cartProducts: productsSource.map((product) => product.product_name || product.name || product || "Item"),
+    dboy:
+      order["Boy Name"] ||
+      order["Delivery Boy"] ||
+      order.Assign ||
+      order.deliveryBoyName ||
+      order.Details?.["Boy Name"] ||
+      "Not Assigned",
+    storeName:
+      order["Store Name"] ||
+      order.storeName ||
+      order.Store ||
+      order.store ||
+      order.Details?.["Store Name"] ||
+      order.Details?.Store ||
+      "Main Store",
+    orderStatus:
+      order["Order Status"] ||
+      order.orderStatus ||
+      order.Details?.["Order Status"] ||
+      order.Status ||
+      order.status ||
+      "Missed",
+    signature: order.Signature || order.signature || order.Details?.Signature || "N/A",
+    payment:
+      order.paymentStatus ||
+      order.paymentMethod ||
+      order.payment ||
+      order["Payment Method"] ||
+      order["Payment Status"] ||
+      "COD",
+    raw: order,
+  };
+};
 
-    return (
-      (targetStoreId && normalizedCandidate === targetStoreId) ||
-      (targetStoreName &&
-        (normalizedCandidate === targetStoreName ||
-          normalizedCandidate.includes(targetStoreName) ||
-          targetStoreName.includes(normalizedCandidate)))
-    );
-  });
+const getEmptyStateCopy = (viewType) => {
+  if (viewType === "today") return "today";
+  if (viewType === "next_day") return "the next day";
+  if (viewType === "day_wise") return "the selected period";
+  if (viewType === "completed") return "completed orders";
+  if (viewType === "cancelled") return "cancelled orders";
+  if (viewType === "payment_failed") return "payment failed orders";
+  if (viewType === "out_for_delivery") return "out for delivery orders";
+  if (viewType === "confirmed") return "ongoing orders";
+  if (viewType === "missed") return "missed orders";
+  if (viewType === "pending") return "pending orders";
+  return "this order view";
 };
 
 const StoreOrders = ({ viewType, title }) => {
@@ -95,85 +158,25 @@ const StoreOrders = ({ viewType, title }) => {
   const [paymentFilter, setPaymentFilter] = useState("all");
 
   const red = "#E53935";
+  const detailCollection = getCollectionNameForView(viewType);
 
   const fetchOrders = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
     try {
-      const params = { storeId: store?.id };
-      
+      const params = { view: viewType };
+
       if (viewType === "day_wise") {
           if (fromDate) params.fromDate = fromDate;
           if (toDate) params.toDate = toDate;
           if (paymentFilter !== "all") params.paymentMethod = paymentFilter;
       }
-      
-      const statusMap = {
-        confirmed: "Accepted",
-        out_for_delivery: "Out For Delivery",
-        payment_failed: "Payment Failed",
-        completed: "Delivered",
-        missed: "Missed"
-      };
-      
-      // Specialized collections already imply a status, avoid over-filtering
-      const specializedCollections = ["pending", "cancelled", "confirmed", "out_for_delivery", "payment_failed", "completed", "missed"];
-      if (viewType && !specializedCollections.includes(viewType) && viewType !== "all" && viewType !== "day_wise" && !["today", "next_day"].includes(viewType)) {
-          params.status = statusMap[viewType] || viewType;
-      }
-
-      // API selection based on viewType
-      let collectionName = "orders";
-      if (viewType === "pending") collectionName = "pending orders";
-      else if (viewType === "cancelled") collectionName = "cancelled orders";
-      else if (viewType === "confirmed") collectionName = "ongoingorders";
-      else if (viewType === "out_for_delivery") collectionName = "out for orders";
-      else if (viewType === "payment_failed") collectionName = "payment failed orders";
-      else if (viewType === "completed") collectionName = "completed orders";
-      else if (viewType === "missed") collectionName = "missed orders";
-      else if (viewType === "day_wise") collectionName = "day wise orders";
-      else if (viewType === "today") collectionName = "day wise orders";
-      else if (viewType === "next_day") collectionName = "day wise orders";
-
-      let list = [];
-      try {
-          const response = await genericApi.getAll(collectionName, params);
-          list = response?.data?.results || response?.data || [];
-      } catch (e) {
-          const response = await getAllOrders(params);
-          list = response?.data?.results || response?.data || [];
-      }
-      
+      const response = await storeWorkspaceApi.getOrders(store?.id, params);
+      const list = response?.data?.data || response?.data?.results || response?.data || [];
       const normalizedList = Array.isArray(list) ? list : [];
-      
-      // Safety Filter: Ensure the sub-admin only sees their own branch data
-      const branchIsolatedList = normalizedList.filter((order) => matchesStoreOrder(order, store));
-      
-      setOrders(branchIsolatedList.map(order => ({
-        id: order._id || order.id || "N/A",
-        cartId: order["Cart ID"] || order.cartId || order._id?.substring(0, 8) || "N/A",
-        price: order["Cart price"] || order["Total Price"] || order.amount || order.totalAmount || 0,
-        user: order.User || order.user || order.customer || "User",
-        userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
-        date: order["Delivery Date"] || order.deliveryDate || order.createdAt || "",
-        timeSlot: order["Time Slot"] || order.timeSlot || order.Details?.["Time Slot"] || order.Details?.timeSlot || "N/A",
-        address: order.Address || order.address || order.Details?.address || order.Details?.Address || "N/A",
-        status: order.Status || order.status || "Pending",
-        reason: order["Cancelling Reason"] || order.reason || order.cancelReason || order.Details?.["Cancelling Reason"] || "N/A",
-        items_count: (order.Products || order.products || order["Cart Products"] || order["cart product"] || order.Details?.Products || []).length,
-        items_preview: (order.Products || order.products || order["Cart Products"] || order["cart product"] || order.Details?.Products || []).map(p => ({
-            name: p.product_name || p.name || "Item",
-            img: p.image || p.img || ""
-        })),
-        cartProducts: (order.Products || order.products || order["Cart Products"] || order["cart product"] || order.Details?.Products || []).map((p) => p.product_name || p.name || p || "Item"),
-        dboy: order["Boy Name"] || order["Delivery Boy"] || order.Assign || order.deliveryBoyName || order.Details?.["Boy Name"] || "Not Assigned",
-        storeName: order["Store Name"] || order.storeName || order.Store || order.store || order.Details?.["Store Name"] || order.Details?.Store || "Main Store",
-        orderStatus: order["Order Status"] || order.orderStatus || order.Details?.["Order Status"] || order.Status || order.status || "Missed",
-        signature: order.Signature || order.signature || order.Details?.Signature || "N/A",
-        payment: order.paymentStatus || order.paymentMethod || order.payment || "COD",
-        raw: order
-      })));
+
+      setOrders(normalizedList.map(mapOrderRecord));
     } catch (err) {
       console.error("Orders Sync Error:", err);
       setOrders([]);
@@ -187,30 +190,30 @@ const StoreOrders = ({ viewType, title }) => {
     if (store?.id) fetchOrders();
   }, [fetchOrders, store?.id]);
 
-  const handleUpdateStatus = async (order, newStatus) => {
+  const handleUpdateStatus = useCallback(async (order, newStatus) => {
     try {
-        const sourceMap = { pending: "pending orders", confirmed: "ongoingorders", out_for_delivery: "out for orders" };
-        const statusToColl = { Accepted: "ongoingorders", Cancelled: "cancelled orders", Delivered: "completed orders" };
-        
-        const payload = buildOrderPayload(order.raw, {
-            Status: newStatus,
-            status: newStatus,
-            "Cancelling Reason": newStatus === "Cancelled" ? "Cancelled by Store Manager" : undefined
+        await storeWorkspaceApi.updateOrderStatus(store?.id, order.id, {
+            view: viewType,
+            nextStatus: newStatus,
+            cancellationReason: newStatus === "Cancelled" ? "Cancelled by Store Manager" : undefined
         });
 
-        await moveOrderBetweenCollections({
-            sourceCollection: sourceMap[viewType] || "orders",
-            targetCollection: statusToColl[newStatus] || "orders",
-            order: { id: order.id },
-            payload
-        });
-
-        setOrders(prev => prev.filter(o => o.id !== order.id));
+        await fetchOrders(true);
         setSnackbar({ open: true, message: `Order marked as ${newStatus}`, severity: "success" });
     } catch (e) {
         setSnackbar({ open: true, message: "Action failed", severity: "error" });
     }
-  };
+  }, [fetchOrders, store?.id, viewType]);
+
+  const handleOpenOrderDetails = useCallback((order) => {
+    navigate(`../details/${order.id}?collection=${encodeURIComponent(detailCollection)}`, {
+      relative: "path",
+      state: {
+        order: order.raw,
+        collection: detailCollection,
+      },
+    });
+  }, [detailCollection, navigate]);
 
   const filteredOrders = useMemo(() => orders.filter(o => 
     o.cartId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -480,7 +483,7 @@ const StoreOrders = ({ viewType, title }) => {
                 <TableRow>
                   <TableCell colSpan={viewType === "completed" || viewType === "missed" || viewType === "day_wise" || viewType === "today" || viewType === "next_day" ? 11 : 7} align="center" sx={{ py: 10 }}>
                     <Typography variant="body1" color="#a3aed0" fontWeight="600">
-                      No order records found for {viewType === "today" ? "today" : "the next day"}
+                      No order records found for {getEmptyStateCopy(viewType)}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -521,7 +524,7 @@ const StoreOrders = ({ viewType, title }) => {
                                 </IconButton>
                            </TableCell>
                            <TableCell align="right" sx={{ pr: 4 }}>
-                                <IconButton size="small" sx={{ color: "#1b2559", borderRadius: "8px" }}>
+                                <IconButton size="small" onClick={() => handleOpenOrderDetails(row)} sx={{ color: "#1b2559", borderRadius: "8px" }}>
                                     <InvoiceIcon sx={{ fontSize: 20 }} />
                                 </IconButton>
                            </TableCell>
@@ -581,7 +584,7 @@ const StoreOrders = ({ viewType, title }) => {
                                 <Chip label="FAILED" size="small" sx={{ fontWeight: 900, bgcolor: alpha(red, 0.1), color: red, borderRadius: "8px", fontSize: "9px" }} />
                            </TableCell>
                            <TableCell align="right" sx={{ pr: 4 }}>
-                                <IconButton size="small" onClick={() => navigate(`../details/${row.id}`, { relative: "path" })} sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.05), "&:hover": { bgcolor: alpha("#4318ff", 0.1) } }}>
+                                <IconButton size="small" onClick={() => handleOpenOrderDetails(row)} sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.05), "&:hover": { bgcolor: alpha("#4318ff", 0.1) } }}>
                                     <VisibilityIcon sx={{ fontSize: 18 }} />
                                 </IconButton>
                            </TableCell>
@@ -604,7 +607,7 @@ const StoreOrders = ({ viewType, title }) => {
                                 <Chip label="ON THE WAY" size="small" sx={{ fontWeight: 900, bgcolor: alpha("#4318ff", 0.1), color: "#4318ff", borderRadius: "8px", fontSize: "9px" }} />
                            </TableCell>
                            <TableCell align="right" sx={{ pr: 4 }}>
-                                <IconButton size="small" onClick={() => navigate(`../details/${row.id}`, { relative: "path" })} sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.05), "&:hover": { bgcolor: alpha("#4318ff", 0.1) } }}>
+                                <IconButton size="small" onClick={() => handleOpenOrderDetails(row)} sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.05), "&:hover": { bgcolor: alpha("#4318ff", 0.1) } }}>
                                     <VisibilityIcon sx={{ fontSize: 18 }} />
                                 </IconButton>
                            </TableCell>
@@ -627,7 +630,7 @@ const StoreOrders = ({ viewType, title }) => {
                                 <Chip label="PROCESSING" size="small" sx={{ fontWeight: 900, bgcolor: alpha("#05cd99", 0.1), color: "#05cd99", borderRadius: "8px", fontSize: "9px" }} />
                            </TableCell>
                            <TableCell align="right" sx={{ pr: 4 }}>
-                                <IconButton size="small" onClick={() => navigate(`../details/${row.id}`, { relative: "path" })} sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.05), "&:hover": { bgcolor: alpha("#4318ff", 0.1) } }}>
+                                <IconButton size="small" onClick={() => handleOpenOrderDetails(row)} sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.05), "&:hover": { bgcolor: alpha("#4318ff", 0.1) } }}>
                                     <VisibilityIcon sx={{ fontSize: 18 }} />
                                 </IconButton>
                            </TableCell>
@@ -658,7 +661,7 @@ const StoreOrders = ({ viewType, title }) => {
                                     <Chip label="CANCELLED" size="small" sx={{ fontWeight: 900, bgcolor: alpha(red, 0.1), color: red, borderRadius: "8px", fontSize: "9px" }} />
                                 </TableCell>
                                 <TableCell align="right" sx={{ pr: 4 }}>
-                                    <IconButton size="small" onClick={() => navigate(`../details/${row.id}`, { relative: "path" })} sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.05), "&:hover": { bgcolor: alpha("#4318ff", 0.1) } }}>
+                                    <IconButton size="small" onClick={() => handleOpenOrderDetails(row)} sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.05), "&:hover": { bgcolor: alpha("#4318ff", 0.1) } }}>
                                         <VisibilityIcon sx={{ fontSize: 18 }} />
                                     </IconButton>
                                 </TableCell>
@@ -685,7 +688,7 @@ const StoreOrders = ({ viewType, title }) => {
                                                 </Typography>
                                             </Box>
                                             <Box sx={{ ml: "auto", alignSelf: "center" }}>
-                                                <Button variant="text" size="small" onClick={() => navigate(`../details/${row.id}`, { relative: "path" })} sx={{ color: red, fontWeight: "800", textTransform: "none" }}>
+                                                <Button variant="text" size="small" onClick={() => handleOpenOrderDetails(row)} sx={{ color: red, fontWeight: "800", textTransform: "none" }}>
                                                     Audit Lifecycle Log →
                                                 </Button>
                                             </Box>
@@ -764,9 +767,6 @@ const StoreOrders = ({ viewType, title }) => {
                   return (
                     <TableRow key={row.id} hover sx={{ "&:hover": { backgroundColor: "#f9fbff" }, borderBottom: "1px solid #eef2f6" }}>
                         <TableCell sx={{ color: "#1b2559", fontWeight: "800", pl: 4, py: 2 }}>
-                            <IconButton size="small" onClick={() => setExpandedOrderId(isExpanded ? null : row.id)} sx={{ color: "#4318ff", mr: 1 }}>
-                                {isExpanded ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
-                            </IconButton>
                             {String(index + 1).padStart(2, '0')}
                         </TableCell>
                         <TableCell sx={{ color: "#4318ff", fontWeight: "900", fontFamily: "monospace" }}>{row.cartId}</TableCell>
@@ -789,7 +789,7 @@ const StoreOrders = ({ viewType, title }) => {
                             />
                         </TableCell>
                         <TableCell align="right" sx={{ pr: 4 }}>
-                            <IconButton size="small" onClick={() => navigate(`../details/${row.id}`, { relative: "path" })} sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.05), "&:hover": { bgcolor: alpha("#4318ff", 0.1) } }}>
+                            <IconButton size="small" onClick={() => handleOpenOrderDetails(row)} sx={{ color: "#4318ff", bgcolor: alpha("#4318ff", 0.05), "&:hover": { bgcolor: alpha("#4318ff", 0.1) } }}>
                                 <VisibilityIcon sx={{ fontSize: 18 }} />
                             </IconButton>
                         </TableCell>

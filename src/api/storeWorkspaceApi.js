@@ -4,6 +4,15 @@ export const storeWorkspaceApi = {
   getDashboard: async (storeId) =>
     api.get(`/stores/${encodeURIComponent(storeId)}/workspace/dashboard`),
 
+  getOrders: async (storeId, params = {}) =>
+    api.get(`/stores/${encodeURIComponent(storeId)}/workspace/orders`, { params }),
+
+  updateOrderStatus: async (storeId, orderId, payload) =>
+    api.patch(
+      `/stores/${encodeURIComponent(storeId)}/workspace/orders/${encodeURIComponent(orderId)}/status`,
+      payload
+    ),
+
   getSettings: async (storeId) =>
     api.get(`/stores/${encodeURIComponent(storeId)}/workspace/settings`),
 
