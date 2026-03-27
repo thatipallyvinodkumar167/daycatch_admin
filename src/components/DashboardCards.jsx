@@ -403,22 +403,22 @@ const DashboardCards = () => {
 
         {/* Action Cloud */}
         <Grid item xs={12} lg={4}>
-          <Paper sx={{ p: 4, borderRadius: "24px", height: "100%", bgcolor: indigoPrimary, color: "#fff", position: "relative", overflow: "hidden", boxShadow: "0 20px 50px rgba(27, 37, 89, 0.2)" }}>
+          <Paper sx={{ p: { xs: 2.5, md: 3 }, borderRadius: "24px", height: "50%", bgcolor: indigoPrimary, color: "#fff", position: "relative", overflow: "hidden", boxShadow: "0 20px 50px rgba(27, 37, 89, 0.2)" }}>
             <Box sx={{ position: "absolute", top: -30, right: -30, width: 160, height: 160, background: alpha("#fff", 0.1), borderRadius: "50%" }} />
             <Box sx={{ position: "absolute", bottom: -50, left: -50, width: 200, height: 200, background: alpha("#fff", 0.05), borderRadius: "50%" }} />
             
-            <Typography variant="h5" sx={{ fontWeight: "900", mb: 1, position: "relative", letterSpacing: "-1px" }}>Workspace Hub</Typography>
-            <Typography variant="body2" sx={{ mb: 4, opacity: 0.8, fontWeight: "600" }}>Direct control node for system-wide configuration.</Typography>
+            <Typography variant="body2" sx={{ fontWeight: "900", mb: 0.75, position: "relative", letterSpacing: "-1px" }}>Workspace Hub</Typography>
+            <Typography variant="body2" sx={{ mb: { xs: 2, md: 2.5 }, opacity: 0.8, fontWeight: "600" }}>Direct control node for system-wide configuration.</Typography>
             
-            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: 180 }}>
-              <Avatar sx={{ width: 80, height: 80, bgcolor: "rgba(255, 255, 255, 0.15)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.2)" }}>
-                <SpeedIcon sx={{ fontSize: 40 }} />
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: { xs: 88, md: 118 } }}>
+              <Avatar sx={{ width: { xs: 60, md: 68 }, height: { xs: 60, md: 68 }, bgcolor: "rgba(255, 255, 255, 0.15)", borderRadius: "18px", border: "1px solid rgba(255,255,255,0.2)" }}>
+                <SpeedIcon sx={{ fontSize: { xs: 30, md: 34 } }} />
               </Avatar>
-              <Typography variant="h6" sx={{ mt: 3, fontWeight: "900" }}>System Core Active</Typography>
-              <Typography variant="caption" sx={{ opacity: 0.7, fontWeight: "700" }}>Operational Health: 100%</Typography>
+              <Typography variant="h6" sx={{ mt: { xs: 1.5, md: 2 }, fontWeight: "900", textAlign: "center", fontSize: { xs: "1rem", md: "1.15rem" } }}>System Core Active</Typography>
+              <Typography variant="caption" sx={{ mt: 0.25, opacity: 0.7, fontWeight: "700", textAlign: "center" }}>Operational Health: 100%</Typography>
             </Box>
             
-            <Stack spacing={2} sx={{ position: "relative", mt: "auto" }}>
+            <Stack spacing={1.25} sx={{ position: "relative", mt: { xs: 1.5, md: 2 } }}>
                 <Button 
                   fullWidth 
                   variant="contained" 
@@ -427,7 +427,7 @@ const DashboardCards = () => {
                     color: "#fff", 
                     fontWeight: "900",
                     borderRadius: "14px",
-                    py: 1.5,
+                    py: 1.1,
                     textTransform: "none",
                     boxShadow: "0 10px 15px rgba(229, 57, 53, 0.2)",
                     "&:hover": { bgcolor: "#d32f2f" }
@@ -444,7 +444,7 @@ const DashboardCards = () => {
                     color: "#fff", 
                     fontWeight: "900",
                     borderRadius: "14px",
-                    py: 1.5,
+                    py: 1.1,
                     textTransform: "none",
                     "&:hover": { borderColor: "#fff", border: "1px solid #fff" }
                   }}

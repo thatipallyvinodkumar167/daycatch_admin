@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Box, 
   Container, 
@@ -10,9 +10,10 @@ import {
   Divider, 
   InputAdornment, 
   IconButton,
-  Stack
+  Stack,
+  Alert
 } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff, Email, Lock } from '@mui/icons-material';
 import api from '../../api/api';
 import { genericApi } from '../../api/genericApi';
@@ -20,13 +21,49 @@ import logo from '../../assets/logo.png';
 import { getAssignedStorePath, setAuthSession } from "../../utils/authSession";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingSetup, setCheckingSetup] = useState(true);
+  const [setupMessage, setSetupMessage] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkRegisterStatus = async () => {
+      try {
+        const response = await api.get('/auth/register-status');
+        const canRegister = Boolean(response.data?.canRegister);
+
+        if (!isMounted) return;
+
+        if (canRegister) {
+          setSetupMessage(response.data?.message || 'No Super Admin found yet. Please register first.');
+          navigate('/register', { replace: true });
+          return;
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('Failed to verify auth setup:', error);
+      } finally {
+        if (isMounted) {
+          setCheckingSetup(false);
+        }
+      }
+    };
+
+    checkRegisterStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (checkingSetup) return;
     setLoading(true);
     try {
       const response = await api.post('/auth/login', {
@@ -118,6 +155,12 @@ const LoginPage = () => {
 
           <Box component="form" onSubmit={handleSubmit}>
             <Stack spacing={2.5}>
+              {setupMessage ? (
+                <Alert severity="info" sx={{ textAlign: 'left', borderRadius: '12px' }}>
+                  {setupMessage}
+                </Alert>
+              ) : null}
+
               <TextField
                 fullWidth
                 size="small"
@@ -206,7 +249,7 @@ const LoginPage = () => {
                 fullWidth
                 type="submit"
                 variant="contained"
-                disabled={loading}
+                disabled={loading || checkingSetup}
                 sx={{
                   py: 1.8,
                   fontWeight: 900,
@@ -221,7 +264,7 @@ const LoginPage = () => {
                   }
                 }}
               >
-                {loading ? 'Entering...' : 'Sign In Now'}
+                {checkingSetup ? 'Checking access...' : loading ? 'Entering...' : 'Sign In Now'}
               </Button>
             </Stack>
           </Box>
