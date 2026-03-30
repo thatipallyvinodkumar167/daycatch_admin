@@ -304,7 +304,7 @@ const SubCategories = () => {
                     />
                 </Box>
 
-                <TableContainer sx={{ maxHeight: "calc(100vh - 400px)", "&::-webkit-scrollbar": { display: "none" } }}>
+                <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
                     <Table stickyHeader>
                         <TableHead>
                             <TableRow>

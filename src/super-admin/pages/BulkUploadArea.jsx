@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  alpha,
   Box,
   Typography,
   Paper,
@@ -11,18 +12,18 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Divider,
   Snackbar,
   Alert,
   Fade,
 } from "@mui/material";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import LocationCityOutlinedIcon from "@mui/icons-material/LocationCityOutlined";
-import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
-import FilePresentIcon from "@mui/icons-material/FilePresent";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import {
+  CloudUpload as UploadIcon,
+  Download as DownloadIcon,
+  CheckCircle as CheckCircleIcon,
+  InfoOutlined as InfoIcon,
+  LocationCityOutlined as CityIcon,
+  GroupsOutlined as AreaIcon,
+} from "@mui/icons-material";
 import { genericApi } from "../../api/genericApi";
 import { getAllAreas, getAllCities } from "../../api/areaManagementApi";
 import {
@@ -30,6 +31,8 @@ import {
   normalizeAreaRecord,
   normalizeCityRecord,
 } from "../../utils/areaManagement";
+
+/* ─── CSV helpers (unchanged logic) ─── */
 
 const normalizeCsvHeader = (value = "") =>
   value
@@ -95,19 +98,15 @@ const parseCsvRows = (csvText) => {
     .map((row) => row.map((cell) => cell.trim()))
     .filter((row) => row.some((cell) => cell.length));
 
-  if (!nonEmptyRows.length) {
-    return [];
-  }
+  if (!nonEmptyRows.length) return [];
 
   const headers = nonEmptyRows[0].map(normalizeCsvHeader);
 
   return nonEmptyRows.slice(1).map((row, rowIndex) => {
     const document = { __rowNumber: rowIndex + 2 };
-
     headers.forEach((header, headerIndex) => {
       document[header] = row[headerIndex]?.trim() || "";
     });
-
     return document;
   });
 };
@@ -115,12 +114,8 @@ const parseCsvRows = (csvText) => {
 const getRowValue = (row, keys) => {
   for (const key of keys) {
     const value = row[normalizeCsvHeader(key)];
-
-    if (value) {
-      return value.trim();
-    }
+    if (value) return value.trim();
   }
-
   return "";
 };
 
@@ -134,44 +129,26 @@ const buildCityUploadPayloads = (rows, existingCities) => {
   let skippedCount = 0;
 
   existingCities.forEach((city) => {
-    existingCityIds.add(
-      normalizeLookupKey(city.raw?.["City ID"] || city.code || city.id || "")
-    );
+    existingCityIds.add(normalizeLookupKey(city.raw?.["City ID"] || city.code || city.id || ""));
     existingCityNames.add(normalizeLookupKey(city.name));
   });
 
   rows.forEach((row) => {
     const cityName = getRowValue(row, ["City Name", "City", "Name"]);
+    if (!cityName) { issues.push(`Row ${row.__rowNumber}: City Name is required.`); return; }
 
-    if (!cityName) {
-      issues.push(`Row ${row.__rowNumber}: City Name is required.`);
-      return;
-    }
-
-    const cityId =
-      getRowValue(row, ["City ID", "City Code", "Code", "ID"]) ||
-      buildGeneratedCityId(cityName);
-
+    const cityId = getRowValue(row, ["City ID", "City Code", "Code", "ID"]) || buildGeneratedCityId(cityName);
     const cityIdKey = normalizeLookupKey(cityId);
     const cityNameKey = normalizeLookupKey(cityName);
 
-    if (
-      existingCityIds.has(cityIdKey) ||
-      existingCityNames.has(cityNameKey) ||
-      seenCityIds.has(cityIdKey) ||
-      seenCityNames.has(cityNameKey)
-    ) {
+    if (existingCityIds.has(cityIdKey) || existingCityNames.has(cityNameKey) || seenCityIds.has(cityIdKey) || seenCityNames.has(cityNameKey)) {
       skippedCount += 1;
       return;
     }
 
     seenCityIds.add(cityIdKey);
     seenCityNames.add(cityNameKey);
-
-    payloads.push({
-      "City ID": cityId,
-      "City Name": cityName,
-    });
+    payloads.push({ "City ID": cityId, "City Name": cityName });
   });
 
   return { payloads, issues, skippedCount };
@@ -187,32 +164,17 @@ const buildAreaUploadPayloads = (rows, existingCities, existingAreas) => {
   let skippedCount = 0;
 
   existingCities.forEach((city) => {
-    cityById.set(
-      normalizeLookupKey(city.raw?.["City ID"] || city.code || city.id || ""),
-      city
-    );
+    cityById.set(normalizeLookupKey(city.raw?.["City ID"] || city.code || city.id || ""), city);
     cityByName.set(normalizeLookupKey(city.name), city);
   });
 
   existingAreas.forEach((area) => {
-    existingAreaKeys.add(
-      `${normalizeLookupKey(area.name)}::${normalizeLookupKey(area.cityName)}`
-    );
+    existingAreaKeys.add(`${normalizeLookupKey(area.name)}::${normalizeLookupKey(area.cityName)}`);
   });
 
   rows.forEach((row) => {
-    const areaName = getRowValue(row, [
-      "Society Name",
-      "Area Name",
-      "Area",
-      "Society",
-      "Name",
-    ]);
-
-    if (!areaName) {
-      issues.push(`Row ${row.__rowNumber}: Society Name is required.`);
-      return;
-    }
+    const areaName = getRowValue(row, ["Society Name", "Area Name", "Area", "Society", "Name"]);
+    if (!areaName) { issues.push(`Row ${row.__rowNumber}: Society Name is required.`); return; }
 
     const requestedCityId = getRowValue(row, ["City ID", "City Code", "Code"]);
     const requestedCityName = getRowValue(row, ["City Name", "City"]);
@@ -220,570 +182,297 @@ const buildAreaUploadPayloads = (rows, existingCities, existingAreas) => {
       (requestedCityId && cityById.get(normalizeLookupKey(requestedCityId))) ||
       (requestedCityName && cityByName.get(normalizeLookupKey(requestedCityName)));
 
-    if (!matchedCity) {
-      issues.push(
-        `Row ${row.__rowNumber}: No city matched "${requestedCityId || requestedCityName}".`
-      );
-      return;
-    }
+    if (!matchedCity) { issues.push(`Row ${row.__rowNumber}: No city matched "${requestedCityId || requestedCityName}".`); return; }
 
-    const duplicateKey = `${normalizeLookupKey(areaName)}::${normalizeLookupKey(
-      matchedCity.name
-    )}`;
-
-    if (existingAreaKeys.has(duplicateKey) || seenAreaKeys.has(duplicateKey)) {
-      skippedCount += 1;
-      return;
-    }
+    const duplicateKey = `${normalizeLookupKey(areaName)}::${normalizeLookupKey(matchedCity.name)}`;
+    if (existingAreaKeys.has(duplicateKey) || seenAreaKeys.has(duplicateKey)) { skippedCount += 1; return; }
 
     seenAreaKeys.add(duplicateKey);
-
-    payloads.push({
-      "Society Name": areaName,
-      "City Name": matchedCity.name,
-    });
+    payloads.push({ "Society Name": areaName, "City Name": matchedCity.name });
   });
 
   return { payloads, issues, skippedCount };
 };
 
 const formatImportSummary = (label, insertedCount, skippedCount) => {
-  if (!insertedCount) {
-    return `No new ${label} were imported. ${skippedCount} duplicate rows were skipped.`;
-  }
-
-  if (!skippedCount) {
-    return `${insertedCount} ${label} imported successfully.`;
-  }
-
+  if (!insertedCount) return `No new ${label} were imported. ${skippedCount} duplicate rows were skipped.`;
+  if (!skippedCount) return `${insertedCount} ${label} imported successfully.`;
   return `${insertedCount} ${label} imported successfully. ${skippedCount} duplicate rows were skipped.`;
 };
 
+/* ─── Component ─── */
+
 const BulkUploadArea = () => {
-  const [cityFile, setCityFile] = useState(null);
-  const [societyFile, setSocietyFile] = useState(null);
-  const [uploadingCity, setUploadingCity] = useState(false);
-  const [uploadingSociety, setUploadingSociety] = useState(false);
-  const [cityProgress, setCityProgress] = useState(0);
-  const [societyProgress, setSocietyProgress] = useState(0);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
+  const [activeTab, setActiveTab] = useState("Cities");
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handleCityFileChange = (event) => {
-    const selectedFile = event.target.files?.[0] || null;
-    setCityFile(selectedFile);
-    event.target.value = "";
-  };
+  const options = [
+    { id: "Cities", title: "City Ingestion", icon: <CityIcon />, subtitle: "Upload cities in batch via CSV" },
+    { id: "Areas", title: "Area / Society Sync", icon: <AreaIcon />, subtitle: "Bulk import societies linked to cities" },
+  ];
 
-  const handleSocietyFileChange = (event) => {
-    const selectedFile = event.target.files?.[0] || null;
-    setSocietyFile(selectedFile);
-    event.target.value = "";
-  };
+  /* ─── Workspace Section (mirrors StoreBulkUpdate) ─── */
+  const WorkspaceSection = ({ type }) => {
+    const [file, setFile] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [progress, setProgress] = useState(0);
 
-  const handleCityUpload = async () => {
-    if (!cityFile) {
-      return;
-    }
+    const handleFileChange = (e) => {
+      if (e.target.files[0]) setFile(e.target.files[0]);
+      e.target.value = "";
+    };
 
-    setUploadingCity(true);
-    setCityProgress(10);
+    const downloadTemplate = () => {
+      let headers = "City ID,City Name,Status";
+      if (type === "Areas") headers = "Society Name,City ID,City Name,Status";
 
-    try {
-      const csvRows = parseCsvRows(await cityFile.text());
+      const blob = new Blob([headers], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Daycatch_${type}_Template.csv`;
+      a.click();
+      showSnackbar(`${type} template downloaded.`, "success");
+    };
 
-      if (!csvRows.length) {
-        throw new Error("City CSV is empty or headers are invalid.");
+    const handleUpload = async () => {
+      if (!file) { showSnackbar("Please select a CSV file first.", "error"); return; }
+
+      setUploading(true);
+      setProgress(10);
+
+      try {
+        const csvRows = parseCsvRows(await file.text());
+        if (!csvRows.length) throw new Error("CSV is empty or headers are invalid.");
+
+        setProgress(35);
+
+        if (type === "Cities") {
+          const existingCitiesResponse = await getAllCities({ limit: 500 });
+          const existingCities = extractCollection(existingCitiesResponse, ["cities", "cityList"]).map((item, index) => normalizeCityRecord(item, index));
+
+          setProgress(60);
+          const { payloads, issues, skippedCount } = buildCityUploadPayloads(csvRows, existingCities);
+          if (issues.length) throw new Error(issues.slice(0, 4).join(" "));
+          if (!payloads.length) { showSnackbar(formatImportSummary("cities", 0, skippedCount), "success"); setUploading(false); return; }
+
+          setProgress(85);
+          await genericApi.bulkCreate("cities", payloads);
+          setProgress(100);
+          showSnackbar(formatImportSummary("cities", payloads.length, skippedCount), "success");
+        } else {
+          const [existingCitiesResponse, existingAreasResponse] = await Promise.all([
+            getAllCities({ limit: 500 }),
+            getAllAreas({ limit: 500 }),
+          ]);
+
+          const existingCities = extractCollection(existingCitiesResponse, ["cities", "cityList"]).map((item, index) => normalizeCityRecord(item, index));
+          const existingAreas = extractCollection(existingAreasResponse, ["areas", "areaList"]).map((item, index) => normalizeAreaRecord(item, index));
+
+          setProgress(60);
+          const { payloads, issues, skippedCount } = buildAreaUploadPayloads(csvRows, existingCities, existingAreas);
+          if (issues.length) throw new Error(issues.slice(0, 4).join(" "));
+          if (!payloads.length) { showSnackbar(formatImportSummary("areas", 0, skippedCount), "success"); setUploading(false); return; }
+
+          setProgress(85);
+          await genericApi.bulkCreate("area", payloads);
+          setProgress(100);
+          showSnackbar(formatImportSummary("areas", payloads.length, skippedCount), "success");
+        }
+
+        setFile(null);
+      } catch (error) {
+        console.error(`Error importing ${type} CSV:`, error);
+        showSnackbar(error.message || `Failed to import ${type.toLowerCase()}.`, "error");
+      } finally {
+        setUploading(false);
+        setTimeout(() => setProgress(0), 300);
       }
+    };
 
-      setCityProgress(35);
-      const existingCitiesResponse = await getAllCities({ limit: 500 });
-      const existingCities = extractCollection(existingCitiesResponse, [
-        "cities",
-        "cityList",
-      ]).map((item, index) => normalizeCityRecord(item, index));
+    const instructions = type === "Cities"
+      ? [
+          "CSV format with standard headers is required.",
+          "Include a stable City ID for every row.",
+          "Duplicate city names or IDs are skipped automatically.",
+          "Max threshold: 5,000 cities per ingestion cycle.",
+        ]
+      : [
+          "CSV format with standard headers is required.",
+          "Link areas using exact City ID or exact City Name.",
+          "Areas are matched against existing city records before import.",
+          "Max threshold: 5,000 areas per ingestion cycle.",
+        ];
 
-      setCityProgress(60);
-      const { payloads, issues, skippedCount } = buildCityUploadPayloads(
-        csvRows,
-        existingCities
-      );
+    return (
+      <Paper sx={{ p: 5, borderRadius: "32px", border: "1px solid #e0e5f2", boxShadow: "0 20px 60px rgba(0,0,0,0.05)", bgcolor: "#fff" }}>
+        <Grid container spacing={6}>
+          <Grid item xs={12} md={5}>
+            <Box sx={{ bgcolor: "#fafbfc", p: 4, borderRadius: "24px", border: "1px solid #f0f4f8", height: "100%" }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
+                <Box sx={{ p: 1.5, borderRadius: "12px", bgcolor: alpha("#E53935", 0.1) }}>
+                  <InfoIcon sx={{ color: "#E53935", fontSize: 24 }} />
+                </Box>
+                <Typography variant="h5" fontWeight="900" color="#1b2559">Sync Protocol</Typography>
+              </Stack>
+              <List spacing={1}>
+                {instructions.map((text, i) => (
+                  <ListItem key={i} sx={{ px: 0, py: 1 }}>
+                    <ListItemIcon sx={{ minWidth: "32px" }}>
+                      <CheckCircleIcon sx={{ color: "#05cd99", fontSize: 18 }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={<Typography variant="body2" fontWeight="700" color="#707eae">{text}</Typography>}
+                    />
+                  </ListItem>
+                ))}
+              </List>
 
-      if (issues.length) {
-        throw new Error(issues.slice(0, 4).join(" "));
-      }
+              <Button
+                variant="text"
+                startIcon={<DownloadIcon />}
+                onClick={downloadTemplate}
+                sx={{ mt: 3, color: "#E53935", fontWeight: 900, textTransform: "none", fontSize: "15px" }}
+              >
+                Download {type} Template
+              </Button>
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={7}>
+            <Stack spacing={4}>
+              <Box>
+                <Typography variant="caption" fontWeight="900" color="#a3aed0" sx={{ mb: 1.5, display: "block", textTransform: "uppercase", letterSpacing: "1px" }}>Data Source (CSV)</Typography>
+                <Box
+                  sx={{
+                    border: "3px dashed #e0e5f2",
+                    borderRadius: "24px",
+                    p: 6,
+                    textAlign: "center",
+                    cursor: "pointer",
+                    transition: "0.2s",
+                    bgcolor: file ? alpha("#E53935", 0.02) : "transparent",
+                    "&:hover": { borderColor: "#E53935", bgcolor: alpha("#E53935", 0.04) }
+                  }}
+                  onClick={() => document.getElementById(`file-${type}`).click()}
+                >
+                  <UploadIcon sx={{ color: file ? "#E53935" : "#d1d9e2", fontSize: 56, mb: 2 }} />
+                  <Typography variant="h5" fontWeight="900" color="#1b2559">
+                    {file ? file.name : "Select or Drop CSV File"}
+                  </Typography>
+                  <Typography variant="body2" color="#a3aed0" fontWeight="700" sx={{ mt: 1 }}>
+                    Only .csv formats are permitted for high-speed ingestion.
+                  </Typography>
+                  <input type="file" id={`file-${type}`} hidden accept=".csv" onChange={handleFileChange} />
+                </Box>
+              </Box>
 
-      if (!payloads.length) {
-        showSnackbar(formatImportSummary("cities", 0, skippedCount), "success");
-        return;
-      }
+              {uploading && (
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 1.5 }}>
+                    <Typography variant="caption" fontWeight="900" color="#1b2559">Verification Progress</Typography>
+                    <Typography variant="caption" fontWeight="900" color="#E53935">{progress}%</Typography>
+                  </Stack>
+                  <LinearProgress variant="determinate" value={progress} sx={{ height: 16, borderRadius: 8, bgcolor: "#f4f7fe", "& .MuiLinearProgress-bar": { bgcolor: "#E53935" } }} />
+                </Box>
+              )}
 
-      setCityProgress(85);
-      await genericApi.bulkCreate("cities", payloads);
-      setCityProgress(100);
-      showSnackbar(
-        formatImportSummary("cities", payloads.length, skippedCount),
-        "success"
-      );
-      setCityFile(null);
-    } catch (error) {
-      console.error("Error importing city CSV:", error);
-      showSnackbar(error.message || "Failed to import cities.", "error");
-    } finally {
-      setUploadingCity(false);
-      setTimeout(() => setCityProgress(0), 300);
-    }
-  };
-
-  const handleSocietyUpload = async () => {
-    if (!societyFile) {
-      return;
-    }
-
-    setUploadingSociety(true);
-    setSocietyProgress(10);
-
-    try {
-      const csvRows = parseCsvRows(await societyFile.text());
-
-      if (!csvRows.length) {
-        throw new Error("Area CSV is empty or headers are invalid.");
-      }
-
-      setSocietyProgress(30);
-      const [existingCitiesResponse, existingAreasResponse] = await Promise.all([
-        getAllCities({ limit: 500 }),
-        getAllAreas({ limit: 500 }),
-      ]);
-
-      const existingCities = extractCollection(existingCitiesResponse, [
-        "cities",
-        "cityList",
-      ]).map((item, index) => normalizeCityRecord(item, index));
-      const existingAreas = extractCollection(existingAreasResponse, [
-        "areas",
-        "areaList",
-      ]).map((item, index) => normalizeAreaRecord(item, index));
-
-      setSocietyProgress(60);
-      const { payloads, issues, skippedCount } = buildAreaUploadPayloads(
-        csvRows,
-        existingCities,
-        existingAreas
-      );
-
-      if (issues.length) {
-        throw new Error(issues.slice(0, 4).join(" "));
-      }
-
-      if (!payloads.length) {
-        showSnackbar(formatImportSummary("areas", 0, skippedCount), "success");
-        return;
-      }
-
-      setSocietyProgress(85);
-      await genericApi.bulkCreate("area", payloads);
-      setSocietyProgress(100);
-      showSnackbar(
-        formatImportSummary("areas", payloads.length, skippedCount),
-        "success"
-      );
-      setSocietyFile(null);
-    } catch (error) {
-      console.error("Error importing area CSV:", error);
-      showSnackbar(error.message || "Failed to import areas.", "error");
-    } finally {
-      setUploadingSociety(false);
-      setTimeout(() => setSocietyProgress(0), 300);
-    }
-  };
-
-  const downloadCityTemplate = () => {
-    const headers = "City ID,City Name,Status";
-    const blob = new Blob([headers], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "Daycatch_Cities_Template.csv";
-    anchor.click();
-    showSnackbar("City template downloaded successfully.", "success");
-  };
-
-  const downloadSocietyTemplate = () => {
-    const headers = "Society Name,City ID,City Name,Status";
-    const blob = new Blob([headers], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "Daycatch_Areas_Template.csv";
-    anchor.click();
-    showSnackbar("Area template downloaded successfully.", "success");
-  };
-
-  const commonCardStyles = {
-    p: 4,
-    borderRadius: "28px",
-    background: "#fff",
-    border: "1px solid #e0e5f2",
-    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.04)",
-    transition: "all 0.3s ease",
-    position: "relative",
-    overflow: "hidden",
-  };
-
-  const uploadBoxStyles = {
-    border: "2px dashed #e0e5f2",
-    borderRadius: "20px",
-    p: 6,
-    backgroundColor: "#f4f7fe",
-    cursor: "pointer",
-    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    "&:hover": {
-      borderColor: "#4318ff",
-      backgroundColor: "#eff2ff",
-      "& .upload-icon": {
-        transform: "translateY(-5px)",
-        color: "#4318ff",
-      },
-    },
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-  };
-
-  const primaryBtnStyles = {
-    backgroundColor: "#4318ff",
-    color: "white",
-    borderRadius: "16px",
-    px: 4,
-    py: 2,
-    textTransform: "none",
-    fontWeight: "800",
-    fontSize: "1rem",
-    boxShadow: "0 10px 20px rgba(67, 24, 255, 0.15)",
-    transition: "all 0.3s ease",
-    "&:hover": {
-      backgroundColor: "#3311cc",
-      boxShadow: "0 12px 25px rgba(67, 24, 255, 0.25)",
-    },
-    "&:disabled": {
-      backgroundColor: "#f4f7fe",
-      color: "#a3aed0",
-    },
-  };
-
-  const secondaryBtnStyles = {
-    borderRadius: "14px",
-    px: 3,
-    py: 1.5,
-    textTransform: "none",
-    fontWeight: "800",
-    fontSize: "0.9rem",
-    color: "#4318ff",
-    backgroundColor: "#f4f7fe",
-    transition: "all 0.3s ease",
-    "&:hover": {
-      backgroundColor: "#e0e7ff",
-    },
-  };
-
-  const InstructionList = ({ extraInfo }) => (
-    <List spacing={1} sx={{ mt: 2 }}>
-      {[
-        "Use standard CSV files.",
-        "First row must contain headers.",
-        "Include all required fields.",
-        "Duplicate rows are skipped automatically.",
-        ...(extraInfo || []),
-      ].map((text, idx) => (
-        <ListItem key={idx} sx={{ px: 0, py: 0.8 }}>
-          <ListItemIcon sx={{ minWidth: 32 }}>
-            <CheckCircleIcon sx={{ fontSize: 20, color: "#24d164" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary={text}
-            primaryTypographyProps={{
-              fontSize: "0.9rem",
-              color: "#1b2559",
-              fontWeight: "600",
-            }}
-          />
-        </ListItem>
-      ))}
-    </List>
-  );
-
-  const snackbarColors = {
-    success: "#00d26a",
-    warning: "#ffb800",
-    info: "#2d60ff",
-    error: "#ff4d49",
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={handleUpload}
+                disabled={!file || uploading}
+                sx={{ py: 2.2, borderRadius: "20px", bgcolor: "#E53935", fontWeight: 900, fontSize: "17px", boxShadow: "0 10px 30px rgba(229, 57, 53, 0.22)", "&:hover": { bgcolor: "#d32f2f" } }}
+              >
+                {uploading ? "Executing Batch Sync..." : `Finalize ${type} Import`}
+              </Button>
+            </Stack>
+          </Grid>
+        </Grid>
+      </Paper>
+    );
   };
 
   return (
-    <Box sx={{ p: 4, minHeight: "100vh", backgroundColor: "#f4f7fe" }}>
-      <Box sx={{ mb: 6 }}>
-        <Typography variant="h4" fontWeight="800" color="#2b3674" sx={{ letterSpacing: "-1px" }}>
-          Bulk Area Upload
-        </Typography>
-        <Typography variant="body2" color="#a3aed0" fontWeight="600">
-          Upload CSV files to add multiple cities and areas at once.
-        </Typography>
+    <Box sx={{ p: { xs: 2.5, md: 5 }, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
+
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h2" fontWeight="900" color="#1b2559" sx={{ letterSpacing: "-3px", mb: 1 }}>
+            Bulk Area Upload
+          </Typography>
+          <Typography variant="body1" color="#a3aed0" fontWeight="700">
+            Choose an upload model to import cities or areas in batch via CSV.
+          </Typography>
+        </Box>
+
+        {/* Option Selector Grid */}
+        <Grid container spacing={3} sx={{ mb: 6 }} alignItems="stretch">
+          {options.map((opt) => (
+            <Grid item xs={12} md={6} key={opt.id}>
+              <Paper
+                onClick={() => setActiveTab(opt.id)}
+                sx={{
+                  p: 4,
+                  borderRadius: "32px",
+                  cursor: "pointer",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "0.3s all cubic-bezier(0.4, 0, 0.2, 1)",
+                  border: "2px solid",
+                  borderColor: activeTab === opt.id ? "#E53935" : "transparent",
+                  backgroundImage: activeTab === opt.id ? `linear-gradient(135deg, ${alpha("#E53935", 0.05)}, #fff)` : "#fff",
+                  boxShadow: activeTab === opt.id ? "0 20px 40px rgba(229, 57, 53, 0.08)" : "0 10px 30px rgba(0,0,0,0.02)",
+                  "&:hover": { transform: "translateY(-5px)", boxShadow: "0 20px 40px rgba(0,0,0,0.06)" }
+                }}
+              >
+                <Stack spacing={2} alignItems="center" textAlign="center">
+                  <Box sx={{
+                    p: 2.5,
+                    borderRadius: "20px",
+                    bgcolor: activeTab === opt.id ? "#E53935" : alpha("#a3aed0", 0.1),
+                    color: activeTab === opt.id ? "#fff" : "#a3aed0",
+                    transition: "0.3s"
+                  }}>
+                    {opt.icon}
+                  </Box>
+                  <Box>
+                    <Typography variant="h5" fontWeight="900" color={activeTab === opt.id ? "#E53935" : "#1b2559"}>
+                      {opt.title}
+                    </Typography>
+                    <Typography variant="caption" fontWeight="800" color="#a3aed0">
+                      {opt.subtitle}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Active Model Workspace */}
+        <Box sx={{ position: "relative" }}>
+          <Typography variant="caption" fontWeight="900" color="#E53935" sx={{ mb: 2, display: "block", textTransform: "uppercase", letterSpacing: "2px" }}>
+            Active Environment: {activeTab}
+          </Typography>
+          <WorkspaceSection type={activeTab} key={activeTab} />
+        </Box>
       </Box>
-
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={6}>
-          <Stack spacing={4}>
-            <Paper sx={commonCardStyles}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Box sx={{ p: 1.5, borderRadius: "14px", backgroundColor: "#f4f7fe" }}>
-                    <LocationCityOutlinedIcon sx={{ color: "#4318ff" }} />
-                  </Box>
-                  <Typography variant="h6" fontWeight="800" color="#1b2559">
-                    City Upload Instructions
-                  </Typography>
-                </Stack>
-                <Button
-                  startIcon={<FileDownloadIcon />}
-                  sx={secondaryBtnStyles}
-                  onClick={downloadCityTemplate}
-                >
-                  Sample
-                </Button>
-              </Stack>
-              <Divider sx={{ mb: 2, opacity: 0.1 }} />
-              <InstructionList extraInfo={["Include a stable City ID for every row."]} />
-            </Paper>
-
-            <Paper sx={commonCardStyles}>
-              <Typography
-                variant="subtitle1"
-                fontWeight="800"
-                color="#1b2559"
-                sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}
-              >
-                <CloudUploadIcon sx={{ color: "#4318ff", fontSize: 20 }} /> Bulk City Upload
-              </Typography>
-              <Box sx={uploadBoxStyles} onClick={() => document.getElementById("cityInput").click()}>
-                {cityFile ? (
-                  <>
-                    <FilePresentIcon className="upload-icon" sx={{ fontSize: 60, color: "#4318ff", mb: 2 }} />
-                    <Typography variant="h6" fontWeight="800" color="#1b2559">
-                      {cityFile.name}
-                    </Typography>
-                    <Typography variant="caption" color="#a3aed0" fontWeight="600">
-                      Click to change selection
-                    </Typography>
-                  </>
-                ) : (
-                  <>
-                    <CloudUploadIcon
-                      className="upload-icon"
-                      sx={{ fontSize: 60, color: "#a3aed0", mb: 2, transition: "0.3s" }}
-                    />
-                    <Typography variant="body1" fontWeight="800" color="#1b2559">
-                      Select CSV File
-                    </Typography>
-                    <Typography variant="caption" color="#a3aed0" fontWeight="600">
-                      Drag and drop or browse...
-                    </Typography>
-                  </>
-                )}
-                <input type="file" id="cityInput" hidden accept=".csv" onChange={handleCityFileChange} />
-              </Box>
-
-              <Button
-                variant="contained"
-                fullWidth
-                disabled={!cityFile || uploadingCity}
-                onClick={handleCityUpload}
-                sx={{ ...primaryBtnStyles, mt: 4 }}
-              >
-                {uploadingCity ? "Uploading cities..." : "Start Upload"}
-              </Button>
-
-              {uploadingCity && (
-                <Box sx={{ mt: 4 }}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={cityProgress}
-                    sx={{
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor: "#f4f7fe",
-                      "& .MuiLinearProgress-bar": { backgroundColor: "#4318ff" },
-                    }}
-                  />
-                  <Stack direction="row" justifyContent="space-between" sx={{ mt: 1.5 }}>
-                    <Typography variant="caption" color="#a3aed0" fontWeight="700">
-                      Saving data...
-                    </Typography>
-                    <Typography variant="caption" fontWeight="800" color="#4318ff">
-                      {cityProgress}%
-                    </Typography>
-                  </Stack>
-                </Box>
-              )}
-            </Paper>
-          </Stack>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Stack spacing={4}>
-            <Paper sx={commonCardStyles}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Box sx={{ p: 1.5, borderRadius: "14px", backgroundColor: "#f4f7fe" }}>
-                    <GroupsOutlinedIcon sx={{ color: "#4318ff" }} />
-                  </Box>
-                  <Typography variant="h6" fontWeight="800" color="#1b2559">
-                    Area Upload Instructions
-                  </Typography>
-                </Stack>
-                <Button
-                  startIcon={<FileDownloadIcon />}
-                  sx={secondaryBtnStyles}
-                  onClick={downloadSocietyTemplate}
-                >
-                  Sample
-                </Button>
-              </Stack>
-              <Divider sx={{ mb: 2, opacity: 0.1 }} />
-              <InstructionList
-                extraInfo={[
-                  "Link areas using exact City ID or exact City Name.",
-                  "Areas are matched against existing city records before import.",
-                ]}
-              />
-            </Paper>
-
-            <Paper sx={commonCardStyles}>
-              <Typography
-                variant="subtitle1"
-                fontWeight="800"
-                color="#1b2559"
-                sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}
-              >
-                <CloudUploadIcon sx={{ color: "#4318ff", fontSize: 20 }} /> Bulk Area Upload
-              </Typography>
-              <Box sx={uploadBoxStyles} onClick={() => document.getElementById("societyInput").click()}>
-                {societyFile ? (
-                  <>
-                    <FilePresentIcon className="upload-icon" sx={{ fontSize: 60, color: "#4318ff", mb: 2 }} />
-                    <Typography variant="h6" fontWeight="800" color="#1b2559">
-                      {societyFile.name}
-                    </Typography>
-                    <Typography variant="caption" color="#a3aed0" fontWeight="600">
-                      Click to change selection
-                    </Typography>
-                  </>
-                ) : (
-                  <>
-                    <CloudUploadIcon
-                      className="upload-icon"
-                      sx={{ fontSize: 60, color: "#a3aed0", mb: 2, transition: "0.3s" }}
-                    />
-                    <Typography variant="body1" fontWeight="800" color="#1b2559">
-                      Select CSV File
-                    </Typography>
-                    <Typography variant="caption" color="#a3aed0" fontWeight="600">
-                      Drag and drop or browse...
-                    </Typography>
-                  </>
-                )}
-                <input
-                  type="file"
-                  id="societyInput"
-                  hidden
-                  accept=".csv"
-                  onChange={handleSocietyFileChange}
-                />
-              </Box>
-
-              <Button
-                variant="contained"
-                fullWidth
-                disabled={!societyFile || uploadingSociety}
-                onClick={handleSocietyUpload}
-                sx={{ ...primaryBtnStyles, mt: 4 }}
-              >
-                {uploadingSociety ? "Uploading areas..." : "Start Upload"}
-              </Button>
-
-              {uploadingSociety && (
-                <Box sx={{ mt: 4 }}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={societyProgress}
-                    sx={{
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor: "#f4f7fe",
-                      "& .MuiLinearProgress-bar": { backgroundColor: "#4318ff" },
-                    }}
-                  />
-                  <Stack direction="row" justifyContent="space-between" sx={{ mt: 1.5 }}>
-                    <Typography variant="caption" color="#a3aed0" fontWeight="700">
-                      Saving data...
-                    </Typography>
-                    <Typography variant="caption" fontWeight="800" color="#4318ff">
-                      {societyProgress}%
-                    </Typography>
-                  </Stack>
-                </Box>
-              )}
-            </Paper>
-          </Stack>
-        </Grid>
-      </Grid>
-
-      <Paper
-        sx={{
-          mt: 6,
-          p: 3,
-          borderRadius: "20px",
-          border: "1px dashed #4318ff",
-          backgroundColor: "rgba(67, 24, 255, 0.02)",
-          display: "flex",
-          alignItems: "center",
-          gap: 2,
-        }}
-      >
-        <InfoOutlinedIcon sx={{ color: "#4318ff" }} />
-        <Typography variant="body2" color="#1b2559" fontWeight="700">
-          Important: Check CSV format before uploading. Bulk uploads skip duplicates,
-          but invalid rows are rejected before import.
-        </Typography>
-      </Paper>
 
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={5000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         TransitionComponent={Fade}
       >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          variant="filled"
-          sx={{
-            borderRadius: "14px",
-            fontWeight: "700",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.15)",
-            bgcolor: snackbarColors[snackbar.severity] || snackbarColors.info,
-          }}
-        >
+        <Alert severity={snackbar.severity} variant="filled" sx={{ borderRadius: "18px", fontWeight: "900", px: 3 }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
@@ -792,5 +481,3 @@ const BulkUploadArea = () => {
 };
 
 export default BulkUploadArea;
-
-

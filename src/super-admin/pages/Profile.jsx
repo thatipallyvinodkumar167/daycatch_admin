@@ -35,7 +35,7 @@ import api from "../../api/api";
 import { clearAuthSession, getAuthSession } from "../../utils/authSession";
 
 // Industry-Level E-commerce Palette (Blinkit / BigBasket Inspired)
-const BRAND_GREEN = "#0c831f"; // Deep lively green typical of fresh grocery apps
+const BRAND_GREEN = "#1f2937";
 const SURFACE_BG = "#f4f6f8";
 const TEXT_DARK = "#1f2937";
 const TEXT_MUTED = "#6b7280";
@@ -92,6 +92,9 @@ const StyledTextField = ({ label, value, onChange, type = "text", placeholder, d
         },
       }}
       sx={{
+        "& input::-ms-reveal, & input::-ms-clear": {
+          display: "none",
+        },
         "& .MuiOutlinedInput-root": {
           "& fieldset": { borderColor: BORDER_COLOR },
           "&:hover fieldset": { borderColor: "#d1d5db" },
@@ -218,31 +221,17 @@ const ProfilePage = () => {
         <Paper
           sx={{
             ...panelSx,
-            position: "relative",
-            overflow: "hidden",
+            bgcolor: "#1f2937",
             mb: 4,
-            pt: { xs: 10, md: 14 },
+            pt: { xs: 4, md: 5 },
             px: { xs: 3, md: 5 },
-            pb: { xs: 3, md: 4 },
+            pb: { xs: 4, md: 5 },
           }}
         >
-          {/* Top Brand Color Banner */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: { xs: "100px", md: "140px" },
-              background: `linear-gradient(90deg, ${BRAND_GREEN} 0%, #11a62c 100%)`,
-            }}
-          />
-
           <Stack
             direction={{ xs: "column", sm: "row" }}
-            spacing={3}
+            spacing={4}
             alignItems={{ xs: "center", sm: "flex-end" }}
-            sx={{ position: "relative", zIndex: 1, mt: { xs: -8, md: -10 } }}
           >
             <Avatar
               sx={{
@@ -259,11 +248,11 @@ const ProfilePage = () => {
               {getInitials(profile.name)}
             </Avatar>
 
-            <Box sx={{ flex: 1, textAlign: { xs: "center", sm: "left" }, pb: 1 }}>
-              <Typography variant="h4" sx={{ fontWeight: 800, color: TEXT_DARK, letterSpacing: "-0.02em" }}>
+            <Box sx={{ flex: 1, textAlign: { xs: "center", sm: "left" }, pb: 1, pt: { xs: 2, sm: 0 } }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em", textShadow: "0 2px 10px rgba(0,0,0,0.15)" }}>
                 {profile.name}
               </Typography>
-              <Typography variant="body1" sx={{ color: TEXT_MUTED, fontWeight: 500, mt: 0.5 }}>
+              <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.85)", fontWeight: 700, mt: 0.5 }}>
                 {profile.email} • {profile.phone}
               </Typography>
               <Stack direction="row" spacing={1.5} sx={{ mt: 2, justifyContent: { xs: "center", sm: "flex-start" } }}>
@@ -271,8 +260,8 @@ const ProfilePage = () => {
                   label={profile.role}
                   size="small"
                   sx={{
-                    bgcolor: alpha(BRAND_GREEN, 0.1),
-                    color: BRAND_GREEN,
+                    bgcolor: "rgba(255,255,255,0.2)",
+                    color: "#ffffff",
                     fontWeight: 800,
                     borderRadius: "6px",
                     px: 1,
@@ -281,13 +270,12 @@ const ProfilePage = () => {
                 <Chip
                   label="Verified Access"
                   size="small"
-                  icon={<VerifiedUserIcon sx={{ fontSize: "16px !important", color: "#059669 !important" }} />}
+                  icon={<VerifiedUserIcon sx={{ fontSize: "16px !important", color: "#05cd99 !important" }} />}
                   sx={{
-                    bgcolor: "#ecfdf5",
-                    color: "#059669",
+                    bgcolor: "rgba(255, 255, 255, 0.95)",
+                    color: "#05cd99",
                     fontWeight: 800,
                     borderRadius: "6px",
-                    border: "1px solid #d1fae5",
                     px: 1,
                   }}
                 />
@@ -296,20 +284,20 @@ const ProfilePage = () => {
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ pb: 1, width: { xs: "100%", sm: "auto" } }}>
               <Button
-                variant="outlined"
+                variant="contained"
                 startIcon={<LockResetIcon />}
                 onClick={() => setChangingPassword(true)}
                 fullWidth
                 sx={{
-                  borderColor: BORDER_COLOR,
-                  color: TEXT_DARK,
-                  borderRadius: "10px",
-                  fontWeight: 700,
+                  bgcolor: "#ffffff",
+                  color: "#1f2937",
+                  borderRadius: "14px",
+                  fontWeight: 900,
                   textTransform: "none",
-                  backgroundColor: "#fff",
-                  px: 3,
-                  py: 1.2,
-                  "&:hover": { borderColor: "#d1d5db", backgroundColor: "#f9fafb" },
+                  boxShadow: "0 10px 20px rgba(0, 0, 0, 0.1)",
+                  px: 4,
+                  py: 1.5,
+                  "&:hover": { bgcolor: "#f4f7fe", boxShadow: "0 10px 20px rgba(0,0,0,0.15)" },
                 }}
               >
                 Reset Password
@@ -322,13 +310,13 @@ const ProfilePage = () => {
                 sx={{
                   bgcolor: "#ef4444",
                   color: "#fff",
-                  borderRadius: "10px",
-                  fontWeight: 700,
+                  borderRadius: "14px",
+                  fontWeight: 900,
                   textTransform: "none",
-                  boxShadow: "none",
-                  px: 3,
-                  py: 1.2,
-                  "&:hover": { bgcolor: "#dc2626", boxShadow: "none" },
+                  boxShadow: "0 10px 20px rgba(239, 68, 68, 0.25)",
+                  px: 4,
+                  py: 1.5,
+                  "&:hover": { bgcolor: "#dc2626", boxShadow: "0 10px 20px rgba(239, 68, 68, 0.4)" },
                 }}
               >
                 Sign Out

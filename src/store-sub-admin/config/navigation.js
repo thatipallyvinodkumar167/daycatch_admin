@@ -113,5 +113,6 @@ export const STORE_MENU_GROUPS = [
 ];
 
 export const STORE_SETTINGS_ITEMS = [
+  { label: "Profile", icon: AssessmentRoundedIcon, route: "profile" },
   { label: "Settings", icon: SettingsRoundedIcon, route: "settings" },
 ];

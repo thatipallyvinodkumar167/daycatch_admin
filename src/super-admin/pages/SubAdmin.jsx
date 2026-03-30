@@ -168,12 +168,7 @@ const SubAdmin = () => {
               </Stack>
           </Box>
 
-          <TableContainer sx={{ 
-              maxHeight: "calc(100vh - 280px)",
-              msOverflowStyle: "none",
-              scrollbarWidth: "none",
-              "&::-webkit-scrollbar": { display: "none" }
-          }}>
+          <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
               <Table stickyHeader>
                   <TableHead>
                       <TableRow>

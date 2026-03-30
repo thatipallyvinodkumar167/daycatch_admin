@@ -17,6 +17,8 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import PersonIcon from "@mui/icons-material/Person";
 import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import RadarIcon from "@mui/icons-material/Radar";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
@@ -80,6 +82,7 @@ const AddStore = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [linkedSubAdmin, setLinkedSubAdmin] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [showPassword, setShowPassword] = useState(false);
   
   const showMsg = (message, severity = "success") => setSnackbar({ open: true, message, severity });
 
@@ -448,12 +451,22 @@ const AddStore = () => {
               </Typography>
               <TextField 
                 fullWidth 
-                type="password" 
+                type={showPassword ? "text" : "password"}
                 placeholder={isEdit ? "Leave blank to keep current password" : "Enter a secure password"} 
                 value={form.password} 
                 onChange={set("password")} 
-                InputProps={{ startAdornment: <LockIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
-                sx={fieldStyles} 
+                InputProps={{ 
+                  startAdornment: <LockIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} />,
+                  endAdornment: (
+                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: "#a3aed0" }}>
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  )
+                }}
+                sx={{
+                  ...fieldStyles,
+                  "& input::-ms-reveal": { display: "none" } // Hide Edge native reveal button
+                }} 
               />
             </Grid>
           </Grid>

@@ -137,6 +137,7 @@ import StoreAddDeliveryBoy from "../../store-sub-admin/pages/StoreAddDeliveryBoy
 import StoreIncentivePayouts from "../../store-sub-admin/pages/StoreIncentivePayouts.jsx";
 import StoreCallbackRequests from "../../store-sub-admin/pages/StoreCallbackRequests.jsx";
 import StoreSettings from "../../store-sub-admin/pages/StoreSettings.jsx";
+import StoreProfile from "../../store-sub-admin/pages/StoreProfile.jsx";
 import StoreLayout from "../../store-sub-admin/layouts/StoreLayout.jsx";
 import { getAssignedStorePath, getAuthSession } from "../../utils/authSession";
 
@@ -220,6 +221,7 @@ const AppRoutes = () => {
         <Route path="callback/users" element={<StoreCallbackRequests type="user" title="User Callback Requests" />} />
         <Route path="callback/drivers" element={<StoreCallbackRequests type="driver" title="Driver Callback Requests" />} />
         <Route path="settings" element={<StoreSettings />} />
+        <Route path="profile" element={<StoreProfile />} />
       </Route>
 
       {/* Admin Routes (Protected) */}

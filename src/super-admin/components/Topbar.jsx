@@ -30,7 +30,7 @@ function Topbar({ toggleSidebar }) {
   const { token, role, storeName } = getAuthSession();
   const isAuth = Boolean(token);
   const [anchorEl, setAnchorEl] = useState(null);
-  const indigoPrimary = "#4318ff";
+  const indigoPrimary = "#1f2937";
 
   const userName = localStorage.getItem("user_name") || "Administrator";
   const userEmail = localStorage.getItem("user_email") || "admin@daycatch.in";

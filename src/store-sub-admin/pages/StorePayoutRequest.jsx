@@ -197,7 +197,7 @@ const StorePayoutRequest = () => {
                   >
                     Current Earning
                   </Typography>
-                  <Typography variant="h1" fontWeight="900" color="#1b2559" sx={{ mt: 1, letterSpacing: "-2px" }}>
+                  <Typography variant="h2" fontWeight="900" color="#1b2559" sx={{ mt: 1, letterSpacing: "-2px" }}>
                     Rs. {earnings.toLocaleString()}
                   </Typography>
                 </Box>

@@ -184,10 +184,8 @@ const AdminProducts = () => {
         </Box>
 
         <TableContainer sx={{ 
-          maxHeight: "calc(100vh - 400px)",
-          msOverflowStyle: "none",
-          scrollbarWidth: "none",
-          "&::-webkit-scrollbar": { display: "none" }
+          width: "100%",
+          overflowX: "auto"
         }}>
           <Table stickyHeader>
             <TableHead>

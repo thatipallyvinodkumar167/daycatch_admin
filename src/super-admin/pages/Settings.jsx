@@ -375,13 +375,13 @@ const Settings = () => {
                     variant="contained"
                     onClick={() => setShowSmsEdit(true)}
                     sx={{
-                      bgcolor: "#1b2559",
+                      bgcolor: "#1f2937",
                       borderRadius: "14px",
                       fontWeight: 900,
                       px: 4,
                       py: 1.5,
                       boxShadow: "0 10px 20px rgba(27, 37, 89, 0.2)",
-                      "&:hover": { bgcolor: "#111c44" },
+                      "&:hover": { bgcolor: "#111827" },
                     }}
                   >
                     Configure Gateway
@@ -449,7 +449,7 @@ const Settings = () => {
                 variant="contained"
                 endIcon={<ArrowIcon />}
                 onClick={() => setOpen(true)}
-                sx={{ bgcolor: "#1b2559", borderRadius: "14px", fontWeight: 900, px: 5, py: 1.8, "&:hover": { bgcolor: "#111c44" } }}
+                sx={{ bgcolor: "#1f2937", borderRadius: "14px", fontWeight: 900, px: 5, py: 1.8, "&:hover": { bgcolor: "#111827" } }}
               >
                 Update Engine Node
               </Button>
@@ -546,13 +546,13 @@ const Settings = () => {
             startIcon={<SaveIcon />}
             onClick={() => setOpen(true)}
             sx={{
-              backgroundColor: "#1b2559",
+              backgroundColor: "#1f2937",
               borderRadius: "12px",
               textTransform: "none",
               fontWeight: 700,
               px: 3,
-              boxShadow: "0 10px 20px rgba(27, 37, 89, 0.2)",
-              "&:hover": { backgroundColor: "#111c44" },
+              boxShadow: "0 10px 20px rgba(31, 41, 55, 0.15)",
+              "&:hover": { backgroundColor: "#111827" },
             }}
           >
             Save Settings
@@ -610,11 +610,13 @@ const Settings = () => {
                       fontWeight: 800,
                       px: 2.25,
                       py: 1.1,
-                      color: isActive ? "#fff" : "#2b3674",
-                      bgcolor: isActive ? "#4318ff" : "transparent",
+                      color: isActive ? "#fff" : "#1f2937",
+                      bgcolor: isActive ? "#1f2937" : "transparent",
                       border: isActive ? "none" : "1px solid #e0e5f2",
                       "&:hover": {
-                        bgcolor: isActive ? "#3311cc" : "#eef2ff",
+                        bgcolor: isActive ? "#111827" : alpha("#1f2937", 0.04),
+                        color: isActive ? "#fff" : "#1f2937",
+                        borderColor: isActive ? "none" : "#1f2937",
                       },
                     }}
                   >
@@ -666,7 +668,7 @@ const Settings = () => {
           </Grid>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button fullWidth variant="contained" onClick={() => setShowSmsEdit(false)} sx={{ bgcolor: "#1b2559", borderRadius: "16px", py: 1.8, fontWeight: 900, "&:hover": { bgcolor: "#111c44" } }}>
+          <Button fullWidth variant="contained" onClick={() => setShowSmsEdit(false)} sx={{ bgcolor: "#1f2937", borderRadius: "16px", py: 1.8, fontWeight: 900, "&:hover": { bgcolor: "#111827" } }}>
             Update Gateway
           </Button>
         </DialogActions>

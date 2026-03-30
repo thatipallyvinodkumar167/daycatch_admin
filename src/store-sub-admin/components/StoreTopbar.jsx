@@ -142,7 +142,7 @@ function StoreTopbar({ onToggleSidebar, store }) {
           <Typography variant="caption" fontWeight="700" color="#707eae" sx={{ wordBreak: "break-all" }}>{userEmail}</Typography>
         </Box>
         <Divider sx={{ my: 1, borderColor: "#f4f7fe" }} />
-        <MenuItem onClick={() => { handleProfileClose(); navigate("/profile"); }} sx={{ borderRadius: "10px", py: 1.2, fontWeight: 700, "&:hover": { bgcolor: alpha(primaryColor, 0.05), color: primaryColor } }}>
+        <MenuItem onClick={() => { handleProfileClose(); navigate(store?.id ? `/stores/details/${store.id}/profile` : "/profile"); }} sx={{ borderRadius: "10px", py: 1.2, fontWeight: 700, "&:hover": { bgcolor: alpha(primaryColor, 0.05), color: primaryColor } }}>
           <AccountCircleOutlinedIcon sx={{ mr: 1.5, fontSize: 18 }} /> Profile
         </MenuItem>
         <MenuItem onClick={handleLogout} sx={{ borderRadius: "10px", py: 1.2, fontWeight: 700, color: "#ff4d49", "&:hover": { bgcolor: alpha("#ff4d49", 0.05) } }}>
