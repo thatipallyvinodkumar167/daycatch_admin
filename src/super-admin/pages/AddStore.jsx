@@ -7,8 +7,7 @@ import {
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
-import api from "../../api/api";
-import bcrypt from "bcryptjs"; // Secure password hashing instance
+import { subAdminApi } from "../../api/subAdminApi";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import BadgeIcon from "@mui/icons-material/Badge";
@@ -24,6 +23,7 @@ import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import PercentIcon from "@mui/icons-material/Percent";
 
 const ID_TYPES = ["Aadhar Card", "PAN Card", "Driving License", "Passport", "Voter ID"];
+const normalizeEmail = (value = "") => String(value || "").trim().toLowerCase();
 
 const sectionLabel = (text, Icon) => (
   <Typography variant="subtitle2" fontWeight="900" color="#4318ff" 
@@ -78,6 +78,7 @@ const AddStore = () => {
   const [cities, setCities] = useState([]);
   const [areas, setAreas] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [linkedSubAdmin, setLinkedSubAdmin] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   
   const showMsg = (message, severity = "success") => setSnackbar({ open: true, message, severity });
@@ -143,32 +144,52 @@ const AddStore = () => {
 
     // Fetch Store Data IF editing
     if (isEdit) {
-        genericApi.getAll("storeList").then(res => {
-            const results = res.data?.results || res.data || [];
-            const store = results.find(s => s._id === id || s.id === id);
-            if (store) {
-                setForm(prev => ({
-                    ...prev,
-                    storeName: store["Store Name"] || store.name || "",
-                    employeeName: store["Employee Name"] || store.employeeName || "",
-                    storeNumber: store.Mobile || store.phone || "",
-                    email: store.Email || store.email || "",
-                    password: store.password || "",
-                    idType: store["ID Type"] || store.idType || "",
-                    idNumber: store["ID Number"] || store.idNumber || "",
-                    selectedCity: store.City || store.city || "",
-                    address: store.address || "",
-                    adminShare: store["admin share"] || store.adminShare || "",
-                    deliveryRange: store["Delivery Range"] || store.deliveryRange || "",
-                    ordersPerSlot: store["Orders Per Slot"] || store.ordersPerSlot || "",
-                    startTime: store["Start Time"] || store.startTime || "",
-                    endTime: store["End Time"] || store.endTime || "",
-                    slotInterval: store["Slot Interval"] || store.slotInterval || "",
-                    storeImagePreview: store["Profile Pic"] || store.logo || null,
-                    idImagePreview: store["ID Image"] || store.idImage || null,
-                }));
+        Promise.allSettled([genericApi.getAll("storeList"), subAdminApi.getAll()])
+          .then(([storeResult, subAdminResult]) => {
+            if (storeResult.status !== "fulfilled") {
+              throw storeResult.reason;
             }
-        }).catch(err => console.error("Error fetching store:", err));
+
+            const stores = storeResult.value.data?.results || storeResult.value.data || [];
+            const store = stores.find((item) => item._id === id || item.id === id);
+            if (!store) return;
+
+            const subAdmins =
+              subAdminResult.status === "fulfilled"
+                ? subAdminResult.value?.data?.data || []
+                : [];
+
+            const storeEmail = normalizeEmail(store.Email || store.email);
+            const matchedSubAdmin =
+              subAdmins.find(
+                (admin) =>
+                  String(admin.storeId || "") === String(id) ||
+                  normalizeEmail(admin.Email || admin.email) === storeEmail
+              ) || null;
+
+            setLinkedSubAdmin(matchedSubAdmin);
+            setForm((prev) => ({
+              ...prev,
+              storeName: store["Store Name"] || store.name || "",
+              employeeName: matchedSubAdmin?.Name || store["Employee Name"] || store.employeeName || "",
+              storeNumber: matchedSubAdmin?.phone || store.Mobile || store.phone || "",
+              email: matchedSubAdmin?.Email || store.Email || store.email || "",
+              password: "",
+              idType: store["ID Type"] || store.idType || "",
+              idNumber: store["ID Number"] || store.idNumber || "",
+              selectedCity: store.City || store.city || "",
+              address: store.address || "",
+              adminShare: store["admin share"] || store.adminShare || "",
+              deliveryRange: store["Delivery Range"] || store.deliveryRange || "",
+              ordersPerSlot: store["Orders Per Slot"] || store.ordersPerSlot || "",
+              startTime: store["Start Time"] || store.startTime || "",
+              endTime: store["End Time"] || store.endTime || "",
+              slotInterval: store["Slot Interval"] || store.slotInterval || "",
+              storeImagePreview: store["Profile Pic"] || store.logo || matchedSubAdmin?.Image || null,
+              idImagePreview: store["ID Image"] || store.idImage || null,
+            }));
+          })
+          .catch((err) => console.error("Error fetching store:", err));
     }
   }, [id, isEdit]);
 
@@ -183,72 +204,124 @@ const AddStore = () => {
     reader.readAsDataURL(file);
   };
 
+  const buildStorePayload = () => ({
+    "Store Name": form.storeName,
+    "Employee Name": form.employeeName,
+    name: form.employeeName,
+    Mobile: form.storeNumber,
+    "admin share": form.adminShare,
+    Email: form.email,
+    email: form.email,
+    "ID Type": form.idType,
+    "ID Number": form.idNumber,
+    City: form.selectedCity,
+    "Delivery Range": form.deliveryRange,
+    address: form.address,
+    "Orders Per Slot": form.ordersPerSlot,
+    "Start Time": form.startTime,
+    "End Time": form.endTime,
+    "Slot Interval": form.slotInterval,
+    ...(form.storeImagePreview && { "Profile Pic": form.storeImagePreview }),
+    ...(form.idImagePreview && { "ID Image": form.idImagePreview }),
+    status: isEdit ? undefined : "Active",
+  });
+
+  const buildStoreSubAdminPayload = (storeIdValue, options = {}) => {
+    const includePassword = Boolean(options.includePassword && form.password.trim());
+
+    return {
+      Name: form.employeeName.trim() || form.storeName.trim(),
+      Email: form.email.trim(),
+      phone: form.storeNumber.trim(),
+      "role Name": linkedSubAdmin?.["role Name"] || "Store Admin",
+      scope: "store",
+      storeId: storeIdValue,
+      storeName: form.storeName.trim(),
+      status: linkedSubAdmin?.status || "Active",
+      Image: form.storeImagePreview || linkedSubAdmin?.Image || "",
+      ...(includePassword ? { password: form.password } : {}),
+    };
+  };
+
   const handleSubmit = async () => {
-    if (!form.storeName.trim() || !form.password.trim()) { 
-        showMsg("Store Name and Access Password are required fields.", "error"); 
-        return; 
+    if (!form.storeName.trim() || !form.employeeName.trim() || !form.storeNumber.trim() || !form.email.trim()) {
+        showMsg("Store name, owner name, phone number, and email are required fields.", "error");
+        return;
+    }
+
+    if (!isEdit && !form.password.trim()) {
+        showMsg("Access password is required while creating a store login.", "error");
+        return;
+    }
+
+    if (isEdit && !linkedSubAdmin && !form.password.trim()) {
+        showMsg("This store has no linked sub-admin login yet. Enter a password to create one.", "warning");
+        return;
     }
     
     setIsSubmitting(true);
     try {
-      // Security Layer: Client-side Hashing (Protects the repository)
-      const hashedPassword = bcrypt.hashSync(form.password, 10);
-      
-      const payload = {
-        "Store Name": form.storeName,
-        "Employee Name": form.employeeName,
-        name: form.employeeName, 
-        Mobile: form.storeNumber,
-        "admin share": form.adminShare,
-        Email: form.email,
-        email: form.email, 
-        password: hashedPassword, 
-        roleName: "store", 
-        scope: "store",    
-        "ID Type": form.idType,
-        "ID Number": form.idNumber,
-        City: form.selectedCity,
-        "Delivery Range": form.deliveryRange,
-        address: form.address,
-        "Orders Per Slot": form.ordersPerSlot,
-        "Start Time": form.startTime,
-        "End Time": form.endTime,
-        "Slot Interval": form.slotInterval,
-        ...(form.storeImagePreview && { "Profile Pic": form.storeImagePreview }),
-        ...(form.idImagePreview && { "ID Image": form.idImagePreview }),
-        status: isEdit ? undefined : "Active",
-      };
+      const payload = buildStorePayload();
+
+      try {
+          const res = await genericApi.getAll("storeList");
+          const results = res.data?.results || res.data || [];
+          const duplicate = results.find(
+            (store) =>
+              normalizeEmail(store.Email || store.email) === normalizeEmail(form.email) &&
+              String(store._id || store.id || "") !== String(id || "")
+          );
+
+          if (duplicate) {
+              showMsg(`Identity Conflict: The email "${form.email}" is already registered for branch "${duplicate["Store Name"] || duplicate.name}".`, "warning");
+              setIsSubmitting(false);
+              return;
+          }
+      } catch (lookupError) {
+          console.error("Uniqueness check error:", lookupError);
+      }
       
       if (isEdit) {
           await genericApi.update("storeList", id, payload);
+
+          if (linkedSubAdmin?._id) {
+              await subAdminApi.update(
+                linkedSubAdmin._id,
+                buildStoreSubAdminPayload(id, { includePassword: Boolean(form.password.trim()) })
+              );
+          } else {
+              const createdSubAdminResponse = await subAdminApi.create(
+                buildStoreSubAdminPayload(id, { includePassword: true })
+              );
+              setLinkedSubAdmin(createdSubAdminResponse?.data?.data || null);
+          }
+
           showMsg("Store configuration updated successfully.", "success");
           setTimeout(() => navigate("/stores-list"), 1500);
       } else {
-          // Uniqueness Check: Ensure email doesn't already mangement a store
-          try {
-              const res = await genericApi.getAll("storeList");
-              const results = res.data?.results || res.data || [];
-              const duplicate = results.find(s => (s.Email || s.email || "").toLowerCase() === form.email.toLowerCase());
-              if (duplicate) {
-                  showMsg(`Identity Conflict: The email "${form.email}" is already registered for branch "${duplicate["Store Name"] || duplicate.name}".`, "warning");
-                  setIsSubmitting(false);
-                  return;
-              }
-          } catch (e) { console.error("Uniqueness check error:", e); }
+          let createdStoreId = "";
 
-          // Mandatory Sub-Admin Enrollment in the Auth System
           try {
-              await api.post("/auth/register", {
-                  name: form.employeeName,
-                  email: form.email,
-                  password: form.password,
-                  roleName: "store" 
-              });
-          } catch (authErr) {
-              console.warn("Sub-admin session might already exist:", authErr.message);
+              const storeResponse = await genericApi.create("storeList", payload);
+              createdStoreId = storeResponse?.data?._id || storeResponse?.data?.id || "";
+
+              if (!createdStoreId) {
+                  throw new Error("Store created, but the backend did not return a store identifier.");
+              }
+
+              await subAdminApi.create(buildStoreSubAdminPayload(createdStoreId, { includePassword: true }));
+          } catch (creationError) {
+              if (createdStoreId) {
+                  try {
+                      await genericApi.remove("storeList", createdStoreId);
+                  } catch (rollbackError) {
+                      console.error("Store rollback failed:", rollbackError);
+                  }
+              }
+
+              throw creationError;
           }
 
-          await genericApi.create("storeList", payload);
           showMsg("Store workspace generated and Sub-Admin enrolled successfully.", "success");
           setTimeout(() => navigate("/stores-list"), 2000);
       }
@@ -370,11 +443,13 @@ const AddStore = () => {
               />
             </Grid>
             <Grid item xs={12} md={4}>
-              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>ACCESS PASSWORD</Typography>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>
+                {isEdit ? "ACCESS PASSWORD (OPTIONAL ON EDIT)" : "ACCESS PASSWORD"}
+              </Typography>
               <TextField 
                 fullWidth 
                 type="password" 
-                placeholder="••••••••" 
+                placeholder={isEdit ? "Leave blank to keep current password" : "Enter a secure password"} 
                 value={form.password} 
                 onChange={set("password")} 
                 InputProps={{ startAdornment: <LockIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
@@ -683,5 +758,3 @@ const AddStore = () => {
 };
 
 export default AddStore;
-
-

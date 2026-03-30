@@ -29,9 +29,17 @@ import {
   Storefront as StoreIcon,
   TrendingUp as TrendingUpIcon,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
 
 const normalizeValue = (value) => String(value || "").trim().toLowerCase();
+
+const extractItems = (payload) => {
+  if (Array.isArray(payload?.results)) return payload.results;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload)) return payload;
+  return [];
+};
 
 const normalizeStatus = (value) => {
   const normalized = normalizeValue(value);
@@ -60,7 +68,27 @@ const formatStoreProduct = (item, index) => ({
   mrp: Number(item.MRP || item.mrp || 0),
   price: Number(item.price || item.Price || 0),
   storeName: item.Store || item.storeName || item.store || "Unknown Store",
-  requestStatus: normalizeStatus(item.status)
+  requestStatus: normalizeStatus(item.status),
+  sourceType: "store",
+  sourceLabel: "Approval Product"
+});
+
+const formatAdminProduct = (item, index) => ({
+  id: item._id || item.id || `admin-product-${index}`,
+  storeProductId: "",
+  productID: item["Product Id"] || item.productID || "",
+  productName: item["Product Name"] || item.productName || item.name || "Unnamed Product",
+  category: item.Category || item.category || "General",
+  type: item.Type || item.type || "General",
+  image: item["Product Image"] || item.image || "",
+  tags: item.Tags || item.tags || "",
+  unit: item.Unit || item.unit || "",
+  mrp: Number(item.MRP || item.mrp || 0),
+  price: Number(item.price || item.Price || 0),
+  storeName: "Admin Catalog",
+  requestStatus: "Admin Product",
+  sourceType: "admin",
+  sourceLabel: "Admin Product"
 });
 
 const formatTrendingProduct = (item, index) => ({
@@ -81,13 +109,21 @@ const formatTrendingProduct = (item, index) => ({
 });
 
 const TrendingSearch = () => {
-  const [approvedStoreProducts, setApprovedStoreProducts] = useState([]);
+  const navigate = useNavigate();
+  const [sourceProducts, setSourceProducts] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [sourceInventoryCounts, setSourceInventoryCounts] = useState({
+    admin: 0,
+    approval: 0,
+    approved: 0,
+    pending: 0,
+    rejected: 0
+  });
 
   // Aesthetic Colors
   const navy = "#1b2559";
@@ -97,25 +133,35 @@ const TrendingSearch = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [productsResponse, trendingResponse] = await Promise.all([
+      const [productsResponse, trendingResponse, adminResponse] = await Promise.all([
         genericApi.getAll("storeProducts"),
-        genericApi.getAll("trending_search")
+        genericApi.getAll("trending_search"),
+        genericApi.getAll("Adminproducts")
       ]);
 
-      const rawProducts = productsResponse.data?.results || productsResponse.data || [];
-      const rawTrending = trendingResponse.data?.results || trendingResponse.data || [];
+      const rawProducts = extractItems(productsResponse.data);
+      const rawTrending = extractItems(trendingResponse.data);
+      const rawAdminProducts = extractItems(adminResponse.data);
 
-      const formattedProducts = rawProducts
-        .map(formatStoreProduct)
-        .filter((item) => item.requestStatus === "Approved")
+      const allStoreProducts = rawProducts.map(formatStoreProduct);
+      const allAdminProducts = rawAdminProducts.map(formatAdminProduct);
+
+      const formattedProducts = [...allAdminProducts, ...allStoreProducts.filter((item) => item.requestStatus !== "Rejected")]
         .sort((a, b) => a.productName.localeCompare(b.productName));
       
       const formattedTrending = rawTrending
         .map(formatTrendingProduct)
         .sort((a, b) => a.position - b.position || a.productName.localeCompare(b.productName));
 
-      setApprovedStoreProducts(formattedProducts);
+      setSourceProducts(formattedProducts);
       setTrendingProducts(formattedTrending);
+      setSourceInventoryCounts({
+        admin: allAdminProducts.length,
+        approval: allStoreProducts.filter((item) => item.requestStatus !== "Rejected").length,
+        approved: allStoreProducts.filter((item) => item.requestStatus === "Approved").length,
+        pending: allStoreProducts.filter((item) => item.requestStatus === "Pending").length,
+        rejected: allStoreProducts.filter((item) => item.requestStatus === "Rejected").length
+      });
     } catch (error) {
       console.error("Error fetching trending product data:", error);
     } finally {
@@ -130,8 +176,8 @@ const TrendingSearch = () => {
   const trendingKeys = useMemo(() => new Set(trendingProducts.map(getProductKey).filter(Boolean)), [trendingProducts]);
 
   const availableProducts = useMemo(() => 
-    approvedStoreProducts.filter((item) => !trendingKeys.has(getProductKey(item))), 
-  [approvedStoreProducts, trendingKeys]);
+    sourceProducts.filter((item) => !trendingKeys.has(getProductKey(item))), 
+  [sourceProducts, trendingKeys]);
 
   const filteredTrendingProducts = useMemo(() => {
     const query = normalizeValue(search);
@@ -236,6 +282,7 @@ const TrendingSearch = () => {
               variant="contained"
               onClick={() => setIsAddModalOpen(true)}
               startIcon={<AddIcon />}
+              disabled={loading}
               sx={{
                 borderRadius: "14px",
                 py: 1.2,
@@ -257,10 +304,11 @@ const TrendingSearch = () => {
         <Grid container spacing={3} sx={{ mb: 6 }}>
           {[
             { title: "Total Trending", value: trendingProducts.length, icon: <TrendingUpIcon />, color: navy },
-            { title: "Top Searched", value: trendingProducts.length ? trendingProducts[0].productName : "N/A", icon: <SearchIcon />, color: brandRed },
-            { title: "Live Stores", value: new Set(trendingProducts.map(p => p.storeName)).size, icon: <StoreIcon />, color: "#05cd99" },
+            { title: "Admin Products", value: sourceInventoryCounts.admin, icon: <StoreIcon />, color: brandRed },
+            { title: "Approval Products", value: sourceInventoryCounts.approval, icon: <StoreIcon />, color: "#05cd99" },
+            { title: "Pending Review", value: sourceInventoryCounts.pending, icon: <SearchIcon />, color: brandRed },
           ].map((stat, i) => (
-            <Grid item xs={12} sm={4} key={i}>
+            <Grid item xs={12} sm={6} lg={3} key={i}>
               <Paper sx={{ p: 3, borderRadius: "24px", display: "flex", alignItems: "center", gap: 2.5, border: "1px solid #e0e5f2", boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
                 <Box sx={{ p: 2, borderRadius: "16px", bgcolor: alpha(stat.color, 0.08), color: stat.color, display: "flex" }}>
                   {React.cloneElement(stat.icon, { sx: { fontSize: 32 } })}
@@ -287,7 +335,59 @@ const TrendingSearch = () => {
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 15, opacity: 0.7 }}>
             <TrendingUpIcon sx={{ fontSize: 80, color: "#a3aed0", mb: 2 }} />
             <Typography variant="h5" color={navy} fontWeight="900">No Trending Products</Typography>
-            <Typography variant="body1" color="#a3aed0" fontWeight="700">Add products to see them appear in your live feed.</Typography>
+            <Typography variant="body1" color="#a3aed0" fontWeight="700" sx={{ textAlign: "center", maxWidth: 520 }}>
+              {availableProducts.length > 0
+                ? `No products are in the trending collection yet. ${availableProducts.length} product(s) from admin products and store approval are ready to be added.`
+                : "There are no source products available right now. Add admin products or review store products first, then come back here to publish them."}
+            </Typography>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mt: 3 }}>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setIsAddModalOpen(true)}
+                sx={{
+                  borderRadius: "14px",
+                  px: 3,
+                  py: 1.2,
+                  bgcolor: brandRed,
+                  textTransform: "none",
+                  fontWeight: 900,
+                  "&:hover": { bgcolor: "#d32f2f" }
+                }}
+                >
+                Add Source Products
+                </Button>
+              {availableProducts.length === 0 && (
+                <>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate("/store-products")}
+                  sx={{
+                    borderRadius: "14px",
+                    px: 3,
+                    py: 1.2,
+                    textTransform: "none",
+                    fontWeight: 900
+                  }}
+                >
+                  Review Store Products
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate("/products")}
+                  sx={{
+                    borderRadius: "14px",
+                    px: 3,
+                    py: 1.2,
+                    textTransform: "none",
+                    fontWeight: 900
+                  }}
+                >
+                  Open Admin Products
+                </Button>
+                </>
+              )}
+            </Stack>
           </Box>
         ) : (
           <Grid container spacing={3}>
@@ -404,7 +504,7 @@ const TrendingSearch = () => {
               Curate Trending List
             </Typography>
             <Typography variant="body2" color="#a3aed0" fontWeight="700" sx={{ mt: 0.5 }}>
-              Select live store inventory to push to the homepage trending feed.
+              Select admin products and approval products to push to the homepage trending feed.
             </Typography>
           </Box>
           <IconButton onClick={() => setIsAddModalOpen(false)} sx={{ bgcolor: bgSoft }}>
@@ -414,17 +514,69 @@ const TrendingSearch = () => {
 
         <DialogContent sx={{ minHeight: "340px", pb: 4 }}>
           <Box sx={{ py: 2 }}>
+            {availableProducts.length === 0 && (
+              <Paper
+                sx={{
+                  mb: 3,
+                  p: 3,
+                  borderRadius: "18px",
+                  border: "1px solid #e0e5f2",
+                  backgroundColor: "#fafbfc"
+                }}
+              >
+                <Typography variant="h6" fontWeight="900" color={navy} sx={{ mb: 1 }}>
+                  No Source Products Available
+                </Typography>
+                <Typography variant="body2" color="#a3aed0" fontWeight="700" sx={{ mb: 2 }}>
+                  {sourceInventoryCounts.admin > 0
+                    ? "All currently available admin products and approval products are already in trending."
+                    : sourceInventoryCounts.pending > 0
+                      ? `You currently have ${sourceInventoryCounts.pending} pending store product request(s). You can review them, or add admin products first.`
+                      : "There are no admin products or approval products available to add to trending right now."}
+                </Typography>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setIsAddModalOpen(false);
+                      navigate("/store-products");
+                    }}
+                    sx={{
+                      borderRadius: "12px",
+                      textTransform: "none",
+                      fontWeight: 900
+                    }}
+                  >
+                    Open Store Products
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setIsAddModalOpen(false);
+                      navigate("/products");
+                    }}
+                    sx={{
+                      borderRadius: "12px",
+                      textTransform: "none",
+                      fontWeight: 900
+                    }}
+                  >
+                    Open Admin Products
+                  </Button>
+                </Stack>
+              </Paper>
+            )}
             <Autocomplete
               multiple
               options={availableProducts}
               value={selectedProducts}
               onChange={(_, value) => setSelectedProducts(value)}
-              getOptionLabel={(option) => option.productName}
+              getOptionLabel={(option) => `${option.productName} (${option.sourceLabel})`}
               isOptionEqualToValue={(option, value) => option.id === value.id}
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  placeholder="Search and select approved products..."
+                  placeholder="Search admin products and approval products..."
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: "16px",
@@ -442,6 +594,18 @@ const TrendingSearch = () => {
                   <Stack direction="row" spacing={2} alignItems="center" sx={{ py: 1 }}>
                     <Avatar src={option.image} variant="rounded" sx={{ width: 50, height: 50, borderRadius: "12px" }} />
                     <Box>
+                      <Stack direction="row" spacing={1} sx={{ mb: 0.5, flexWrap: "wrap" }}>
+                        <Chip
+                          label={option.sourceLabel}
+                          size="small"
+                          sx={{ bgcolor: alpha(brandRed, 0.08), color: brandRed, fontWeight: 800, fontSize: "10px", height: 22 }}
+                        />
+                        <Chip
+                          label={option.requestStatus}
+                          size="small"
+                          sx={{ bgcolor: alpha(navy, 0.08), color: navy, fontWeight: 800, fontSize: "10px", height: 22 }}
+                        />
+                      </Stack>
                       <Typography variant="body1" fontWeight="800" color={navy}>
                         {option.productName}
                       </Typography>
@@ -464,7 +628,13 @@ const TrendingSearch = () => {
                 />
               ))}
               {selectedProducts.length === 0 && (
-                <Typography variant="body2" color="#a3aed0" fontWeight="600" sx={{ mt: 1 }}>No products selected. Search above to begin.</Typography>
+                <Typography variant="body2" color="#a3aed0" fontWeight="600" sx={{ mt: 1 }}>
+                  {availableProducts.length
+                    ? "No products selected. Search above to begin."
+                    : sourceInventoryCounts.admin > 0 || sourceInventoryCounts.approved > 0 || sourceInventoryCounts.pending > 0
+                      ? "All available source products are already in trending."
+                      : "No admin products or approval products are available yet."}
+                </Typography>
               )}
             </Box>
           </Box>

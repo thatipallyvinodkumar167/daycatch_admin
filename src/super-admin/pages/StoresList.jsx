@@ -83,7 +83,8 @@ const StoresList = () => {
   };
 
   const openStorePage = (storeId) => {
-    window.open(`/stores/details/${storeId}`, "_blank", "noopener,noreferrer");
+    if (!storeId) return;
+    navigate(`/stores/details/${encodeURIComponent(storeId)}/dashboard`);
   };
 
   const toggleStatus = async (item) => {

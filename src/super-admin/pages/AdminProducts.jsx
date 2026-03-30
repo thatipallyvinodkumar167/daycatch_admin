@@ -26,6 +26,14 @@ import SearchIcon from "@mui/icons-material/Search";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import { useNavigate } from "react-router-dom";
 import * as productApi from "../../api/productApi";
+import { genericApi } from "../../api/genericApi";
+
+const extractCollectionItems = (payload) => {
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.results)) return payload.results;
+  if (Array.isArray(payload)) return payload;
+  return [];
+};
 
 const AdminProducts = () => {
   const navigate = useNavigate();
@@ -40,7 +48,12 @@ const AdminProducts = () => {
 
     try {
       const response = await productApi.getAllProducts();
-      const productList = response.data.data || [];
+      let productList = extractCollectionItems(response.data);
+
+      if (productList.length === 0) {
+        const collectionResponse = await genericApi.getAll("Adminproducts");
+        productList = extractCollectionItems(collectionResponse.data);
+      }
       
       const formattedData = productList.map((item, index) => ({
         id: item._id || item.id,
@@ -48,7 +61,7 @@ const AdminProducts = () => {
         name: item["Product Name"] || item.name || "Unnamed Product",
         category: item["Category"] || item.category || "N/A",
         type: item["Type"] || item.type || "N/A",
-        image: item["Product Image"] || item.image || `https://picsum.photos/seed/${item._id}/100`,
+        image: item["Product Image"] || item.image || "",
         hide: item.hide || false
       }));
 
@@ -69,9 +82,9 @@ const AdminProducts = () => {
     const query = search.toLowerCase().trim();
     if (!query) return products;
     return products.filter((item) =>
-      item.name.toLowerCase().includes(query) ||
-      item.category.toLowerCase().includes(query) ||
-      item.productID.toLowerCase().includes(query)
+      String(item.name || "").toLowerCase().includes(query) ||
+      String(item.category || "").toLowerCase().includes(query) ||
+      String(item.productID || "").toLowerCase().includes(query)
     );
   }, [products, search]);
 
@@ -212,11 +225,28 @@ const AdminProducts = () => {
                       #{index + 1}
                     </TableCell>
                     <TableCell>
-                        <Avatar 
-                            src={item.image} 
-                            variant="rounded" 
-                            sx={{ width: 48, height: 48, borderRadius: "12px", border: "2px solid #f4f7fe" }} 
-                        />
+                        {item.image ? (
+                          <Avatar 
+                              src={item.image} 
+                              variant="rounded" 
+                              sx={{ width: 48, height: 48, borderRadius: "12px", border: "2px solid #f4f7fe" }} 
+                          />
+                        ) : (
+                          <Box
+                            sx={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: "12px",
+                              border: "2px solid #f4f7fe",
+                              backgroundColor: "#f8fafc",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center"
+                            }}
+                          >
+                            <Inventory2Icon sx={{ color: "#c2c9e2", fontSize: 22 }} />
+                          </Box>
+                        )}
                     </TableCell>
                     <TableCell sx={{ color: "#1b2559", fontWeight: "800", fontSize: "15px" }}>
                       {item.name}

@@ -102,6 +102,8 @@ const StoreProducts = () => {
             item.image ||
             `https://ui-avatars.com/api/?name=${encodeURIComponent(item["Product Name"] || "SP")}&background=random`,
           productName: item["Product Name"] || item.productName || item.name || `Product ${index + 1}`,
+          category: item.Category || item.category || "General",
+          type: item.Type || item.type || "General",
           price: Number(item.Price || item.price || 0),
           mrp: Number(item.MRP || item.mrp || 0),
           storeName: item.Store || item.storeName || item.store || `Store ${index + 1}`,

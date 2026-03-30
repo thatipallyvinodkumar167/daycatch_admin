@@ -40,9 +40,7 @@ const LoginPage = () => {
         if (!isMounted) return;
 
         if (canRegister) {
-          setSetupMessage(response.data?.message || 'No Super Admin found yet. Please register first.');
-          navigate('/register', { replace: true });
-          return;
+          setSetupMessage(response.data?.message || 'No Super Admin found yet. First-time setup is available.');
         }
       } catch (error) {
         if (!isMounted) return;

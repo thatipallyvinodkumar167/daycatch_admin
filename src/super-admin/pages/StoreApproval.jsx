@@ -26,9 +26,106 @@ import {
   Visibility as VisibilityIcon,
   VerifiedUser as VerifiedUserIcon
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import { genericApi } from "../../api/genericApi";
 
+const normalizeValue = (value) => String(value || "").trim().toLowerCase();
+
+const extractItems = (payload) => {
+  if (Array.isArray(payload?.results)) return payload.results;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload)) return payload;
+  return [];
+};
+
+const getStoreKey = (store) =>
+  normalizeValue(store.email) ||
+  normalizeValue(store.storeName) ||
+  normalizeValue(store.mobile) ||
+  normalizeValue(store.id);
+
+const buildLogo = (storeName, image) =>
+  image ||
+  `https://ui-avatars.com/api/?name=${encodeURIComponent(storeName || "S")}&background=4318ff&color=fff`;
+
+const normalizeApprovalStatus = (value, fallback = "Pending") => {
+  const normalized = normalizeValue(value);
+
+  if (["approved", "active", "accepted", "live"].includes(normalized)) return "Active";
+  if (["rejected", "declined", "inactive"].includes(normalized)) return "Rejected";
+  if (["pending", "review", "in review"].includes(normalized)) return "Pending";
+
+  return fallback;
+};
+
+const formatStoreListRequest = (store, index) => {
+  const storeName = store["Store Name"] || store.name || "Unknown Entity";
+
+  return {
+    id: store._id || `store-list-${index}`,
+    sourceCollection: "storeList",
+    storeWorkspaceId: store._id || "",
+    linkedStoreId: store._id || "",
+    storeName,
+    city: store.City || store.city || "Registry Not Set",
+    mobile: store.Mobile || store.phone || "N/A",
+    email: store.Email || store.email || "N/A",
+    adminShare: store["admin share"] || store["Admin Share"] || "0%",
+    ownerName:
+      store["Employee Name"] ||
+      store["owner name"] ||
+      store["Owner name"] ||
+      store.ownerName ||
+      "Anonymous Owner",
+    status: normalizeApprovalStatus(store.status || store.Status, "Pending"),
+    logo: buildLogo(storeName, store["Profile Pic"] || store.logo),
+    raw: store
+  };
+};
+
+const formatStoreApprovalRequest = (store, index, linkedStoreId = "") => {
+  const storeName = store["Store Name"] || store.name || "Unknown Entity";
+  const reviewStatus = normalizeApprovalStatus(store.status || store.Status, "Pending");
+
+  return {
+    id: store._id || `store-approval-${index}`,
+    sourceCollection: "storeapproval",
+    storeWorkspaceId: linkedStoreId || "",
+    linkedStoreId,
+    storeName,
+    city: store.City || store.city || "Registry Not Set",
+    mobile: store.Mobile || store.phone || "N/A",
+    email: store.Email || store.email || "N/A",
+    adminShare: store["Admin Share"] || store["admin share"] || "0%",
+    ownerName:
+      store["Owner name"] ||
+      store["owner name"] ||
+      store["Employee Name"] ||
+      store.ownerName ||
+      "Anonymous Owner",
+    status: reviewStatus === "Rejected" ? "Rejected" : "Pending",
+    logo: buildLogo(storeName, store["Profile Pic"] || store.logo),
+    raw: store
+  };
+};
+
+const buildStoreListPayloadFromApproval = (store) => ({
+  "Profile Pic": store.logo || "",
+  "Store Name": store.storeName,
+  name: store.storeName,
+  City: store.city,
+  Mobile: store.mobile,
+  Email: store.email,
+  "admin share": store.adminShare,
+  "Admin Share": Number.parseFloat(String(store.adminShare || "").replace(/[^\d.]/g, "")) || 0,
+  "owner name": store.ownerName,
+  "Employee Name": store.ownerName,
+  status: "Active",
+  updatedAt: new Date().toISOString()
+});
+
 const StoreApproval = () => {
+  const navigate = useNavigate();
   const [stores, setStores] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -39,28 +136,49 @@ const StoreApproval = () => {
     else setLoading(true);
 
     try {
-      const response = await genericApi.getAll("storeList");
-      const results = response.data?.results || response.data || [];
+      const [approvalResponse, storeListResponse] = await Promise.allSettled([
+        genericApi.getAll("storeapproval"),
+        genericApi.getAll("storeList")
+      ]);
 
-      // Show only stores with status Pending
-      const pendingStores = results.filter((store) =>
-        String(store.status || store.Status || "").toLowerCase() === "pending"
+      const approvalResults =
+        approvalResponse.status === "fulfilled" ? extractItems(approvalResponse.value.data) : [];
+      const storeListResults =
+        storeListResponse.status === "fulfilled" ? extractItems(storeListResponse.value.data) : [];
+
+      const mappedStoreList = storeListResults.map(formatStoreListRequest);
+      const storeListLookup = new Map(
+        mappedStoreList
+          .map((store) => [getStoreKey(store), store])
+          .filter(([key]) => Boolean(key))
       );
 
-      const formattedData = pendingStores.map((store, index) => ({
-        id: store._id || index + 1,
-        storeName: store["Store Name"] || store.name || "Unknown Entity",
-        city: store.City || store.city || "Registry Not Set",
-        mobile: store.Mobile || store.phone || "N/A",
-        email: store.Email || store.email || "N/A",
-        adminShare: store["admin share"] || store["Admin Share"] || "0%",
-        ownerName: store["Employee Name"] || store["owner name"] || store.ownerName || "Anonymous Owner",
-        status: store.status || store.Status || "Pending",
-        logo: store["Profile Pic"] || store.logo ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(store["Store Name"] || store.name || "S")}&background=4318ff&color=fff`
-      }));
+      const approvalQueue = approvalResults
+        .map((store, index) => {
+          const baseStore = formatStoreApprovalRequest(store, index);
+          const linkedStore = storeListLookup.get(getStoreKey(baseStore));
 
-      setStores(formattedData);
+          return linkedStore
+            ? {
+                ...baseStore,
+                linkedStoreId: linkedStore.linkedStoreId,
+                storeWorkspaceId: linkedStore.storeWorkspaceId
+              }
+            : baseStore;
+        })
+        .filter((store) => store.status !== "Rejected");
+
+      const approvalKeys = new Set(approvalQueue.map(getStoreKey).filter(Boolean));
+
+      const pendingStoreListQueue = mappedStoreList.filter(
+        (store) => store.status === "Pending" && !approvalKeys.has(getStoreKey(store))
+      );
+
+      setStores(
+        [...approvalQueue, ...pendingStoreListQueue].sort((left, right) =>
+          left.storeName.localeCompare(right.storeName)
+        )
+      );
     } catch (error) {
       console.error("Error: Failed to load store approval list:", error);
     } finally {
@@ -73,16 +191,59 @@ const StoreApproval = () => {
     fetchPendingStores();
   }, [fetchPendingStores]);
 
-  const handleApprove = async (id) => {
+  const handleApprove = async (store) => {
     if (window.confirm("Approve this store to start selling on the platform?")) {
       try {
-        await genericApi.update("storeList", id, { status: "Active" });
-        setStores(prev => prev.filter(s => s.id !== id));
+        if (store.sourceCollection === "storeapproval") {
+          const payload = buildStoreListPayloadFromApproval(store);
+
+          if (store.linkedStoreId) {
+            await genericApi.update("storeList", store.linkedStoreId, payload);
+          } else {
+            await genericApi.create("storeList", payload);
+          }
+
+          await genericApi.remove("storeapproval", store.id);
+        } else {
+          await genericApi.update("storeList", store.id, {
+            ...store.raw,
+            status: "Active",
+            updatedAt: new Date().toISOString()
+          });
+        }
+
+        setStores(prev => prev.filter(s => s.id !== store.id));
         alert("Store approved successfully!");
       } catch (error) {
         console.error(error);
         alert("Approval failed. Please try again.");
       }
+    }
+  };
+
+  const handleReject = async (store) => {
+    if (!window.confirm("Reject this store request?")) return;
+
+    try {
+      if (store.sourceCollection === "storeapproval") {
+        await genericApi.update("storeapproval", store.id, {
+          ...store.raw,
+          status: "Rejected",
+          reviewedAt: new Date().toISOString()
+        });
+      } else {
+        await genericApi.update("storeList", store.id, {
+          ...store.raw,
+          status: "Rejected",
+          reviewedAt: new Date().toISOString()
+        });
+      }
+
+      setStores(prev => prev.filter(s => s.id !== store.id));
+      alert("Store rejected successfully.");
+    } catch (error) {
+      console.error("Rejection failed:", error);
+      alert("Rejection failed. Please try again.");
     }
   };
 
@@ -96,7 +257,8 @@ const StoreApproval = () => {
   }, [stores, search]);
 
   const openStorePage = (storeId) => {
-    window.open(`/stores/details/${storeId}`, "_blank", "noopener,noreferrer");
+    if (!storeId) return;
+    navigate(`/stores/details/${encodeURIComponent(storeId)}/dashboard`);
   };
 
   return (
@@ -241,7 +403,8 @@ const StoreApproval = () => {
                                           <Tooltip title="Open Store Page">
                                               <IconButton 
                                                 size="small" 
-                                                onClick={() => openStorePage(store.id)}
+                                                disabled={!store.storeWorkspaceId}
+                                                onClick={() => openStorePage(store.storeWorkspaceId)}
                                                 sx={{ color: "#4318ff", bgcolor: "#f4f7fe", borderRadius: "10px", "&:hover": { bgcolor: "#e0e5f2" } }}
                                               >
                                                   <VisibilityIcon fontSize="small" />
@@ -249,14 +412,17 @@ const StoreApproval = () => {
                                           </Tooltip>
                                           <Tooltip title="Approve Store">
                                               <IconButton 
-                                                  onClick={() => handleApprove(store.id)}
+                                                  onClick={() => handleApprove(store)}
                                                   sx={{ color: "#00d26a", bgcolor: "rgba(0, 210, 106, 0.05)", borderRadius: "10px", "&:hover": { bgcolor: "rgba(0, 210, 106, 0.1)" } }}
                                               >
                                                   <CheckCircleIcon fontSize="small" />
                                               </IconButton>
                                           </Tooltip>
                                           <Tooltip title="Reject Store">
-                                              <IconButton sx={{ color: "#ff4d49", bgcolor: "rgba(255, 77, 73, 0.05)", borderRadius: "10px", "&:hover": { bgcolor: "rgba(255, 77, 73, 0.1)" } }}>
+                                              <IconButton
+                                                onClick={() => handleReject(store)}
+                                                sx={{ color: "#ff4d49", bgcolor: "rgba(255, 77, 73, 0.05)", borderRadius: "10px", "&:hover": { bgcolor: "rgba(255, 77, 73, 0.1)" } }}
+                                              >
                                                   <CancelIcon fontSize="small" />
                                               </IconButton>
                                           </Tooltip>
