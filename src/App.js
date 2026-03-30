@@ -52,6 +52,14 @@ function App() {
         components: {
           MuiCssBaseline: {
             styleOverrides: {
+              // ─── Fix: prevent navbar "shake" when MUI menus/selects open ───
+              // MUI adds padding-right to <body> to compensate for the scrollbar
+              // it hides on modal open. Keeping the scrollbar always visible
+              // means MUI never needs to apply that offset, stopping the shift.
+              html: {
+                overflowY: 'scroll',
+              },
+              // ────────────────────────────────────────────────────────────────
               '.super-admin-shell .MuiButton-root': {
                 borderRadius: 12,
                 fontWeight: 800,
@@ -117,6 +125,27 @@ function App() {
               '.super-admin-shell .MuiIconButton-root:has([data-testid="DeleteIcon"]):hover, .super-admin-shell .MuiIconButton-root:has([data-testid="DeleteOutlineIcon"]):hover, .store-shell .MuiIconButton-root:has([data-testid="DeleteIcon"]):hover, .store-shell .MuiIconButton-root:has([data-testid="DeleteOutlineIcon"]):hover': {
                 backgroundColor: '#df3733 !important',
               },
+              // ─── Settings nav tabs: override global red → dark navy ──────
+              '.super-admin-shell .settings-tabs .MuiButton-text': {
+                color: '#1f2937 !important',
+              },
+              '.super-admin-shell .settings-tabs .MuiButton-text:hover': {
+                backgroundColor: 'rgba(31,41,55,0.05) !important',
+                color: '#1f2937 !important',
+              },
+              '.super-admin-shell .settings-tabs .MuiButton-contained': {
+                backgroundColor: '#1f2937 !important',
+                color: '#ffffff !important',
+                boxShadow: '0 10px 20px rgba(31,41,55,0.18) !important',
+              },
+              '.super-admin-shell .settings-tabs .MuiButton-contained:hover': {
+                backgroundColor: '#111827 !important',
+              },
+              // ─── Fix: red focused border on Select/TextField in super-admin ─
+              '.super-admin-shell .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#1f2937 !important',
+              },
+              // ─────────────────────────────────────────────────────────────────
             },
           },
           MuiButton: {
@@ -131,11 +160,19 @@ function App() {
           MuiDrawer: {
             styleOverrides: {
               paper: {
-                backgroundColor: '#1c2536', // Dark sidebar as requested
+                backgroundColor: '#1c2536',
                 color: '#ffffff',
               },
             },
           },
+          // ─── Definitive navbar-shake fix: disable scroll-lock globally ───
+          // Every MUI Select/Menu/Dialog uses Modal internally.
+          // disableScrollLock prevents body padding-right from being injected,
+          // so the fixed AppBar never shifts/shakes when a popup opens.
+          MuiModal: { defaultProps: { disableScrollLock: true } },
+          MuiPopover: { defaultProps: { disableScrollLock: true } },
+          MuiMenu: { defaultProps: { disableScrollLock: true } },
+          // ─────────────────────────────────────────────────────────────────
         },
       }),
     [mode]

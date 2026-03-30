@@ -83,8 +83,63 @@ const AddStore = () => {
   const [linkedSubAdmin, setLinkedSubAdmin] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   const [showPassword, setShowPassword] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoCoords, setGeoCoords] = useState(null);
+  const [geoCityCandidate, setGeoCityCandidate] = useState("");
+  const [geoAreaCandidate, setGeoAreaCandidate] = useState("");
+  const [geoAddressCandidate, setGeoAddressCandidate] = useState("");
   
   const showMsg = (message, severity = "success") => setSnackbar({ open: true, message, severity });
+
+  const findCityMatch = (candidate, cityList) => {
+    const needle = String(candidate || "").trim().toLowerCase();
+    if (!needle) return "";
+    const exact = cityList.find((c) => String(c || "").trim().toLowerCase() === needle);
+    if (exact) return exact;
+    const partial = cityList.find(
+      (c) =>
+        String(c || "").trim().toLowerCase().includes(needle) ||
+        needle.includes(String(c || "").trim().toLowerCase())
+    );
+    return partial || "";
+  };
+
+  const findCityFromAddress = (addressText, cityList) => {
+    const hay = String(addressText || "").trim().toLowerCase();
+    if (!hay) return "";
+    const match = cityList.find((c) => hay.includes(String(c || "").trim().toLowerCase()));
+    return match || "";
+  };
+
+  const findAreaMatch = (candidate, cityValue, areaList) => {
+    const needle = String(candidate || "").trim().toLowerCase();
+    if (!needle) return "";
+    const cityKey = String(cityValue || "").trim().toLowerCase();
+    const scopedAreas = cityKey
+      ? areaList.filter((area) => String(area.cityName || "").trim().toLowerCase() === cityKey)
+      : areaList;
+    const exact = scopedAreas.find((area) => String(area.name || "").trim().toLowerCase() === needle);
+    if (exact?.name) return exact.name;
+    const contains = scopedAreas.find(
+      (area) =>
+        String(area.name || "").trim().toLowerCase().includes(needle) ||
+        needle.includes(String(area.name || "").trim().toLowerCase())
+    );
+    return contains?.name || "";
+  };
+
+  const findAreaFromAddress = (addressText, cityValue, areaList) => {
+    const hay = String(addressText || "").trim().toLowerCase();
+    if (!hay) return "";
+    const cityKey = String(cityValue || "").trim().toLowerCase();
+    const scopedAreas = cityKey
+      ? areaList.filter((area) => String(area.cityName || "").trim().toLowerCase() === cityKey)
+      : areaList;
+    const match = scopedAreas.find((area) =>
+      hay.includes(String(area.name || "").trim().toLowerCase())
+    );
+    return match?.name || "";
+  };
 
   const [form, setForm] = useState({
     storeImagePreview: null, storeImage: null,
@@ -92,7 +147,7 @@ const AddStore = () => {
     adminShare: "", email: "", password: "",
     idType: "", idNumber: "",
     idImagePreview: null, idImage: null,
-    selectedCity: "", deliveryRange: "",
+    selectedCity: "", selectedArea: "", deliveryRange: "",
     address: "", ordersPerSlot: "",
     startTime: "", endTime: "", slotInterval: "",
   });
@@ -105,9 +160,11 @@ const AddStore = () => {
     deliveryRangeKm >= 10 ? 12 :
     deliveryRangeKm >= 5 ? 13 :
     deliveryRangeKm >= 2 ? 14 : 15;
-  const mapEmbedSrc = mapQuery
-    ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`
-    : "";
+  const mapEmbedSrc = geoCoords
+    ? `https://maps.google.com/maps?q=${geoCoords.lat},${geoCoords.lng}&t=&z=${Math.max(14, mapZoom)}&ie=UTF8&iwloc=&output=embed`
+    : mapQuery
+      ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`
+      : "";
   const radiusOverlaySize = Math.min(240, Math.max(84, 76 + deliveryRangeKm * 8));
   const selectedCityKey = String(form.selectedCity || "").trim().toLowerCase();
   const cityAreas = selectedCityKey
@@ -124,6 +181,35 @@ const AddStore = () => {
       ? Math.min(orderedCityAreas.length, Math.max(1, Math.round(deliveryRangeKm * 1.5)))
       : 0;
   const coveredAreas = orderedCityAreas.slice(0, coverageAreaCount);
+
+  useEffect(() => {
+    if (!geoCityCandidate || form.selectedCity) return;
+    const matchedCity =
+      findCityMatch(geoCityCandidate, cities) ||
+      findCityFromAddress(geoAddressCandidate, cities) ||
+      "";
+    if (matchedCity) {
+      setForm((prev) => ({ ...prev, selectedCity: matchedCity }));
+    }
+  }, [geoCityCandidate, geoAddressCandidate, cities, form.selectedCity]);
+
+  useEffect(() => {
+    if (!geoAreaCandidate || form.selectedArea) return;
+    const cityValue =
+      form.selectedCity ||
+      findCityMatch(geoCityCandidate, cities) ||
+      findCityFromAddress(geoAddressCandidate, cities) ||
+      "";
+    const matchedArea =
+      findAreaMatch(geoAreaCandidate, cityValue, areas) ||
+      findAreaMatch(geoAreaCandidate, "", areas) ||
+      findAreaFromAddress(geoAddressCandidate, cityValue, areas) ||
+      findAreaFromAddress(geoAddressCandidate, "", areas) ||
+      "";
+    if (matchedArea) {
+      setForm((prev) => ({ ...prev, selectedArea: matchedArea }));
+    }
+  }, [geoAreaCandidate, geoAddressCandidate, geoCityCandidate, areas, cities, form.selectedCity, form.selectedArea]);
 
   useEffect(() => {
     // Fetch Cities
@@ -181,6 +267,7 @@ const AddStore = () => {
               idType: store["ID Type"] || store.idType || "",
               idNumber: store["ID Number"] || store.idNumber || "",
               selectedCity: store.City || store.city || "",
+              selectedArea: store.Area || store.area || "",
               address: store.address || "",
               adminShare: store["admin share"] || store.adminShare || "",
               deliveryRange: store["Delivery Range"] || store.deliveryRange || "",
@@ -218,6 +305,7 @@ const AddStore = () => {
     "ID Type": form.idType,
     "ID Number": form.idNumber,
     City: form.selectedCity,
+    Area: form.selectedArea,
     "Delivery Range": form.deliveryRange,
     address: form.address,
     "Orders Per Slot": form.ordersPerSlot,
@@ -336,6 +424,79 @@ const AddStore = () => {
     }
   };
 
+  const handleUseLiveLocation = () => {
+    if (!navigator.geolocation) {
+      showMsg("Geolocation is not supported by this browser.", "error");
+      return;
+    }
+
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords || {};
+        if (typeof latitude === "number" && typeof longitude === "number") {
+          const coords = { lat: Number(latitude.toFixed(6)), lng: Number(longitude.toFixed(6)) };
+          setGeoCoords(coords);
+
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}&zoom=10&addressdetails=1`,
+              { headers: { "Accept-Language": "en" } }
+            );
+            const data = await response.json();
+            const address = data?.address || {};
+            const cityCandidate =
+              address.city || address.town || address.village || address.state_district || address.state || "";
+            const areaCandidate =
+              address.suburb || address.neighbourhood || address.quarter || address.county || "";
+            const displayAddress = data?.display_name || "";
+
+            setGeoCityCandidate(cityCandidate || "");
+            setGeoAreaCandidate(areaCandidate || "");
+            setGeoAddressCandidate(displayAddress || "");
+
+            const matchedCity =
+              findCityMatch(cityCandidate, cities) ||
+              findCityFromAddress(displayAddress, cities) ||
+              "";
+            const matchedArea =
+              findAreaMatch(areaCandidate, matchedCity, areas) ||
+              findAreaMatch(areaCandidate, "", areas) ||
+              findAreaFromAddress(displayAddress, matchedCity, areas) ||
+              findAreaFromAddress(displayAddress, "", areas) ||
+              "";
+
+            setForm((prev) => ({
+              ...prev,
+              selectedCity: matchedCity || prev.selectedCity,
+              selectedArea: matchedArea || prev.selectedArea,
+              address: displayAddress || prev.address,
+            }));
+
+            showMsg("Live location captured. City and area updated from GPS.", "success");
+          } catch (err) {
+            console.error("Reverse geocoding failed:", err);
+            showMsg("Live location captured. Map centered to your current position.", "success");
+          }
+        } else {
+          showMsg("Unable to read live location coordinates.", "error");
+        }
+        setGeoLoading(false);
+      },
+      (error) => {
+        const message =
+          error?.code === 1
+            ? "Location permission denied. Please allow access and try again."
+            : error?.code === 2
+              ? "Location unavailable. Try again in a moment."
+              : "Unable to fetch live location.";
+        showMsg(message, "error");
+        setGeoLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }
+    );
+  };
+
   return (
     <Box sx={{ p: 4, backgroundColor: "#f4f7fe", minHeight: "100vh" }}>
       
@@ -382,7 +543,7 @@ const AddStore = () => {
           {/* Section 1: Store Identity */}
           {sectionLabel("Store Identity", StorefrontIcon)}
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={8} sx={{ mx: "auto" }}>
               <ImageUpload
                 label="STORE LOGO (Should Be Less Than 1000 KB)"
                 preview={form.storeImagePreview}
@@ -516,7 +677,7 @@ const AddStore = () => {
           {sectionLabel("Location & Logistics", MapIcon)}
           <Grid container spacing={3}>
             <Grid item xs={12} md={4}>
-              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>OPERATIONAL CITY</Typography>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block"  }}>OPERATIONAL CITY</Typography>
               <FormControl fullWidth>
                 <Select 
                   value={form.selectedCity} 
@@ -544,16 +705,18 @@ const AddStore = () => {
                 sx={fieldStyles} 
               />
             </Grid>
-            <Grid item xs={12} md={4}>
-              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>DELIVERY COVERAGE MAP</Typography>
+            <Grid item xs={12} md={8} sx={{ml:18}}>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 20, mb: 1, display: "block"}}>DELIVERY COVERAGE MAP</Typography>
               <Box
                 sx={{
                   position: "relative",
                   minHeight: 220,
+                 
                   borderRadius: "18px",
                   overflow: "hidden",
                   border: "1px solid #e0e5f2",
                   background: "#eef4ff",
+                 
                 }}
               >
                 {mapEmbedSrc ? (
@@ -569,7 +732,8 @@ const AddStore = () => {
                         inset: 0,
                         width: "100%",
                         height: "100%",
-                        border: 0
+                        border: 0,
+                        
                       }}
                     />
 
@@ -596,17 +760,13 @@ const AddStore = () => {
                             position: "absolute",
                             top: "50%",
                             left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            width: Math.max(18, radiusOverlaySize * 0.18),
-                            height: Math.max(18, radiusOverlaySize * 0.18),
-                            borderRadius: "50%",
-                            bgcolor: "#4318ff",
-                            border: "4px solid rgba(255,255,255,0.9)",
-                            boxShadow: "0 8px 18px rgba(67, 24, 255, 0.28)",
+                            transform: "translate(-50%, -60%)",
                             pointerEvents: "none",
-                            zIndex: 2
+                            zIndex: 3
                           }}
-                        />
+                        >
+                          <LocationOnIcon sx={{ color: "#e53935", fontSize: 22, filter: "drop-shadow(0 2px 6px rgba(229, 57, 53, 0.45))" }} />
+                        </Box>
                       </>
                     ) : null}
                   </>
@@ -622,6 +782,7 @@ const AddStore = () => {
                       gap: 1.5,
                       p: 3,
                       background: "linear-gradient(180deg, #eef4ff 0%, #f9fbff 100%)",
+                     
                     }}
                   >
                     <Avatar sx={{ width: 58, height: 58, bgcolor: "rgba(67, 24, 255, 0.12)", color: "#4318ff" }}>
@@ -643,14 +804,15 @@ const AddStore = () => {
                     borderRadius: "14px",
                     bgcolor: "rgba(255, 255, 255, 0.92)",
                     border: "1px solid rgba(224, 229, 242, 0.9)",
-                    backdropFilter: "blur(6px)"
+                    backdropFilter: "blur(6px)",
+                    
                   }}
                 >
-                  <Typography variant="caption" fontWeight="900" color="#4318ff" sx={{ display: "block", mb: 0.5 }}>
-                    {deliveryRangeKm > 0 ? `${deliveryRangeKm} KM DELIVERY RADIUS` : "LIVE MAP PREVIEW"}
-                  </Typography>
-                  <Typography variant="body2" fontWeight="700" color="#2b3674">
-                    {locationSummary || "Select a city and add the store address to visualize coverage."}
+                 
+                  <Typography variant="body2" fontWeight="700" color="#2b3674" >
+                    {geoCoords
+                      ? `Live location: ${geoCoords.lat}, ${geoCoords.lng}`
+                      : locationSummary || "Select a city and add the store address to visualize coverage."}
                   </Typography>
                   <Typography variant="caption" fontWeight="700" color="#7b89b0" sx={{ display: "block", mt: 0.5 }}>
                     {coveredAreas.length
@@ -660,6 +822,29 @@ const AddStore = () => {
                         : "Choose a city to see available mapped areas."}
                   </Typography>
                 </Box>
+              </Box>
+              <Box sx={{ mt: 1.5, display: "flex", gap: 1, alignItems: "center" }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleUseLiveLocation}
+                  disabled={geoLoading}
+                  sx={{
+                    borderRadius: "12px",
+                    textTransform: "none",
+                    fontWeight: 800,
+                    borderColor: "rgba(229, 57, 53, 0.4)",
+                    color: "#e53935",
+                    "&:hover": { borderColor: "#e53935", bgcolor: "rgba(229, 57, 53, 0.08)" }
+                  }}
+                >
+                  {geoLoading ? "Fetching Location..." : "Use Live Location"}
+                </Button>
+                {geoCoords ? (
+                  <Typography variant="caption" fontWeight="700" color="#7b89b0">
+                    Live location is active for the map preview.
+                  </Typography>
+                ) : null}
               </Box>
               <Box sx={{ mt: 1.5, display: "flex", flexWrap: "wrap", gap: 1 }}>
                 {coveredAreas.length ? (

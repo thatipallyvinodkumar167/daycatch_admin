@@ -38,8 +38,8 @@ import {
   Sms as SmsIcon,
 } from "@mui/icons-material";
 
-const BRAND_RED = "#4318ff";
-const BRAND_RED_LIGHT = "#7551ff";
+const BRAND_RED = "#1f2937";
+const BRAND_RED_LIGHT = "#374151";
 const BRAND_DARK = "#1b2559";
 const BRAND_TEXT_MUTED = "#707eae";
 const BRAND_BORDER = "#e0e5f2";
@@ -561,7 +561,7 @@ const Settings = () => {
 
         <Grid container spacing={3} sx={{ mb: 4 }}>
           {[
-            { label: "ACTIVE MODULE", value: activeMenu.label, icon: activeMenu.icon, color: "#4318ff", bg: "#eef2ff" },
+            { label: "ACTIVE MODULE", value: activeMenu.label, icon: activeMenu.icon, color: "#1f2937", bg: "#e8eaed" },
             { label: "PAYMENT GATEWAY", value: settings.gateway, icon: <AccountBalanceIcon />, color: "#ffb800", bg: "#fff9e6" },
             { label: "LIVE CHAT", value: settings.liveChat, icon: <SmsIcon />, color: "#24d164", bg: "#e6f9ed" },
             { label: "MAP ENGINE", value: settings.mapType, icon: <MapIcon />, color: "#ff4d49", bg: "#fff1f0" },
@@ -595,7 +595,7 @@ const Settings = () => {
           }}
         >
           <Stack direction={{ xs: "column", lg: "row" }} spacing={2} justifyContent="space-between" alignItems={{ xs: "stretch", lg: "center" }}>
-            <Box sx={{ display: "flex", gap: 1.25, flexWrap: "wrap" }}>
+            <Box className="settings-tabs" sx={{ display: "flex", gap: 1.25, flexWrap: "wrap" }}>
               {menuItems.map((item) => {
                 const isActive = activeTab === item.id;
                 return (
