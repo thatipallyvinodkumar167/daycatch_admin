@@ -18,9 +18,9 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  AdminPanelSettings as AdminPanelIcon,
+
   Cancel as CancelIcon,
-  Edit as EditIcon,
+  
   Email as EmailIcon,
   LocationCity as CityIcon,
   LockReset as LockResetIcon,
@@ -36,7 +36,7 @@ import api from "../../api/api";
 import { getAuthSession } from "../../utils/authSession";
 
 const BRAND_BLUE = "#1b2559";
-const SURFACE_BG = "#f4f7fe";
+
 const TEXT_DARK = "#1b2559";
 const TEXT_MUTED = "#a3aed0";
 const BORDER_COLOR = "#e0e5f2";
