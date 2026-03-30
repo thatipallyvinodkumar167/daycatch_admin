@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getAuthSession, setAuthSession, clearAuthSession } from "../utils/authSession";
+import { getAuthSession, clearAuthSession } from "../utils/authSession";
 
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 export const API_ROOT_URL = isLocal ? "http://localhost:5001" : "https://backend-daycatch.onrender.com";
