@@ -1,12 +1,8 @@
 import axios from "axios";
 
-const DEFAULT_API_ROOT_URL = "http://localhost:5001";
-const DEFAULT_API_BASE_URL = `${DEFAULT_API_ROOT_URL}/api/v1`;
-
-export const API_ROOT_URL =
-  process.env.REACT_APP_API_ROOT_URL || DEFAULT_API_ROOT_URL;
-export const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || DEFAULT_API_BASE_URL;
+const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+export const API_ROOT_URL = isLocal ? "http://localhost:5001" : "https://backend-daycatch.onrender.com";
+export const API_BASE_URL = `${API_ROOT_URL}/api/v1`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
