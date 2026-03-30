@@ -69,7 +69,7 @@ const LoginPage = () => {
         password
       });
 
-      const { token, data } = response.data;
+      const { token, refreshToken, data } = response.data;
       const { user } = data;
       
       const role = user?.["role Name"] || user?.roleName || user?.role || user?.role_name || user?.user_type || "";
@@ -91,8 +91,8 @@ const LoginPage = () => {
       if (isStoreAdmin) {
           user.scope = "store";
       }
-
-      setAuthSession({ token, user });
+ 
+      setAuthSession({ token, refreshToken, user });
 
       const nextPath = isStoreAdmin && user?.storeId ? getAssignedStorePath() : "/";
       window.location.assign(nextPath);

@@ -1,5 +1,6 @@
 export const getAuthSession = () => ({
   token: localStorage.getItem("token"),
+  refreshToken: localStorage.getItem("refreshToken"),
   role: localStorage.getItem("user_role") || "",
   scope: localStorage.getItem("user_scope") || "platform",
   storeId: localStorage.getItem("user_store_id") || "",
@@ -12,7 +13,7 @@ export const getAssignedStorePath = () => {
   return storeId ? `/stores/details/${encodeURIComponent(storeId)}/dashboard` : "/";
 };
 
-export const setAuthSession = ({ token, user }) => {
+export const setAuthSession = ({ token, refreshToken, user }) => {
   const role = user?.["role Name"] || user?.roleName || user?.role || "Manager";
   const scope = user?.scope || "platform";
   const storeId = user?.storeId || "";
@@ -20,6 +21,7 @@ export const setAuthSession = ({ token, user }) => {
   const status = user?.status || "Active";
 
   localStorage.setItem("token", token || "");
+  if (refreshToken) localStorage.setItem("refreshToken", refreshToken); // only update if provided (login/refresh)
   localStorage.setItem("user_role", role);
   localStorage.setItem("user_email", user?.Email || "");
   localStorage.setItem("user_name", user?.Name || "");
@@ -32,6 +34,7 @@ export const setAuthSession = ({ token, user }) => {
 export const clearAuthSession = () => {
   [
     "token",
+    "refreshToken",
     "user_role",
     "user_email",
     "user_name",
