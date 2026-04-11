@@ -217,7 +217,7 @@ export const getCityIdFromRecord = (record) => {
 };
 
 export const normalizeCityRecord = (record, index) => {
-  const entityId = pickFirstValue(record, ["_id", "id", "cityId", "cityID"]);
+  const entityId = pickFirstValue(record, ["_id", "id", "cityId", "city_id", "cityID"]);
   const id = isPresent(entityId) ? String(entityId) : `city-${index + 1}`;
 
   return {
@@ -225,11 +225,11 @@ export const normalizeCityRecord = (record, index) => {
     backendId: id,
     code: formatCode(
       "CTY",
-      pickFirstValue(record, ["City ID", "cityId", "cityID", "cityCode", "code"]),
+      pickFirstValue(record, ["city_id", "City ID", "cityId", "cityID", "cityCode", "code"]),
       index
     ),
     name: normalizeString(
-      pickFirstValue(record, ["City Name", "cityName", "name", "city", "title"]),
+      pickFirstValue(record, ["city_name", "City Name", "cityName", "name", "city", "title"]),
       `City ${index + 1}`
     ),
     status: normalizeStatus(
@@ -248,6 +248,7 @@ export const normalizeAreaRecord = (record, index) => {
     backendId: id,
     name: normalizeString(
       pickFirstValue(record, [
+        "society_name",
         "Society Name",
         "areaName",
         "name",
@@ -271,8 +272,7 @@ export const buildCityPayloads = (name) => {
   const normalizedName = normalizeString(name);
 
   return dedupePayloads([
-    { "City Name": normalizedName },
-    { cityName: normalizedName }
+    { city_name: normalizedName, "City Name": normalizedName, cityName: normalizedName }
   ]).map(compactObject);
 };
 
@@ -283,6 +283,8 @@ export const buildAreaPayloads = ({ name, cityId, cityName }) => {
 
   return dedupePayloads([
     {
+      city_name: normalizedCityName,
+      society_name: normalizedAreaName,
       "City Name": normalizedCityName,
       "Society Name": normalizedAreaName,
     },

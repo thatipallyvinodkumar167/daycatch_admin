@@ -47,13 +47,13 @@ const MembershipPlain = () => {
       const results = response.data.results || response.data || [];
       
       const processedPlans = results.map(plan => ({
-        id: plan._id,
-        name: plan.name || plan["Plan Name"] || "Unnamed Plan",
-        days: plan.days || plan["Plan Days"] || 0,
-        price: plan.price || plan["Plan Price"] || 0,
-        freeDelivery: plan.freeDelivery ?? plan["Free Delivery"] ?? false,
-        instantDelivery: plan.instantDelivery ?? plan["Instant Delivery"] ?? false,
-        rewards: plan.rewards || plan.Reward || 0,
+        id: plan._id || plan.id,
+        name: plan.plan_name || plan.name || plan["Plan Name"] || "Unnamed Plan",
+        days: plan.plan_days || plan.days || plan["Plan Days"] || 0,
+        price: plan.plan_price || plan.price || plan["Plan Price"] || 0,
+        freeDelivery: plan.free_delivery ?? plan.freeDelivery ?? plan["Free Delivery"] ?? false,
+        instantDelivery: plan.instant_delivery ?? plan.instantDelivery ?? plan["Instant Delivery"] ?? false,
+        rewards: plan.reward || plan.rewards || plan.Reward || 0,
         description: plan.description || plan.Description || "",
         image: plan.image || plan.Image || ""
       }));

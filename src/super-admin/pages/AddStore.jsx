@@ -23,9 +23,11 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import RadarIcon from "@mui/icons-material/Radar";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import PercentIcon from "@mui/icons-material/Percent";
+import PhoneIcon from "@mui/icons-material/Phone";
 
 const ID_TYPES = ["Aadhar Card", "PAN Card", "Driving License", "Passport", "Voter ID"];
 const normalizeEmail = (value = "") => String(value || "").trim().toLowerCase();
+const isValidPhone = (value = "") => /^[0-9]{10}$/.test(String(value || "").trim());
 
 const sectionLabel = (text, Icon) => (
   <Typography variant="subtitle2" fontWeight="900" color="#4318ff" 
@@ -240,7 +242,7 @@ const AddStore = () => {
             }
 
             const stores = storeResult.value.data?.results || storeResult.value.data || [];
-            const store = stores.find((item) => item._id === id || item.id === id);
+            const store = stores.find((item) => String(item._id || item.id) === String(id));
             if (!store) return;
 
             const subAdmins =
@@ -259,24 +261,24 @@ const AddStore = () => {
             setLinkedSubAdmin(matchedSubAdmin);
             setForm((prev) => ({
               ...prev,
-              storeName: store["Store Name"] || store.name || "",
-              employeeName: matchedSubAdmin?.Name || store["Employee Name"] || store.employeeName || "",
-              storeNumber: matchedSubAdmin?.phone || store.Mobile || store.phone || "",
-              email: matchedSubAdmin?.Email || store.Email || store.email || "",
+              storeName: store.store_name || store["Store Name"] || store.name || "",
+              employeeName: matchedSubAdmin?.Name || store.employee_name || store["Employee Name"] || store.employeeName || "",
+              storeNumber: matchedSubAdmin?.phone || store.phone_number || store.Mobile || store.phone || "",
+              email: matchedSubAdmin?.Email || store.email || store.Email || "",
               password: "",
-              idType: store["ID Type"] || store.idType || "",
-              idNumber: store["ID Number"] || store.idNumber || "",
-              selectedCity: store.City || store.city || "",
-              selectedArea: store.Area || store.area || "",
+              idType: store.id_type || store["ID Type"] || store.idType || "",
+              idNumber: store.id_number || store["ID Number"] || store.idNumber || "",
+              selectedCity: store.city || store.City || "",
+              selectedArea: store.area || store.Area || "",
               address: store.address || "",
-              adminShare: store["admin share"] || store.adminShare || "",
-              deliveryRange: store["Delivery Range"] || store.deliveryRange || "",
-              ordersPerSlot: store["Orders Per Slot"] || store.ordersPerSlot || "",
-              startTime: store["Start Time"] || store.startTime || "",
-              endTime: store["End Time"] || store.endTime || "",
-              slotInterval: store["Slot Interval"] || store.slotInterval || "",
-              storeImagePreview: store["Profile Pic"] || store.logo || matchedSubAdmin?.Image || null,
-              idImagePreview: store["ID Image"] || store.idImage || null,
+              adminShare: store.admin_share || store["admin share"] || store.adminShare || "",
+              deliveryRange: store.delivery_range || store["Delivery Range"] || store.deliveryRange || "",
+              ordersPerSlot: store.orders_per_slot || store["Orders Per Slot"] || store.ordersPerSlot || "",
+              startTime: store.store_opening_time || store.startTime || store["Start Time"] || "",
+              endTime: store.store_closing_time || store.endTime || store["End Time"] || "",
+              slotInterval: store.slot_interval || store.slotInterval || store["Slot Interval"] || "",
+              storeImagePreview: store.store_photo || store["Profile Pic"] || store.logo || matchedSubAdmin?.Image || null,
+              idImagePreview: store.id_photo || store["ID Image"] || store.idImage || null,
             }));
           })
           .catch((err) => console.error("Error fetching store:", err));
@@ -299,6 +301,7 @@ const AddStore = () => {
     "Employee Name": form.employeeName,
     name: form.employeeName,
     Mobile: form.storeNumber,
+    phone_number: form.storeNumber,
     "admin share": form.adminShare,
     Email: form.email,
     email: form.email,
@@ -314,7 +317,7 @@ const AddStore = () => {
     "Slot Interval": form.slotInterval,
     ...(form.storeImagePreview && { "Profile Pic": form.storeImagePreview }),
     ...(form.idImagePreview && { "ID Image": form.idImagePreview }),
-    status: isEdit ? undefined : "Active",
+    status: isEdit ? undefined : "Pending",
   });
 
   const buildStoreSubAdminPayload = (storeIdValue, options = {}) => {
@@ -337,6 +340,11 @@ const AddStore = () => {
   const handleSubmit = async () => {
     if (!form.storeName.trim() || !form.employeeName.trim() || !form.storeNumber.trim() || !form.email.trim()) {
         showMsg("Store name, owner name, phone number, and email are required fields.", "error");
+        return;
+    }
+
+    if (!isValidPhone(form.storeNumber)) {
+        showMsg("Store mobile number must be exactly 10 digits.", "error");
         return;
     }
 
@@ -413,8 +421,8 @@ const AddStore = () => {
               throw creationError;
           }
 
-          showMsg("Store workspace generated and Sub-Admin enrolled successfully.", "success");
-          setTimeout(() => navigate("/stores-list"), 2000);
+          showMsg("Store created. Pending Super Admin approval.", "success");
+          setTimeout(() => navigate("/store-approval"), 1500);
       }
     } catch (error) {
       console.error("Error saving store:", error);
@@ -572,13 +580,13 @@ const AddStore = () => {
               />
             </Grid>
             <Grid item xs={12} md={4}>
-              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>STORE NUMBER</Typography>
+              <Typography variant="caption" fontWeight="800" color="#2b3674" sx={{ ml: 0.5, mb: 1, display: "block" }}>STORE MOBILE NUMBER</Typography>
               <TextField 
                 fullWidth 
-                // placeholder="+91 XXXXX XXXXX" 
+                placeholder="10 digit number" 
                 value={form.storeNumber} 
                 onChange={set("storeNumber")} 
-                // InputProps={{ startAdornment: <PhoneIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
+                InputProps={{ startAdornment: <PhoneIcon sx={{ color: "#a3aed0", fontSize: 18, mr: 1 }} /> }}
                 sx={fieldStyles} 
               />
             </Grid>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   Box,
   Button,
@@ -40,23 +41,13 @@ const RegisterPage = () => {
 
     try {
       await api.post('/auth/register', formData);
-      alert('Registration successful! Please login.');
+      toast.success('Registration successful! Please login.');
       navigate('/login');
     } catch (error) {
       console.error('Registration error:', error);
-      const errData = error.response?.data;
-      const errMsg =
-        typeof errData === 'string'
-          ? errData
-          : errData?.message || errData?.error || errData?.msg
-          ? String(errData?.message || errData?.error || errData?.msg)
-          : 'Registration failed. Please try again.';
-
+      // Redundant error alerts removed; handled by global api interceptor.
       if (error.response?.status === 403) {
-        alert(errMsg || 'A Super Admin is already registered. Please login instead.');
         navigate('/login');
-      } else {
-        alert(errMsg);
       }
     } finally {
       setLoading(false);

@@ -42,12 +42,12 @@ const UserNotifications = () => {
       const results = response.data.results || response.data || [];
       
       const formattedData = results.map((item, index) => ({
-        id: item._id || index,
-        title: item.title || "System Broadcast",
+        id: item.noti_id || item.id || item._id || index + 1,
+        title: item.noti_title || item.title || "System Broadcast",
         image: item.image || item.logo || null,
-        user: item.user || item.selectUsers || "All Users",
-        message: item.message || item.body || "No message content available.",
-        timestamp: item.createdAt || item.date || null
+        user: item.select_users || item.user || item.selectUsers || (Number(item.user_id) > 0 ? `User #${item.user_id}` : "All Users"),
+        message: item.noti_message || item.message || item.body || "No message content available.",
+        timestamp: item.created_at || item.createdAt || item.date || null
       }));
 
       setNotifications(formattedData);

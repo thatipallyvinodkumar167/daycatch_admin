@@ -43,12 +43,12 @@ const StoreNotifications = () => {
       const results = response.data.results || response.data || [];
       
       const formattedData = results.map((item, index) => ({
-        id: item._id || index,
-        title: item.title || "Admin Broadcast",
+        id: item.not_id || item.id || item._id || index + 1,
+        title: item.not_title || item.title || "Admin Broadcast",
         image: item.image || item.logo || null,
-        store: item.store || item.selectStores || "All Stores",
-        message: item.message || item.body || "No message content available.",
-        timestamp: item.createdAt || item.date || null
+        store: item.select_store || item.store || item.selectStores || (Number(item.store_id) > 0 ? `Store #${item.store_id}` : "All Stores"),
+        message: item.not_message || item.message || item.body || "No message content available.",
+        timestamp: item.created_at || item.createdAt || item.date || null
       }));
 
       setNotifications(formattedData);

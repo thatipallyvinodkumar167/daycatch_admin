@@ -40,14 +40,14 @@ const EditMembership = () => {
         const data = response.data;
         if (data) {
           setFormData({
-            name: data["Plan Name"] || data.name || "",
-            days: data["Plan Days"] || data.days || "",
-            price: data["Plan Price"] || data.price || "",
-            rewardPoint: data.Reward || data.rewardPoint || "",
-            freeDelivery: (data["Free Delivery"] ?? data.freeDelivery) ? "Yes" : "No",
-            instantDelivery: (data["Instant Delivery"] ?? data.instantDelivery) ? "Yes" : "No",
-            image: data.Image || data.image || "",
-            description: data.Description || data.description || "",
+            name: data.plan_name || data["Plan Name"] || data.name || "",
+            days: data.plan_days || data["Plan Days"] || data.days || "",
+            price: data.plan_price || data["Plan Price"] || data.price || "",
+            rewardPoint: data.reward || data.Reward || data.rewardPoint || "",
+            freeDelivery: (data.free_delivery ?? data["Free Delivery"] ?? data.freeDelivery) ? "Yes" : "No",
+            instantDelivery: (data.instant_delivery ?? data["Instant Delivery"] ?? data.instantDelivery) ? "Yes" : "No",
+            image: data.image || data.Image || "",
+            description: data.description || data.Description || "",
           });
         }
       } catch (error) {
@@ -81,14 +81,14 @@ const EditMembership = () => {
     e.preventDefault();
     try {
       const payload = {
-        "Plan Name": formData.name,
-        "Plan Days": Number(formData.days),
-        "Plan Price": Number(formData.price),
-        "Free Delivery": formData.freeDelivery === "Yes",
-        "Instant Delivery": formData.instantDelivery === "Yes",
-        Reward: Number(formData.rewardPoint),
-        Image: formData.image,
-        Description: formData.description
+        plan_name: formData.name,
+        plan_days: Number(formData.days),
+        plan_price: Number(formData.price),
+        free_delivery: formData.freeDelivery === "Yes",
+        instant_delivery: formData.instantDelivery === "Yes",
+        reward: Number(formData.rewardPoint),
+        image: formData.image,
+        description: formData.description
       };
 
       await genericApi.update("membership", id, payload);

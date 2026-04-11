@@ -148,7 +148,7 @@ const buildCityUploadPayloads = (rows, existingCities) => {
 
     seenCityIds.add(cityIdKey);
     seenCityNames.add(cityNameKey);
-    payloads.push({ "City ID": cityId, "City Name": cityName });
+    payloads.push({ city_id: cityId, city_name: cityName, "City ID": cityId, "City Name": cityName });
   });
 
   return { payloads, issues, skippedCount };
@@ -188,7 +188,7 @@ const buildAreaUploadPayloads = (rows, existingCities, existingAreas) => {
     if (existingAreaKeys.has(duplicateKey) || seenAreaKeys.has(duplicateKey)) { skippedCount += 1; return; }
 
     seenAreaKeys.add(duplicateKey);
-    payloads.push({ "Society Name": areaName, "City Name": matchedCity.name });
+    payloads.push({ society_name: areaName, city_name: matchedCity.name, "Society Name": areaName, "City Name": matchedCity.name });
   });
 
   return { payloads, issues, skippedCount };

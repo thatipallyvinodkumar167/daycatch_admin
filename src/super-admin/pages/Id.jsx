@@ -56,9 +56,9 @@ const Id = () => {
       const response = await genericApi.getAll("id");
       const results = response.data.results || response.data || [];
       const formattedIds = results.map((item, index) => ({
-        id: item._id,
-        name: item.name || item["ID Name"] || "Unnamed ID",
-        status: item.status || "Active",
+        id: item._id || item.id,
+        name: item.id_name || item.name || item["ID Name"] || "Unnamed ID",
+        status: item.status === 1 ? "Active" : item.status === 0 ? "Inactive" : typeof item.status === 'string' ? item.status : "Active",
       }));
       setIds(formattedIds);
     } catch (error) {
@@ -108,8 +108,8 @@ const Id = () => {
 
     try {
       const payload = {
-        name: formData.name,
-        status: formData.status
+        id_name: formData.name,
+        status: formData.status === "Active" ? 1 : 0
       };
 
       if (editMode) {

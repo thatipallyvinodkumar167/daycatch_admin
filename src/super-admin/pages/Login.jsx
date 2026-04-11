@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { 
   Box, 
   Container, 
@@ -10,10 +11,10 @@ import {
   Divider, 
   InputAdornment, 
   IconButton,
-  Stack,
-  Alert
+  Stack
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
+import { useSearchParams } from "react-router-dom";
 import { Visibility, VisibilityOff, Email, Lock } from '@mui/icons-material';
 import api from '../../api/api';
 import { genericApi } from '../../api/genericApi';
@@ -22,46 +23,14 @@ import { getAssignedStorePath, setAuthSession } from "../../utils/authSession";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [checkingSetup, setCheckingSetup] = useState(true);
-  const [setupMessage, setSetupMessage] = useState('');
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const checkRegisterStatus = async () => {
-      try {
-        const response = await api.get('/auth/register-status');
-        const canRegister = Boolean(response.data?.canRegister);
-
-        if (!isMounted) return;
-
-        if (canRegister) {
-          setSetupMessage(response.data?.message || 'No Super Admin found yet. First-time setup is available.');
-        }
-      } catch (error) {
-        if (!isMounted) return;
-        console.error('Failed to verify auth setup:', error);
-      } finally {
-        if (isMounted) {
-          setCheckingSetup(false);
-        }
-      }
-    };
-
-    checkRegisterStatus();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (checkingSetup) return;
     setLoading(true);
     try {
       const response = await api.post('/auth/login', {
@@ -77,13 +46,13 @@ const LoginPage = () => {
       
       if (isStoreAdmin && !user.storeId) {
           try {
-              const res = await genericApi.getAll("storeList");
-              const results = res.data?.results || res.data || [];
+              const res = await api.get("/stores");
+              const results = res.data?.data || res.data?.results || res.data || [];
               const userEmail = (user.email || user.Email || "").toLowerCase();
               const myStore = results.find(s => (s.Email || s.email || "").toLowerCase() === userEmail);
               if (myStore) {
                   user.storeId = myStore._id || myStore.id;
-                  user.storeName = myStore["Store Name"] || myStore.name;
+                  user.storeName = myStore["Store Name"] || myStore.store_name || myStore.name;
               }
           } catch (e) { console.error("Redirection bridge failure:", e); }
       }
@@ -93,19 +62,22 @@ const LoginPage = () => {
       }
  
       setAuthSession({ token, refreshToken, user });
+      toast.success('Login successful! Redirecting...');
 
-      const nextPath = isStoreAdmin && user?.storeId ? getAssignedStorePath() : "/";
-      window.location.assign(nextPath);
+      const redirectStoreId = searchParams.get("storeId");
+      const nextPath = redirectStoreId
+        ? `/stores/details/${encodeURIComponent(redirectStoreId)}/dashboard`
+        : (isStoreAdmin && user?.storeId ? getAssignedStorePath() : "/");
+      navigate(nextPath);
     } catch (error) {
       console.error('Login error:', error);
-      const errData = error.response?.data;
-      const errMsg =
-        typeof errData === 'string'
-          ? errData
-          : errData?.message || errData?.error || errData?.msg
-          ? String(errData?.message || errData?.error || errData?.msg)
-          : 'Login failed. Please check your credentials and try again.';
-      alert(errMsg);
+      if (!error?.__toastShown) {
+        const message =
+          error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          "Invalid email or password.";
+        toast.error(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -153,12 +125,6 @@ const LoginPage = () => {
 
           <Box component="form" onSubmit={handleSubmit}>
             <Stack spacing={2.5}>
-              {setupMessage ? (
-                <Alert severity="info" sx={{ textAlign: 'left', borderRadius: '12px' }}>
-                  {setupMessage}
-                </Alert>
-              ) : null}
-
               <TextField
                 fullWidth
                 size="small"
@@ -247,7 +213,7 @@ const LoginPage = () => {
                 fullWidth
                 type="submit"
                 variant="contained"
-                disabled={loading || checkingSetup}
+                disabled={loading}
                 sx={{
                   py: 1.8,
                   fontWeight: 900,
@@ -262,7 +228,7 @@ const LoginPage = () => {
                   }
                 }}
               >
-                {checkingSetup ? 'Checking access...' : loading ? 'Entering...' : 'Sign In Now'}
+                {loading ? 'Entering...' : 'Sign In Now'}
               </Button>
             </Stack>
           </Box>

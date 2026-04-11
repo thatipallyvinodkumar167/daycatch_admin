@@ -134,7 +134,7 @@ function StoreLayout() {
     }
 
     if (!activeStoreId) {
-      navigate("/stores-list");
+      navigate(getAssignedStorePath(), { replace: true });
       return;
     }
 
@@ -152,18 +152,18 @@ function StoreLayout() {
         const record = response.data || {};
         const storeData = {
           id: record._id || record.id || activeStoreId,
-          name: record["Store Name"] || record.name || storeNameRaw || "Unnamed Store",
-          logo: record["Profile Pic"] || record.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(storeNameRaw || "S")}&background=4318ff&color=fff`,
+          name: record.store_name || record["Store Name"] || record.name || storeNameRaw || "Unnamed Store",
+          logo: record.store_photo || record["Profile Pic"] || record.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(storeNameRaw || "S")}&background=4318ff&color=fff`,
           // Add other fields you might need in child components
-          owner: record["Employee Name"] || "N/A",
-          phone: record.Mobile || "N/A",
-          email: record.Email || "N/A",
-          city: record.City || "N/A",
-          address: record.Address || "N/A",
+          owner: record.employee_name || record["Employee Name"] || "N/A",
+          phone: record.phone_number || record.Mobile || "N/A",
+          email: record.email || record.Email || "N/A",
+          city: record.city || record.City || "N/A",
+          address: record.address || record.Address || "N/A",
           status: record.status || "Active",
-          adminShare: record["Admin Share"] || 0,
-          startTime: record["Start Time"] || "N/A",
-          endTime: record["End Time"] || "N/A",
+          adminShare: record.admin_share || record["Admin Share"] || 0,
+          startTime: record.store_opening_time || record["Start Time"] || record.startTime || "N/A",
+          endTime: record.store_closing_time || record["End Time"] || record.endTime || "N/A",
         };
         sessionStorage.setItem(`${STORE_CACHE_PREFIX}${storeData.id}`, JSON.stringify(storeData));
         setStore(storeData);

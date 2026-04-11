@@ -90,23 +90,23 @@ const StoreProducts = () => {
     else setLoading(true);
 
     try {
-      const response = await genericApi.getAll("storeProducts");
+      const response = await genericApi.getAll("store_products");
       const results = response.data.results || response.data || [];
 
       const formattedData = results
         .map((item, index) => ({
           id: item._id || item.id || `store-product-${index}`,
           image:
+            item.image ||
             item.Image ||
             item["Product Image"] ||
-            item.image ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(item["Product Name"] || "SP")}&background=random`,
-          productName: item["Product Name"] || item.productName || item.name || `Product ${index + 1}`,
-          category: item.Category || item.category || "General",
-          type: item.Type || item.type || "General",
-          price: Number(item.Price || item.price || 0),
-          mrp: Number(item.MRP || item.mrp || 0),
-          storeName: item.Store || item.storeName || item.store || `Store ${index + 1}`,
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(item.product_name || item["Product Name"] || "SP")}&background=random`,
+          productName: item.product_name || item["Product Name"] || item.productName || item.name || `Product ${index + 1}`,
+          category: item.category || item.Category || "General",
+          type: item.type || item.Type || "General",
+          price: Number(item.price || item.Price || 0),
+          mrp: Number(item.mrp || item.MRP || 0),
+          storeName: item.store || item.Store || item.storeName || `Store ${index + 1}`,
           status: normalizeStatus(item.status),
           raw: item
         }))
@@ -133,7 +133,7 @@ const StoreProducts = () => {
     setUpdatingId(item.id);
 
     try {
-      await genericApi.update("storeProducts", item.id, {
+      await genericApi.update("store_products", item.id, {
         ...item.raw,
         status: nextStatus,
         reviewedAt: new Date().toISOString()

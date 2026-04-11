@@ -60,14 +60,14 @@ const AddMembership = () => {
       }
 
       const payload = {
-        "Plan Name": formData.name,
-        "Plan Days": Number(formData.days),
-        "Plan Price": Number(formData.price),
-        "Free Delivery": formData.freeDelivery === "Yes",
-        "Instant Delivery": formData.instantDelivery === "Yes",
-        Reward: Number(formData.rewardPoint),
-        Image: formData.image,
-        Description: formData.description
+        plan_name: formData.name,
+        plan_days: Number(formData.days),
+        plan_price: Number(formData.price),
+        free_delivery: formData.freeDelivery === "Yes",
+        instant_delivery: formData.instantDelivery === "Yes",
+        reward: Number(formData.rewardPoint),
+        image: formData.image,
+        description: formData.description
       };
 
       await genericApi.create("membership", payload);

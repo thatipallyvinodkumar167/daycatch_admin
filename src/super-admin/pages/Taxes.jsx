@@ -60,7 +60,7 @@ const Taxes = () => {
         id: tax._id,
         name: tax.name || tax["Tax Type name"] || tax["Tax Name"] || "Unnamed Tax",
         rate: tax.rate || tax["Tax percentage"] || tax["Tax Rate"] || 0,
-        status: tax.status || "Active",
+        status: tax.status === 1 ? "Active" : tax.status === 0 ? "Inactive" : typeof tax.status === 'string' ? tax.status : "Active",
       }));
       setTaxes(formattedTaxes);
     } catch (error) {

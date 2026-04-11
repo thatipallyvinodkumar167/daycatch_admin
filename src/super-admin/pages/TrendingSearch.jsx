@@ -58,16 +58,16 @@ const getProductKey = (item) =>
 const formatStoreProduct = (item, index) => ({
   id: item._id || item.id || `store-product-${index}`,
   storeProductId: item._id || item.id || `store-product-${index}`,
-  productID: item["Product Id"] || item.productID || "",
-  productName: item["Product Name"] || item.productName || item.name || "Unnamed Product",
-  category: item.Category || item.category || "General",
-  type: item.Type || item.type || "General",
-  image: item.Image || item["Product Image"] || item.image || "",
-  tags: item.Tags || item.tags || "",
-  unit: item.Unit || item.unit || "",
-  mrp: Number(item.MRP || item.mrp || 0),
+  productID: item.product_id || item["Product Id"] || item.productID || "",
+  productName: item.product_name || item["Product Name"] || item.productName || item.name || "Unnamed Product",
+  category: item.category || item.Category || "General",
+  type: item.type || item.Type || "General",
+  image: item.image || item.Image || item["Product Image"] || "",
+  tags: item.tags || item.Tags || "",
+  unit: item.unit || item.Unit || "",
+  mrp: Number(item.mrp || item.MRP || 0),
   price: Number(item.price || item.Price || 0),
-  storeName: item.Store || item.storeName || item.store || "Unknown Store",
+  storeName: item.store || item.Store || item.storeName || "Unknown Store",
   requestStatus: normalizeStatus(item.status),
   sourceType: "store",
   sourceLabel: "Approval Product"
@@ -76,14 +76,14 @@ const formatStoreProduct = (item, index) => ({
 const formatAdminProduct = (item, index) => ({
   id: item._id || item.id || `admin-product-${index}`,
   storeProductId: "",
-  productID: item["Product Id"] || item.productID || "",
-  productName: item["Product Name"] || item.productName || item.name || "Unnamed Product",
-  category: item.Category || item.category || "General",
-  type: item.Type || item.type || "General",
-  image: item["Product Image"] || item.image || "",
-  tags: item.Tags || item.tags || "",
-  unit: item.Unit || item.unit || "",
-  mrp: Number(item.MRP || item.mrp || 0),
+  productID: item.product_id || item["Product Id"] || item.productID || "",
+  productName: item.product_name || item["Product Name"] || item.productName || item.name || "Unnamed Product",
+  category: item.category || item.Category || "General",
+  type: item.type || item.Type || "General",
+  image: item.product_image || item["Product Image"] || item.image || "",
+  tags: item.tags || item.Tags || "",
+  unit: item.unit || item.Unit || "",
+  mrp: Number(item.mrp || item.MRP || 0),
   price: Number(item.price || item.Price || 0),
   storeName: "Admin Catalog",
   requestStatus: "Admin Product",
@@ -93,19 +93,19 @@ const formatAdminProduct = (item, index) => ({
 
 const formatTrendingProduct = (item, index) => ({
   id: item._id || item.id || `trending-${index}`,
-  storeProductId: item["Store Product Id"] || item.storeProductId || "",
-  productID: item["Product Id"] || item.productID || "",
-  productName: item["Product Name"] || item.productName || item.Keyword || item.keyword || "Unnamed Product",
-  category: item.Category || item.category || "General",
-  type: item.Type || item.type || "General",
-  image: item["Product Image"] || item.image || "",
-  storeName: item.Store || item.storeName || item.store || "Unknown Store",
-  mrp: Number(item.MRP || item.mrp || 0),
+  storeProductId: item.store_product_id || item["Store Product Id"] || item.storeProductId || "",
+  productID: item.product_id || item["Product Id"] || item.productID || "",
+  productName: item.product_name || item["Product Name"] || item.productName || item.Keyword || item.keyword || "Unnamed Product",
+  category: item.category || item.Category || "General",
+  type: item.type || item.Type || "General",
+  image: item.product_image || item["Product Image"] || item.image || "",
+  storeName: item.store || item.Store || item.storeName || "Unknown Store",
+  mrp: Number(item.mrp || item.MRP || 0),
   price: Number(item.price || item.Price || 0),
   status: item.status || "Active",
-  position: Number(item.Position || item.position || index + 1),
-  searchCount: Number(item["Search Count"] || item.searchCount || 0),
-  lastUpdated: item["Last Updated"] ? new Date(item["Last Updated"]).toLocaleDateString() : "N/A"
+  position: Number(item.position || item.Position || index + 1),
+  searchCount: Number(item.search_count || item["Search Count"] || item.searchCount || 0),
+  lastUpdated: item.last_updated || item["Last Updated"] ? new Date(item.last_updated || item["Last Updated"]).toLocaleDateString() : "N/A"
 });
 
 const TrendingSearch = () => {
@@ -134,20 +134,25 @@ const TrendingSearch = () => {
     setLoading(true);
     try {
       const [productsResponse, trendingResponse, adminResponse] = await Promise.all([
-        genericApi.getAll("storeProducts"),
+        genericApi.getAll("store_products"),
         genericApi.getAll("trending_search"),
-        genericApi.getAll("Adminproducts")
+        genericApi.getAll("admin_products")
       ]);
 
       const rawProducts = extractItems(productsResponse.data);
       const rawTrending = extractItems(trendingResponse.data);
-      const rawAdminProducts = extractItems(adminResponse.data);
+      const rawAdminProducts = extractItems(adminResponse.data).filter((item) => {
+        const source = String(item?.source || "").toLowerCase();
+        return source !== "store";
+      });
 
       const allStoreProducts = rawProducts.map(formatStoreProduct);
       const allAdminProducts = rawAdminProducts.map(formatAdminProduct);
 
-      const formattedProducts = [...allAdminProducts, ...allStoreProducts.filter((item) => item.requestStatus !== "Rejected")]
-        .sort((a, b) => a.productName.localeCompare(b.productName));
+      const formattedProducts = [
+        ...allAdminProducts,
+        ...allStoreProducts.filter((item) => item.requestStatus === "Approved")
+      ].sort((a, b) => a.productName.localeCompare(b.productName));
       
       const formattedTrending = rawTrending
         .map(formatTrendingProduct)
@@ -157,7 +162,7 @@ const TrendingSearch = () => {
       setTrendingProducts(formattedTrending);
       setSourceInventoryCounts({
         admin: allAdminProducts.length,
-        approval: allStoreProducts.filter((item) => item.requestStatus !== "Rejected").length,
+        approval: allStoreProducts.filter((item) => item.requestStatus === "Approved").length,
         approved: allStoreProducts.filter((item) => item.requestStatus === "Approved").length,
         pending: allStoreProducts.filter((item) => item.requestStatus === "Pending").length,
         rejected: allStoreProducts.filter((item) => item.requestStatus === "Rejected").length
@@ -197,22 +202,22 @@ const TrendingSearch = () => {
       const basePosition = trendingProducts.length;
       const now = new Date().toISOString();
       const payloads = selectedProducts.map((product, index) => ({
-        Keyword: product.productName,
-        "Store Product Id": product.storeProductId,
-        "Product Id": product.productID,
-        "Product Name": product.productName,
-        Category: product.category,
-        Type: product.type,
-        "Product Image": product.image,
-        Store: product.storeName,
-        Tags: product.tags,
-        Unit: product.unit,
-        MRP: product.mrp,
+        keyword: product.productName,
+        store_product_id: product.storeProductId,
+        product_id: product.productID,
+        product_name: product.productName,
+        category: product.category,
+        type: product.type,
+        product_image: product.image,
+        store: product.storeName,
+        tags: product.tags,
+        unit: product.unit,
+        mrp: product.mrp,
         price: product.price,
         status: "Active",
-        Position: basePosition + index + 1,
-        "Search Count": 0,
-        "Last Updated": now
+        position: basePosition + index + 1,
+        search_count: 0,
+        last_updated: now
       }));
 
       if (payloads.length === 1) {
@@ -304,8 +309,8 @@ const TrendingSearch = () => {
         <Grid container spacing={3} sx={{ mb: 6 }}>
           {[
             { title: "Total Trending", value: trendingProducts.length, icon: <TrendingUpIcon />, color: navy },
-            { title: "Admin Products", value: sourceInventoryCounts.admin, icon: <StoreIcon />, color: brandRed },
-            { title: "Approval Products", value: sourceInventoryCounts.approval, icon: <StoreIcon />, color: "#05cd99" },
+            { title: "Master Catalog", value: sourceInventoryCounts.admin, icon: <StoreIcon />, color: brandRed },
+            { title: "Store Requests", value: sourceInventoryCounts.approval, icon: <StoreIcon />, color: "#05cd99" },
             { title: "Pending Review", value: sourceInventoryCounts.pending, icon: <SearchIcon />, color: brandRed },
           ].map((stat, i) => (
             <Grid item xs={12} sm={6} lg={3} key={i}>

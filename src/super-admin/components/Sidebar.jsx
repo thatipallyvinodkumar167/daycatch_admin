@@ -72,7 +72,7 @@ function Sidebar({ open }) {
       try {
         const response = await genericApi.getAll("roles");
         const roles = response.data.results || response.data || [];
-        const foundRole = roles.find(r => r.name === userRole);
+        const foundRole = roles.find(r => (r.role_name || r.name) === userRole);
         setPermissions(foundRole?.permissions || "all");
       } catch {
         setPermissions("all");

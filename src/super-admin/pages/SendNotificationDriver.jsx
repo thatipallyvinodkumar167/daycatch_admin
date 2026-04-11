@@ -72,7 +72,9 @@ const SendNotificationDriver = () => {
     setIsSubmitting(true);
     try {
       await genericApi.create("driver_notifications", {
-        ...formData,
+        title: formData.title,
+        message: formData.message,
+        select_driver: formData.selectDeliveryBoys,
         image: imageFile ? imageFile.name : null,
       });
       setSnackbar({ open: true, message: "Notification sent successfully!", severity: "success" });

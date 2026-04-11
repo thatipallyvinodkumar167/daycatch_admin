@@ -30,6 +30,14 @@ import EmailIcon from "@mui/icons-material/Email";
 import { useNavigate } from "react-router-dom";
 import { subAdminApi } from "../../api/subAdminApi";
 
+const toStatusLabel = (value) => {
+  if (value === 1 || value === "1" || value === true) return "Active";
+  if (value === 0 || value === "0" || value === false) return "Inactive";
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return "Inactive";
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+};
+
 const SubAdmin = () => {
   const navigate = useNavigate();
   const [admins, setAdmins] = useState([]);
@@ -46,14 +54,13 @@ const SubAdmin = () => {
       const results = response?.data?.data || [];
       
       const formattedData = results.map((user, index) => ({
-        id: user._id || index,
+        id: user._id || user.id || index,
         name: user["Name"] || user.name || "Unknown Admin",
         email: user["Email"] || user["Email ID"] || user.email || "protocol@daycatch.com",
         phone: user["Mobile Number"] || user.phone || "N/A",
-        role: user["role Name"] || user.roleName || user.role || "Admin",
-        scope: user.scope || "platform",
-        storeName: user.storeName || "",
-        status: user.Status || user.status || "Active",
+        role: user["role Name"] || user.roleName || user.role || user.role_name || "Admin",
+        cityNames: Array.isArray(user.assigned_cities) ? user.assigned_cities.map((city) => city.city_name).filter(Boolean) : [],
+        status: toStatusLabel(user.Status ?? user.status ?? "Active"),
         image: user.Image || user.image || user.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user["Name"] || "Admin")}&background=4318ff&color=fff`
       }));
 
@@ -88,7 +95,7 @@ const SubAdmin = () => {
       admin.name.toLowerCase().includes(q) ||
       admin.email.toLowerCase().includes(q) ||
       admin.phone.toLowerCase().includes(q) ||
-      admin.storeName.toLowerCase().includes(q)
+      admin.cityNames.join(" ").toLowerCase().includes(q)
     );
   }, [admins, search]);
 
@@ -175,7 +182,7 @@ const SubAdmin = () => {
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pl: 4, bgcolor: "#f4f7fe" }}>#</TableCell>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Sub-Admin</TableCell>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Role</TableCell>
-                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Scope</TableCell>
+                          <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Assigned Cities</TableCell>
                           <TableCell sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", bgcolor: "#f4f7fe" }}>Status</TableCell>
                           <TableCell align="right" sx={{ fontWeight: "800", color: "#8f9bba", textTransform: "uppercase", fontSize: "11px", pr: 4, bgcolor: "#f4f7fe" }}>Actions</TableCell>
                       </TableRow>
@@ -207,35 +214,42 @@ const SubAdmin = () => {
                                   </TableCell>
                                   <TableCell>
                                       <Stack spacing={0.5}>
-                                        <Chip
-                                          label={admin.scope === "store" ? "STORE" : "PLATFORM"}
-                                          size="small"
-                                          sx={{
-                                            fontWeight: "900",
-                                            bgcolor: admin.scope === "store" ? "rgba(5, 205, 153, 0.08)" : "rgba(67, 24, 255, 0.08)",
-                                            color: admin.scope === "store" ? "#05cd99" : "#4318ff",
-                                            borderRadius: "8px",
-                                            fontSize: "10px",
-                                          }}
-                                        />
-                                        {admin.scope === "store" && admin.storeName ? (
+                                        {admin.cityNames.length ? admin.cityNames.slice(0, 2).map((cityName) => (
+                                          <Chip
+                                            key={`${admin.id}-${cityName}`}
+                                            label={cityName}
+                                            size="small"
+                                            sx={{
+                                              fontWeight: "900",
+                                              bgcolor: "rgba(67, 24, 255, 0.08)",
+                                              color: "#4318ff",
+                                              borderRadius: "8px",
+                                              fontSize: "10px",
+                                            }}
+                                          />
+                                        )) : (
                                           <Typography variant="caption" color="#a3aed0" fontWeight="700">
-                                            {admin.storeName}
+                                            No cities assigned
+                                          </Typography>
+                                        )}
+                                        {admin.cityNames.length > 2 ? (
+                                          <Typography variant="caption" color="#a3aed0" fontWeight="700">
+                                            +{admin.cityNames.length - 2} more
                                           </Typography>
                                         ) : null}
                                       </Stack>
                                   </TableCell>
                                   <TableCell>
                                       <Chip 
-                                          label={admin.status.toUpperCase()} 
+                                          label={String(admin.status || "").toUpperCase()} 
                                           size="small" 
                                           sx={{ 
                                               fontWeight: "900", 
-                                              bgcolor: admin.status === "Active" ? "rgba(0, 210, 106, 0.1)" : "rgba(163, 174, 208, 0.1)", 
-                                              color: admin.status === "Active" ? "#00d26a" : "#a3aed0", 
+                                              bgcolor: String(admin.status).toLowerCase() === "active" ? "rgba(0, 210, 106, 0.1)" : "rgba(163, 174, 208, 0.1)", 
+                                              color: String(admin.status).toLowerCase() === "active" ? "#00d26a" : "#a3aed0", 
                                               borderRadius: "8px",
                                               fontSize: "10px",
-                                              border: `1px solid ${admin.status === "Active" ? "rgba(0, 210, 106, 0.2)" : "rgba(163, 174, 208, 0.2)"}`
+                                              border: `1px solid ${String(admin.status).toLowerCase() === "active" ? "rgba(0, 210, 106, 0.2)" : "rgba(163, 174, 208, 0.2)"}`
                                           }} 
                                       />
                                   </TableCell>

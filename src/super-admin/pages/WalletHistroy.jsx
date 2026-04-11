@@ -26,6 +26,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HistoryIcon from "@mui/icons-material/History";
 import { genericApi } from "../../api/genericApi";
+import { getAllUsers } from "../../api/usersApi";
 
 const WalletHistory = () => {
   const [records, setRecords] = useState([]);
@@ -38,23 +39,71 @@ const WalletHistory = () => {
     else setLoading(true);
 
     try {
-      const response = await genericApi.getAll("Wallet_Rechage_History");
-      const results = response.data.results || response.data || [];
+      const [walletResponse, usersResponse] = await Promise.all([
+        genericApi.getAll("wallet_recharge_history"),
+        getAllUsers({ limit: 2000 }),
+      ]);
+
+      const results = walletResponse.data.results || walletResponse.data || [];
+      const users = usersResponse.data?.results || usersResponse.data?.data || [];
+      const usersById = new Map();
+      users.forEach((u) => {
+        const keys = [u.id, u.user_id, u._id, u["User ID"]];
+        keys.forEach((key) => {
+          const normalized = String(key ?? "").trim();
+          if (normalized) usersById.set(normalized, u);
+        });
+      });
 
       const formattedData = results.map((item, index) => ({
-        id: item._id || index + 1,
-        userName: item["User Name"] || item.userName || "Unknown User",
-        userPhone: item["User Phone"] || item.userPhone || "N/A",
-        rechargeAmount: Number(item["Recharge Amount"] || item.rechargeAmount || 0),
-        rechargeDate: item["Recharge Date"] ? new Date(item["Recharge Date"]).toLocaleDateString("en-IN", {
+        ...(function () {
+          const walletUserKey = String(item.user_id ?? item.userId ?? item["User ID"] ?? "").trim();
+          const matchedUser = usersById.get(walletUserKey);
+          const matchedName =
+            matchedUser?.name ||
+            matchedUser?.["User Name"] ||
+            matchedUser?.user_name ||
+            "";
+          const matchedPhone =
+            matchedUser?.user_phone ||
+            matchedUser?.phone ||
+            matchedUser?.["User Phone"] ||
+            "";
+          const matchedEmail =
+            matchedUser?.email ||
+            matchedUser?.["User Email"] ||
+            "";
+
+          return {
+        id: item._id || item.id || index + 1,
+        userName:
+          item.user_name ||
+          item["User Name"] ||
+          matchedName ||
+          (walletUserKey ? `User #${walletUserKey}` : "Unknown User"),
+        userPhone:
+          item.user_phone ||
+          item["User Phone"] ||
+          matchedPhone ||
+          matchedEmail ||
+          "",
+        rechargeAmount: Number(item.amount || item.recharge_amount || item["Recharge Amount"] || item.rechargeAmount || 0),
+        rechargeDate: item.date_of_recharge || item.recharge_date || item["Recharge Date"] ? new Date(item.date_of_recharge || item.recharge_date || item["Recharge Date"]).toLocaleDateString("en-IN", {
           day: "2-digit",
           month: "short",
           year: "numeric"
-        }) : "N/A",
-        status: item.Status || item.status || "Pending",
-        medium: item.Medium || item.medium || "N/A",
-        currentBalance: Number(item["Current Amount"] || item.currentBalance || 0),
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(item["User Name"] || item.userName || "U")}&background=random&color=fff`,
+        }) : "",
+        status: item.recharge_status || item.status || item.Status || "Pending",
+        medium: item.payment_gateway || item.medium || item.Medium || "",
+        currentBalance: Number(item.current_amount || item["Current Amount"] || item.currentBalance || 0),
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          item.user_name ||
+          item["User Name"] ||
+          matchedName ||
+          "U"
+        )}&background=random&color=fff`,
+          };
+        })(),
       }));
 
       setRecords(formattedData);
@@ -82,7 +131,7 @@ const WalletHistory = () => {
 
   const stats = useMemo(() => [
     { label: "Total Recharges", value: records.length, icon: <HistoryIcon sx={{ fontSize: 18 }} />, color: "#4318ff" },
-    { label: "Success", value: records.filter((r) => r.status === "Success" || r.status === "Active").length, icon: <CheckCircleIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
+    { label: "Success", value: records.filter((r) => ["success", "active"].includes(String(r.status).toLowerCase())).length, icon: <CheckCircleIcon sx={{ fontSize: 18 }} />, color: "#00d26a" },
     { label: "Total Amount", value: `₹${records.reduce((sum, r) => sum + r.rechargeAmount, 0).toLocaleString()}`, icon: <AccountBalanceWalletIcon sx={{ fontSize: 18 }} />, color: "#ffb800" },
   ], [records]);
 

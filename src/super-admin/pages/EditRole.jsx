@@ -115,6 +115,28 @@ const PERMISSION_GROUPS = [
 ];
 
 const ALL_KEYS = PERMISSION_GROUPS.flatMap(g => g.items.map(i => i.key));
+const permissionFieldByLabel = {
+  Dashboard: "dashboard",
+  Users: "users",
+  Reports: "reports",
+  Category: "category",
+  Product: "product",
+  Orders: "orders",
+  Store: "store",
+  "Delivery Boy": "delivery_boy",
+  Area: "area",
+  Tax: "tax",
+  Id: "id",
+  Payout: "payout",
+  Rewards: "rewards",
+  Membership: "membership",
+  Notification: "notification",
+  Callback: "callback",
+  Feedback: "feedback",
+  Pages: "pages",
+  Settings: "settings",
+  "Cancelling Reasons": "reason",
+};
 
 const EditRole = () => {
   const navigate = useNavigate();
@@ -128,10 +150,16 @@ const EditRole = () => {
             const response = await genericApi.getOne("roles", id);
             const role = response.data;
             if (role) {
-                setRoleName(role.name || "");
-                if (role.permissions) {
-                    setSelected(role.permissions);
+                setRoleName(role.role_name || role.name || "");
+                const nextSelected = {};
+                ALL_KEYS.forEach((key) => {
+                  const field = permissionFieldByLabel[key];
+                  nextSelected[key] = Boolean(role?.[field]);
+                });
+                if (role.permissions && typeof role.permissions === "object") {
+                  Object.assign(nextSelected, role.permissions);
                 }
+                setSelected(nextSelected);
             }
         } catch (error) {
             console.error("Error fetching role data:", error);
@@ -170,10 +198,13 @@ const EditRole = () => {
       const permissions = {};
       ALL_KEYS.forEach(k => { permissions[k] = !!selected[k]; });
       
-      const payload = {
-        name: roleName.trim(),
-        permissions: permissions
-      };
+      const payload = { role_name: roleName.trim() };
+      ALL_KEYS.forEach((key) => {
+        const field = permissionFieldByLabel[key];
+        if (field) {
+          payload[field] = permissions[key] ? 1 : 0;
+        }
+      });
       
       await genericApi.update("roles", id, payload);
       alert("Role updated successfully!");

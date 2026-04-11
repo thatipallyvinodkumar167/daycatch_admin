@@ -43,7 +43,7 @@ const BulkUpload = () => {
     };
 
     const downloadTemplate = () => {
-      const headers = "Product Id,Product Name,Category,Type,Product Image,Quantity,EAN code,Tags,Unit,MRP,price,description";
+      const headers = "product_id,product_name,category,type,product_image,quantity,ean_code,tags,unit,mrp,price,description";
       const blob = new Blob([headers], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -87,7 +87,7 @@ const BulkUpload = () => {
           setProgress(60);
 
           try {
-            await genericApi.create("Adminproducts/bulk", data);
+            await genericApi.create("admin_products/bulk", data);
             setProgress(100);
             setTimeout(() => {
               setUploading(false);

@@ -81,14 +81,14 @@ const ParentCategories = () => {
       const results = response.data?.results || response.data?.data || [];
       
       const formattedData = results.map((item) => ({
-        id: item._id,
-        categoryID: item["Cart Id"] || item.catID || item.id || "N/A",
-        name: item["Title"] || item["Category Name"] || item.name || "Unnamed",
-        image: item["Image"] || item.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(item["Title"] || item["Category Name"] || "C")}&background=random`,
+        id: item._id || item.id,
+        categoryID: item.slug || item.id || "N/A",
+        name: item.name || item.title || item["Category Name"] || "Unnamed",
+        image: item.image || item["Image"] || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name || item.title || item["Category Name"] || "C")}&background=random`,
         taxType: item.tax || "",
-        taxName: item.taxtName || "",
-        taxPercent: item["Tax percentage"] || "",
-        description: item.description || "",
+        taxName: item.tax_name || item.taxtName || "",
+        taxPercent: item.tax_percentage || item["Tax percentage"] || "",
+        description: item.description || ""
       }));
       setCategories(formattedData);
     } catch (error) {
@@ -107,14 +107,10 @@ const ParentCategories = () => {
     if (!formData.name.trim()) return;
     try {
       const payload = {
-        "Cart Id": formData.categoryID.trim() || ("CAT-" + Math.floor(Math.random() * 1000)),
-        Title: formData.name.trim(),
-        Category: formData.name.trim(),
-        Image: imagePreview || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name.trim())}&background=random`,
-        tax: formData.taxType,
-        taxtName: formData.taxName,
-        "Tax percentage": Number(formData.taxPercent),
-        description: formData.description,
+        name: formData.name.trim(),
+        slug: formData.categoryID.trim() || formData.name.trim().toLowerCase().replace(/\s+/g, "-"),
+        image: imagePreview || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name.trim())}&background=random`,
+        description: formData.description
       };
       
       if (isEditing) {

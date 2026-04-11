@@ -59,19 +59,24 @@ const SubCategories = () => {
     }
   };
 
-  const fetchSubCategories = useCallback(async () => {
+  const fetchSubCategories = useCallback(async (parentLookup = []) => {
     try {
       const response = await getSubCategories();
       const results = response.data?.results || response.data?.data || [];
-      
-      const formattedData = results.map((item) => ({
-        id: item._id,
-        categoryID: item["Cart id"] || item.catID || item.id || "N/A",
-        name: item["Title"] || item["Sub Category Name"] || item.name || "Unnamed",
-        parentCategory: item["Parent Category"] || item.parent || "General",
-        image: item["Category Image"] || item.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(item["Title"] || item["Sub Category Name"] || "SC")}&background=random`,
-        description: item.description || "",
-      }));
+
+      const formattedData = results.map((item) => {
+        const parentId = item.category_id || item.parent_category_id || item.parent_category || item.parent || "";
+        const matchedParent = parentLookup.find((p) => String(p.id) === String(parentId));
+        return ({
+        id: item._id || item.id,
+        categoryID: item.slug || item.id || "N/A",
+        name: item.name || item.title || item["Sub Category Name"] || "Unnamed",
+        parentCategoryId: parentId,
+        parentCategory: matchedParent?.name || item.parent_category || item["Parent Category"] || item.parent || "General",
+        image: item.category_image || item["Category Image"] || item.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.title || item["Title"] || item["Sub Category Name"] || "SC")}&background=random`,
+        description: item.description || ""
+      });
+    });
       setSubCategories(formattedData);
     } catch (error) {
       console.error("Error fetching sub-categories:", error);
@@ -84,12 +89,12 @@ const SubCategories = () => {
       const parentRes = await getParentCategories();
       const pResults = parentRes.data?.results || parentRes.data?.data || [];
       const formattedParents = pResults.map(p => ({
-        id: p._id,
-        name: p["Title"] || p["Category Name"] || p.name || "Unnamed"
+        id: p._id || p.id,
+        name: p.name || p["Title"] || p["Category Name"] || "Unnamed"
       }));
       setParentCats(formattedParents);
 
-      await fetchSubCategories();
+      await fetchSubCategories(formattedParents);
     } catch (error) {
       console.error("Error fetching initial sub-category data:", error);
     } finally {
@@ -105,11 +110,11 @@ const SubCategories = () => {
     if (!formData.name.trim() || !formData.selectedParent) return;
     try {
       const payload = {
-        "Cart id": formData.categoryID.trim() || ("SCAT-" + Math.floor(Math.random() * 1000)),
-        Title: formData.name.trim(),
-        "Parent Category": formData.selectedParent,
-        "Category Image": imagePreview || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name.trim())}&background=random`,
-        description: formData.description,
+        category_id: formData.selectedParent,
+        name: formData.name.trim(),
+        slug: formData.categoryID.trim() || formData.name.trim().toLowerCase().replace(/\s+/g, "-"),
+        image: imagePreview || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name.trim())}&background=random`,
+        description: formData.description
       };
       
       if (isEditing) {
@@ -133,7 +138,7 @@ const SubCategories = () => {
     setFormData({
       categoryID: item.categoryID,
       name: item.name,
-      selectedParent: item.parentCategory,
+      selectedParent: item.parentCategoryId || "",
       description: item.description,
     });
     setEditId(item.id);
@@ -196,7 +201,7 @@ const SubCategories = () => {
                         >
                             <MenuItem value="" disabled><Typography variant="body2" color="#a3aed0">Select Parent Category</Typography></MenuItem>
                             {parentCats.map((cat, idx) => (
-                                <MenuItem key={`${cat.id || cat.name}-${idx}`} value={cat.name}>
+                                <MenuItem key={`${cat.id || cat.name}-${idx}`} value={cat.id}>
                                     <Typography variant="body2" fontWeight="700">{cat.name}</Typography>
                                 </MenuItem>
                             ))}

@@ -89,8 +89,8 @@ const StoreAdminCatalog = () => {
     setLoading(true);
     try {
       const [adminResponse, storeResponse] = await Promise.all([
-        genericApi.getAll("Adminproducts"),
-        genericApi.getAll("storeProducts"),
+        genericApi.getAll("admin_products"),
+        genericApi.getAll("store_products"),
       ]);
 
       const adminProducts = (adminResponse?.data?.results || []).map(mapAdminProduct);
@@ -136,7 +136,7 @@ const StoreAdminCatalog = () => {
     try {
       await Promise.all(
         selectedToAdd.map((product) =>
-          genericApi.create("storeProducts", {
+          genericApi.create("store_products", {
             storeId: store.id,
             adminProductId: product.id,
             "Product Id": product.productCode,
@@ -173,7 +173,7 @@ const StoreAdminCatalog = () => {
     if (!window.confirm(`Are you sure you want to remove ${product.name} from your store?`)) return;
 
     try {
-      await genericApi.remove("storeProducts", product.storeProductId);
+      await genericApi.remove("store_products", product.storeProductId);
       setSnackbar({ open: true, message: "Product removed from store.", severity: "success" });
       await fetchData();
     } catch (error) {

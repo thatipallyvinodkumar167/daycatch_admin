@@ -1,8 +1,9 @@
 import axios from "axios";
+import toast from "react-hot-toast";
 import { getAuthSession, clearAuthSession } from "../utils/authSession";
 
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-export const API_ROOT_URL = isLocal ? "http://localhost:5001" : "https://backend-daycatch.onrender.com";
+export const API_ROOT_URL = isLocal ? "http://localhost:5002" : "https://backend-daycatch.onrender.com";
 export const API_BASE_URL = `${API_ROOT_URL}/api/v1`;
 
 const api = axios.create({
@@ -29,6 +30,9 @@ const processQueue = (error, token = null) => {
 
 api.interceptors.request.use(
   (config) => {
+    // Applied structured logger for outgoing requests
+    console.log(`[API REQUEST] => ${config.method?.toUpperCase()} ${config.url}`, config.data || "");
+
     const { token } = getAuthSession();
     if (token) {
       config.headers = config.headers || {};
@@ -36,11 +40,17 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error("[API REQUEST ERROR] =>", error);
+    return Promise.reject(error);
+  }
 );
+
 
 api.interceptors.response.use(
   (response) => {
+    console.log(`[API RESPONSE] <= [${response.status}] ${response.config.url}`, response.data);
+
     // Standard industry response normalization
     if (response.data && response.data.status === "success") {
       if (response.data.data && Array.isArray(response.data.data)) {
@@ -51,13 +61,17 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    console.error(`[API RESPONSE ERROR] <= [${error.response?.status || "NETWORK"}] ${originalRequest?.url}`, error.response?.data || error.message);
 
     // 1) Handle 401 Unauthorized (Expired Access Token)
     if (error.response?.status === 401 && !originalRequest._retry) {
       
-      // If we are on login page, don't try to refresh
+      // If we are on login page, don't try to refresh (and show the toast)
       if (window.location.pathname === "/login") {
         clearAuthSession();
+        const errMessage = error.response?.data?.message || error.response?.data?.error || error.message || "Authentication failed.";
+        toast.error(errMessage);
+        error.__toastShown = true;
         return Promise.reject(error);
       }
 
@@ -94,7 +108,7 @@ api.interceptors.response.use(
         const { token: newToken } = response.data;
         
         // Update local session with new access token
-        localStorage.setItem("token", newToken);
+        import("../utils/authSession").then(({ updateTokens }) => updateTokens({ token: newToken }));
         
         processQueue(null, newToken);
         isRefreshing = false;
@@ -114,6 +128,11 @@ api.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
+
+    // Display a top-right toast for any API error that isn't a silent 401 refresh
+    const errMessage = error.response?.data?.message || error.response?.data?.error?.message || error.message || "An unexpected network error occurred.";
+    toast.error(errMessage);
+    error.__toastShown = true;
 
     return Promise.reject(error);
   }

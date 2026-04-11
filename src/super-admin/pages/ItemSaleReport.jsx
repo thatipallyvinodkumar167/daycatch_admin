@@ -39,11 +39,11 @@ const ItemSaleReport = () => {
       const response = await genericApi.getAll("item_sale_report");
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item, index) => ({
-        id: item._id || index + 1,
-        productName: item["Product Name"] || item.productName || "Unknown Product",
-        variantSize: item["Variant Size"] || item.variantSize || item.Variant || item.variant || item.size || item.Size || item.variation || "N/A",
-        quantity: Number(item["Quantity"] || item.quantity || item.qty || item.Stock || 0),
-        totalWeight: item["Total Weight"] || item.totalWeight || item.weight || item.Weight || item.total_weight || "0",
+        id: item._id || item.id || index + 1,
+        productName: item.product_name || item["Product Name"] || item.productName || "Unknown Product",
+        variantSize: item.variant_size || item["Variant Size"] || item.variantSize || item.Variant || item.variant || item.size || item.Size || item.variation || "N/A",
+        quantity: Number(item.quantity || item["Quantity"] || item.qty || item.Stock || 0),
+        totalWeight: item.total_weight || item["Total Weight"] || item.totalWeight || item.weight || item.Weight || "0",
       }));
       setSales(formattedData);
     } catch (error) {

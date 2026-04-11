@@ -74,7 +74,9 @@ const SendNotificationStore = () => {
     setIsSubmitting(true);
     try {
       await genericApi.create("store_notifications", {
-        ...formData,
+        title: formData.title,
+        message: formData.message,
+        select_store: formData.selectStores,
         image: imageFile ? imageFile.name : null,
       });
       setSnackbar({ open: true, message: "Notification sent successfully!", severity: "success" });

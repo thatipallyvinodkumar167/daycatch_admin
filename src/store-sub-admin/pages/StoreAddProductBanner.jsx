@@ -42,7 +42,7 @@ const StoreAddProductBanner = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await genericApi.getAll("storeProducts");
+        const response = await genericApi.getAll("store_products");
         const rows = response?.data?.results || [];
         setProducts(
           rows

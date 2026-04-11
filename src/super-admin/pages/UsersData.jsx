@@ -28,6 +28,7 @@ import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import EmailIcon from "@mui/icons-material/Email";
 import { useNavigate } from "react-router-dom";
 import { deleteUser, getAllUsers, updateUser } from "../../api/usersApi";
 
@@ -48,30 +49,46 @@ const UsersData = () => {
       const results = userRes.data?.results || userRes.data?.data || [];
 
       const formattedData = results.map((user) => {
-        const name = user["User Name"] || "Unknown User";
-        const email = user["User Email"] || "No email";
-        const phone = user["User Phone"] || "N/A";
-        const registrationDate = user["Registration Date"];
-        const isVerified = Boolean(user["Is Verified"]);
+        const name = String(user.name || user["User Name"] || "").trim();
+        const email = String(
+          user.email ||
+            user.Email ||
+            user["User Email"] ||
+            user["Email ID"] ||
+            ""
+        ).trim();
+        const phone = String(
+          user.user_phone ||
+            user.phone ||
+            user.Phone ||
+            user.mobile ||
+            user.Mobile ||
+            user["User Phone"] ||
+            user["Mobile Number"] ||
+            ""
+        ).trim();
+        const registrationDate = user.reg_date || user["Registration Date"] || null;
+        const isVerified = Boolean(user.is_verified ?? user["Is Verified"]);
+        const isBlocked = Number(user.block ?? 0) === 1;
 
         return {
-          id: user._id || name,
+          id: user.id || user._id || name || Math.random().toString(36).slice(2),
           name,
           email,
           phone,
-          city: user.City || "N/A",
-          society: user.Society || user.Location || "N/A",
+          city: user.city || user.City || "",
+          society: user.Society || user.Location || "",
           regDate: registrationDate
             ? new Date(registrationDate).toLocaleDateString("en-IN", {
                 day: "2-digit",
                 month: "short",
                 year: "numeric",
               })
-            : "N/A",
+            : "",
           isVerified,
           walletBalance: user["Wallet Balance"] ?? 0,
           userRewards: user["User Rewards"] ?? 0,
-          status: user.status || user.Status || "Active",
+          status: user.status || user.Status || (isBlocked ? "Blocked" : "Active"),
         };
       });
 
@@ -233,7 +250,6 @@ const UsersData = () => {
                           <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px", py: 2, pl: 4 }}>#</TableCell>
                           <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>USER NAME</TableCell>
                           <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>USER PHONE</TableCell>
-                          <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>USER EMAIL</TableCell>
                           <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>REGISTRATION DATE</TableCell>
                           <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>IS VERIFIED</TableCell>
                           <TableCell sx={{ backgroundColor: "#fafbfc", color: "#a3aed0", fontWeight: "800", fontSize: "11px" }}>ACTIVE / BLOCK</TableCell>
@@ -243,7 +259,7 @@ const UsersData = () => {
                   <TableBody>
                       {filteredUsers.length === 0 ? (
                           <TableRow>
-                              <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                              <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
                                   <Typography variant="body1" color="#a3aed0" fontWeight="600">
                                     No user records found
                                   </Typography>
@@ -257,17 +273,22 @@ const UsersData = () => {
                                       <Typography variant="body2" fontWeight="800" color="#1b2559">
                                         {user.name}
                                       </Typography>
-                                      <Typography variant="caption" color="#a3aed0" fontWeight="700">
-                                        {user.city}
+                                      <Typography
+                                        variant="caption"
+                                        color="#a3aed0"
+                                        fontWeight="700"
+                                        sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25, wordBreak: "break-word" }}
+                                      >
+                                        <EmailIcon sx={{ fontSize: 10 }} />
+                                        {user.email}
                                       </Typography>
                                   </TableCell>
                                   <TableCell sx={{ borderBottom: "1px solid #edf1f8" }}>
-                                      <Typography variant="body2" color="#1b2559" fontWeight="800">{user.phone}</Typography>
-                                  </TableCell>
-                                  <TableCell sx={{ borderBottom: "1px solid #edf1f8" }}>
-                                      <Typography variant="body2" color="#1b2559" fontWeight="800" sx={{ wordBreak: "break-word" }}>{user.email}</Typography>
+                                      <Typography variant="body2" color="#1b2559" fontWeight="800">
+                                        {user.phone}
+                                      </Typography>
                                       <Typography variant="caption" color="#a3aed0" fontWeight="700">
-                                        {user.society}
+                                        {user.city}
                                       </Typography>
                                   </TableCell>
                                   <TableCell sx={{ borderBottom: "1px solid #edf1f8" }}>

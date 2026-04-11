@@ -75,17 +75,17 @@ const AllOrders = () => {
 
       const formattedData = apiResults.map((order, index) => ({
         id: order._id || index + 1,
-        cartId: order["Cart ID"] || order.cartId || order._id,
-        cartPrice: parseFloat(order["Cart price"] || order.cartPrice || 0),
-        userName: order["User"] || order.user || "N/A",
-        userPhone: order.Details?.phone || order["User Phone"] || "N/A",
-        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : "N/A",
-        status: order["Status"] || order.status || "Processing",
-        products: (order.Products || order.products || []).map(p => ({
+        cartId: order.cart_id || order["Cart ID"] || order.cartId || order._id,
+        cartPrice: parseFloat(order.cart_price || order["Cart price"] || order.cartPrice || 0),
+        userName: order.user || order["User"] || "N/A",
+        userPhone: order.details?.phone || order.Details?.phone || order["User Phone"] || "N/A",
+        deliveryDate: order.delivery_date || order["Delivery Date"] ? new Date(order.delivery_date || order["Delivery Date"]).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : "N/A",
+        status: order.status || order["Status"] || "Processing",
+        products: (order.cart_product || order.Products || order.products || []).map(p => ({
           name: p.product_name || p.name || "Product",
           img: p.image || p.img || ""
         })),
-        products_expanded: (order.Products || order.products || []).map(p => ({
+        products_expanded: (order.cart_product || order.Products || order.products || []).map(p => ({
             name: p.product_name || p.name || "Product",
             qty: p.qty || 0,
             tax: p.tax || "0 %",
@@ -93,8 +93,8 @@ const AllOrders = () => {
             total: p.total || 0,
             img: p.image || p.img || ""
         })),
-        address: order.Address || order.address || order.Details?.address || "N/A",
-        timeSlot: order["Time Slot"] || order.timeSlot || "N/A",
+        address: order.address || order.Address || order.details?.address || order.Details?.address || "N/A",
+        timeSlot: order.time_slot || order["Time Slot"] || order.timeSlot || "N/A",
       }));
 
       setOrders(formattedData);

@@ -115,6 +115,28 @@ const PERMISSION_GROUPS = [
 ];
 
 const ALL_KEYS = PERMISSION_GROUPS.flatMap(g => g.items.map(i => i.key));
+const permissionFieldByLabel = {
+  Dashboard: "dashboard",
+  Users: "users",
+  Reports: "reports",
+  Category: "category",
+  Product: "product",
+  Orders: "orders",
+  Store: "store",
+  "Delivery Boy": "delivery_boy",
+  Area: "area",
+  Tax: "tax",
+  Id: "id",
+  Payout: "payout",
+  Rewards: "rewards",
+  Membership: "membership",
+  Notification: "notification",
+  Callback: "callback",
+  Feedback: "feedback",
+  Pages: "pages",
+  Settings: "settings",
+  "Cancelling Reasons": "reason",
+};
 
 const AddRole = () => {
   const navigate = useNavigate();
@@ -146,9 +168,15 @@ const AddRole = () => {
   const handleSubmit = async () => {
     if (!roleName.trim()) { alert("Please enter a role name."); return; }
     try {
-      const permissions = {};
-      ALL_KEYS.forEach(k => { permissions[k] = !!selected[k]; });
-      await genericApi.create("roles", { name: roleName.trim(), permissions });
+      const payload = { role_name: roleName.trim() };
+      ALL_KEYS.forEach((key) => {
+        const field = permissionFieldByLabel[key];
+        if (field) {
+          payload[field] = selected[key] ? 1 : 0;
+        }
+      });
+
+      await genericApi.create("roles", payload);
       alert("Role added successfully!");
       navigate("/roles");
     } catch (error) {

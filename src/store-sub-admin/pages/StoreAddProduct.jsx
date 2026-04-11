@@ -82,7 +82,7 @@ const StoreAddProduct = ({ isEdit = false }) => {
     if (!id || !isEdit) return;
     try {
       setLoading(true);
-      const response = await genericApi.getOne("storeProducts", id);
+      const response = await genericApi.getOne("store_products", id);
       const data = response.data?.data || response.data?.results || response.data;
       
       if (data) {
@@ -157,10 +157,10 @@ const StoreAddProduct = ({ isEdit = false }) => {
       };
 
       if (isEdit && id) {
-        await genericApi.update("storeProducts", id, payload);
+        await genericApi.update("store_products", id, payload);
         setSnackbar({ open: true, message: "Product profile updated successfully.", severity: "success" });
       } else {
-        await genericApi.create("storeProducts", { ...payload, status: "Pending", submittedAt: new Date().toISOString() });
+        await genericApi.create("store_products", { ...payload, status: "Pending", submittedAt: new Date().toISOString() });
         setSnackbar({ open: true, message: "New product deployed to catalog.", severity: "success" });
       }
       setTimeout(() => navigate(-1), 1500);

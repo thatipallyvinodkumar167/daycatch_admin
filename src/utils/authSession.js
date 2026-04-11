@@ -1,46 +1,62 @@
+// Volatile memory storage to ensure login on refresh as requested
+let memoryToken = "";
+let memoryRefreshToken = "";
+let memoryRole = "";
+let memoryScope = "platform";
+let memoryStoreId = "";
+let memoryStoreName = "";
+let memoryStatus = "Active";
+let memoryAssignedCityIds = [];
+
 export const getAuthSession = () => ({
-  token: localStorage.getItem("token"),
-  refreshToken: localStorage.getItem("refreshToken"),
-  role: localStorage.getItem("user_role") || "",
-  scope: localStorage.getItem("user_scope") || "platform",
-  storeId: localStorage.getItem("user_store_id") || "",
-  storeName: localStorage.getItem("user_store_name") || "",
-  status: localStorage.getItem("user_status") || "Active",
+  token: memoryToken,
+  refreshToken: memoryRefreshToken,
+  role: memoryRole,
+  scope: memoryScope,
+  storeId: memoryStoreId,
+  storeName: memoryStoreName,
+  status: memoryStatus,
+  assignedCityIds: memoryAssignedCityIds,
 });
 
 export const getAssignedStorePath = () => {
   const { storeId } = getAuthSession();
-  return storeId ? `/stores/details/${encodeURIComponent(storeId)}/dashboard` : "/";
+  return storeId ? `/stores/details/${encodeURIComponent(storeId)}/dashboard` : "/stores-list";
 };
 
 export const setAuthSession = ({ token, refreshToken, user }) => {
-  const role = user?.["role Name"] || user?.roleName || user?.role || "Manager";
-  const scope = user?.scope || "platform";
-  const storeId = user?.storeId || "";
-  const storeName = user?.storeName || "";
-  const status = user?.status || "Active";
+  memoryToken = token || "";
+  memoryRefreshToken = refreshToken || "";
+  memoryRole = user?.["role Name"] || user?.roleName || user?.role || "Super Admin";
+  memoryScope = user?.scope || "platform";
+  memoryStoreId = user?.storeId || "";
+  memoryStoreName = user?.storeName || "";
+  memoryStatus = user?.status || "Active";
+  memoryAssignedCityIds = Array.isArray(user?.assignedCityIds) ? user.assignedCityIds : [];
 
-  localStorage.setItem("token", token || "");
-  if (refreshToken) localStorage.setItem("refreshToken", refreshToken); // only update if provided (login/refresh)
-  localStorage.setItem("user_role", role);
+  // Optionally keep user_email or user_name in localStorage for cosmetic reasons
+  // but the 'secret' tokens are memory-only now.
   localStorage.setItem("user_email", user?.Email || "");
   localStorage.setItem("user_name", user?.Name || "");
-  localStorage.setItem("user_scope", scope);
-  localStorage.setItem("user_store_id", storeId);
-  localStorage.setItem("user_store_name", storeName);
-  localStorage.setItem("user_status", status);
 };
 
 export const clearAuthSession = () => {
+  memoryToken = "";
+  memoryRefreshToken = "";
+  memoryRole = "";
+  memoryScope = "platform";
+  memoryStoreId = "";
+  memoryStoreName = "";
+  memoryStatus = "Active";
+  memoryAssignedCityIds = [];
+  
   [
-    "token",
-    "refreshToken",
-    "user_role",
     "user_email",
     "user_name",
-    "user_scope",
-    "user_store_id",
-    "user_store_name",
-    "user_status",
   ].forEach((key) => localStorage.removeItem(key));
+};
+
+export const updateTokens = ({ token, refreshToken }) => {
+  if (token) memoryToken = token;
+  if (refreshToken) memoryRefreshToken = refreshToken;
 };

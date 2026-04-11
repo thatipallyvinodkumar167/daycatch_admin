@@ -38,9 +38,9 @@ const TaxReports = () => {
       const response = await genericApi.getAll("tax_report");
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item, index) => ({
-        id: item._id || index + 1,
-        productName: item["Product Name"] || item.productName || "Unknown Product",
-        quantity: item["Quantity"] || item.quantity || "0",
+        id: item._id || item.id || index + 1,
+        productName: item.product_name || item["Product Name"] || item.productName || "Unknown Product",
+        quantity: item.quantity || item["Quantity"] || "0",
       }));
       setReports(formattedData);
     } catch (error) {

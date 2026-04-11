@@ -148,11 +148,6 @@ const ProtectedAdminElement = () => {
   }
   if (scope === "store") {
     const path = getAssignedStorePath();
-    if (path === "/") {
-        // Safety Break: Logic error or missing store assignment
-        console.warn("Store Sub-Admin has no assigned storeId. Access denied.");
-        return <Navigate to="/login" replace />;
-    }
     return <Navigate to={path} replace />;
   }
   return <AdminLayout />;

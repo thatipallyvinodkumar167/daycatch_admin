@@ -44,8 +44,8 @@ const Roles = () => {
       const results = response.data.results || response.data || [];
       
       const formattedData = results.map((role) => ({
-        id: role._id,
-        name: role.name || "Unnamed Role",
+        id: role.role_id || role.id || role._id,
+        name: role.role_name || role.name || "Unnamed Role",
       }));
 
       setRoles(formattedData);

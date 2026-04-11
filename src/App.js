@@ -1,6 +1,7 @@
 import React, { useState, useMemo, createContext } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { Toaster } from 'react-hot-toast';
 import AppRoutes from './super-admin/routes/AppRoutes';
 
 export const ColorModeContext = createContext({ toggleColorMode: () => {} });
@@ -52,12 +53,9 @@ function App() {
         components: {
           MuiCssBaseline: {
             styleOverrides: {
-              // ─── Fix: prevent navbar "shake" when MUI menus/selects open ───
-              // MUI adds padding-right to <body> to compensate for the scrollbar
-              // it hides on modal open. Keeping the scrollbar always visible
-              // means MUI never needs to apply that offset, stopping the shift.
               html: {
                 overflowY: 'scroll',
+                colorScheme: 'light !important',
               },
               // ────────────────────────────────────────────────────────────────
               '.super-admin-shell .MuiButton-root': {
@@ -182,6 +180,20 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <Toaster 
+          position="top-right" 
+          toastOptions={{
+            style: {
+              background: '#333',
+              color: '#fff',
+              padding: '16px',
+              borderRadius: '8px',
+              fontWeight: 600,
+            },
+            success: { theme: { primary: '#10C469' } },
+            error: { theme: { primary: '#E53935' } },
+          }} 
+        />
         <AppRoutes />
       </ThemeProvider>
     </ColorModeContext.Provider>

@@ -37,19 +37,20 @@ const StoreEarningPaments = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await genericApi.getAll("storeList");
+      const response = await genericApi.getAll("storepayments");
       const results = response.data?.results || response.data || [];
 
-      const formatted = results.map((store, index) => {
-        const totalRevenue = store["Total Revenue"] || store.totalRevenue || store.revenue || 0;
-        const alreadyPaid = store["Already Paid"] || store.alreadyPaid || store.paid || 0;
+      const formatted = results
+        .map((store, index) => {
+        const totalRevenue = store.total_revenue || store["Total Revenue"] || store.totalRevenue || store.revenue || 0;
+        const alreadyPaid = store.already_paid || store["Already Paid"] || store.alreadyPaid || store.paid || 0;
         const pending = totalRevenue - alreadyPaid;
         return {
-          id: store._id || index,
-          name: store["Store Name"] || store.name || "Unnamed Store",
-          address: store.address || store.Address || store.City || "N/A",
-          logo: store["Profile Pic"] || store.logo ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(store["Store Name"] || store.name || "S")}&background=4318ff&color=fff`,
+          id: store.store_id || store._id || index,
+          name: store.store_name || store["Store Name"] || store.name || "Unnamed Store",
+          address: store.address || store.Address || store.City || store.city || "N/A",
+          logo: store.profile_pic || store["Profile Pic"] || store.logo ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(store.store_name || store["Store Name"] || store.name || "S")}&background=4318ff&color=fff`,
           totalRevenue,
           alreadyPaid,
           pendingBalance: pending < 0 ? 0 : pending,

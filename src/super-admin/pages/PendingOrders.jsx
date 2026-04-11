@@ -59,15 +59,15 @@ const PendingOrders = () => {
       const apiResults = response.data?.results || response.data?.data || response.data || [];
       
       const formattedData = apiResults.map((order, index) => ({
-        id: order._id || index + 1,
-        cartId: order["Cart ID"] || order.cartId || order._id,
-        cartPrice: parseFloat(order["Cart price"] || order.cartPrice || 0),
-        userName: order["User"] || order.user || "N/A",
-        userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
-        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : "N/A",
-        timeSlot: order["Time Slot"] || order.timeSlot || "N/A",
-        address: order.Address || order.address || order.Details?.address || "N/A",
-        status: order["Status"] || order.status || "Pending",
+        id: order.id || order._id || index + 1,
+        cartId: order.cart_id || order["Cart ID"] || order.cartId || order._id,
+        cartPrice: parseFloat(order.cart_price || order["Cart price"] || order.cartPrice || 0),
+        userName: order.user_name || order["User"] || order.user || "N/A",
+        userPhone: order.user_phone || order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+        deliveryDate: (order.delivery_date || order["Delivery Date"]) ? new Date(order.delivery_date || order["Delivery Date"]).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : "N/A",
+        timeSlot: order.time_slot || order["Time Slot"] || order.timeSlot || "N/A",
+        address: order.address || order.Address || order.Details?.address || "N/A",
+        status: order.status || order["Status"] || "Pending",
         products: (order.Products || order.products || []).map(p => ({
           name: p.product_name || p.name || "Product",
           img: p.image || p.img || ""

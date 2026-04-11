@@ -52,16 +52,16 @@ const CancelledOrders = () => {
       const apiResults = response.data?.results || response.data?.data || response.data || [];
       
       const formattedData = apiResults.map((order, index) => ({
-        id: order._id || index + 1,
-        cartId: order["Cart ID"] || order.cartId || order._id,
-        cartPrice: parseFloat(order["Cart price"] || order.cartPrice || 0),
-        userName: order["User"] || order.user || "N/A",
-        userPhone: order["User Phone"] || order.phone || order.Details?.phone || "N/A",
-        store: order["Store Name"] || order.store || "N/A",
-        deliveryBoy: order["Boy Name"] || order.deliveryBoy || "N/A",
-        deliveryDate: order["Delivery Date"] ? new Date(order["Delivery Date"]).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : "N/A",
-        status: order["Status"] || order.status || "Cancelled",
-        reason: order["Cancelling Reason"] || order.reason || "N/A",
+        id: order.id || order._id || index + 1,
+        cartId: order.cart_id || order["Cart ID"] || order.cartId || order._id,
+        cartPrice: parseFloat(order.cart_price || order["Cart price"] || order.cartPrice || 0),
+        userName: order.user_name || order["User"] || order.user || "N/A",
+        userPhone: order.user_phone || order["User Phone"] || order.phone || order.Details?.phone || "N/A",
+        store: order.store_name || order["Store Name"] || order.store || "N/A",
+        deliveryBoy: order.boy_name || order["Boy Name"] || order.deliveryBoy || "N/A",
+        deliveryDate: (order.delivery_date || order["Delivery Date"]) ? new Date(order.delivery_date || order["Delivery Date"]).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : "N/A",
+        status: order.status || order["Status"] || "Cancelled",
+        reason: order.cancelling_reason || order["Cancelling Reason"] || order.reason || "N/A",
         address: order.Address || order.address || order.Details?.address || "N/A",
         timeSlot: order["Time Slot"] || order.timeSlot || "N/A",
         products: (order.Products || order.products || []).map(p => ({

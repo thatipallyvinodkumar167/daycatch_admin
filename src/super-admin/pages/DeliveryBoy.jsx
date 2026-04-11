@@ -62,8 +62,9 @@ const DeliveryBoy = () => {
 
       const normalizedList = rawList.map(item => ({
         ...item,
-        boyName: item.boyName || item.name || item["Boy Name"] || "Unnamed",
-        boyMobile: item.boyMobile || item.phone || item["Boy Phone"] || "N/A",
+        id: item.id || item.dboy_id || item._id,
+        boyName: item.boy_name || item.boyName || item.name || item["Boy Name"] || "Unnamed",
+        boyMobile: item.boy_phone || item.boyMobile || item.phone || item["Boy Phone"] || "N/A",
         boyPassword: item.boyPassword || item.password || item["Boy Password"] || "••••••",
         status: item.status || item.Status || "Off duty",
         orders: item.orders || item.Orders || 0,
@@ -483,6 +484,8 @@ const Grid = ({ children, container, item, xs, md, spacing }) => {
 }
 
 export default DeliveryBoy;
+
+
 
 
 

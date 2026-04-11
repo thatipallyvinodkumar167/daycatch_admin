@@ -47,21 +47,21 @@ const AdminProducts = () => {
     else setLoading(true);
 
     try {
-      const response = await productApi.getAllProducts();
+      const response = await productApi.getAllProducts({ master: 1, limit: 20 });
       let productList = extractCollectionItems(response.data);
 
       if (productList.length === 0) {
-        const collectionResponse = await genericApi.getAll("Adminproducts");
+        const collectionResponse = await genericApi.getAll("admin_products");
         productList = extractCollectionItems(collectionResponse.data);
       }
       
       const formattedData = productList.map((item, index) => ({
         id: item._id || item.id,
-        productID: item["Product Id"] || item.id || "N/A",
-        name: item["Product Name"] || item.name || "Unnamed Product",
-        category: item["Category"] || item.category || "N/A",
-        type: item["Type"] || item.type || "N/A",
-        image: item["Product Image"] || item.image || "",
+        productID: item.product_id || item["Product Id"] || item.id || "N/A",
+        name: item.product_name || item["Product Name"] || item.name || "Unnamed Product",
+        category: item.category || item["Category"] || "N/A",
+        type: item.type || item["Type"] || "N/A",
+        image: item.product_image || item["Product Image"] || item.image || "",
         hide: item.hide || false
       }));
 

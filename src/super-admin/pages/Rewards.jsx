@@ -31,9 +31,9 @@ const Rewards = () => {
       const response = await genericApi.getAll("rewards");
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item) => ({
-        id: item._id,
-        cartValue: item["Cart Value"] || item.cartValue || 0,
-        rewardPoints: item["Reward Points"] || item.rewardPoints || 0,
+        id: item._id || item.reward_id,
+        cartValue: item["Cart Value"] || item.cartValue || item.min_cart_value || 0,
+        rewardPoints: item["Reward Points"] || item.rewardPoints || item.reward_point || 0,
       }));
       setRewards(formattedData);
     } catch (error) {
@@ -54,8 +54,8 @@ const Rewards = () => {
     if (!newRule.cartValue || !newRule.points) return;
     try {
       const payload = {
-        "Cart Value": Number(newRule.cartValue),
-        "Reward Points": Number(newRule.points),
+        min_cart_value: Number(newRule.cartValue),
+        reward_point: Number(newRule.points),
       };
       await genericApi.create("rewards", payload);
       alert("Reward rule added!");

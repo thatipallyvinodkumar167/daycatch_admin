@@ -42,12 +42,12 @@ const DriverNotifications = () => {
       const results = response.data.results || response.data || [];
       
       const formattedData = results.map((item, index) => ({
-        id: item._id || index,
-        title: item.title || "Dispatch Alert",
+        id: item.not_id || item.id || item._id || index + 1,
+        title: item.not_title || item.title || "Dispatch Alert",
         image: item.image || item.logo || null,
-        driver: item.driver || item.selectDrivers || "All Drivers",
-        message: item.message || item.body || "No message content available.",
-        timestamp: item.createdAt || item.date || null
+        driver: item.select_driver || item.driver || item.selectDrivers || (Number(item.dboy_id) > 0 ? `Driver #${item.dboy_id}` : "All Drivers"),
+        message: item.not_message || item.message || item.body || "No message content available.",
+        timestamp: item.created_at || item.createdAt || item.date || null
       }));
 
       setNotifications(formattedData);

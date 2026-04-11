@@ -33,10 +33,10 @@ const RedeemValues = () => {
       const response = await genericApi.getAll("reedm value");
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item) => ({
-        id: item._id,
-        rewardPoints: item["Reward Points"] || item.rewardPoints || 0,
+        id: item._id || item.reedem_id,
+        rewardPoints: item["Reward Points"] || item.rewardPoints || item.reward_point || 0,
         redeemValue:
-          item["Redeem Values"] || item["Redeem Value"] || item.redeemValue || 0,
+          item["Redeem Values"] || item["Redeem Value"] || item.redeemValue || item.value || 0,
       }));
       setRedeemValues(formattedData);
     } catch (error) {
@@ -58,8 +58,8 @@ const RedeemValues = () => {
     if (!newRule.points || !newRule.value) return;
     try {
       const payload = {
-        "Reward Points": Number(newRule.points),
-        "Redeem Values": Number(newRule.value),
+        reward_point: Number(newRule.points),
+        value: Number(newRule.value),
       };
       await genericApi.create("reedm value", payload);
       alert("Redemption rule added!");

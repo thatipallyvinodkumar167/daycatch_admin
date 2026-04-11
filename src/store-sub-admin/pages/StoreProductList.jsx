@@ -42,7 +42,7 @@ const StoreProductList = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await genericApi.getAll("storeProducts");
+        const response = await genericApi.getAll("store_products");
         const list = response?.data?.results || [];
         setProducts(
           list
@@ -63,7 +63,7 @@ const StoreProductList = () => {
             }))
         );
       } catch (error) {
-        console.warn("Backend collection 'storeProducts' not initialized yet (404). Falling back to mock data.");
+        console.warn("Backend collection 'store_products' not initialized yet (404). Falling back to mock data.");
         setProducts([
           {
             id: "mock-prod-1",
@@ -120,7 +120,7 @@ const StoreProductList = () => {
     }
 
     try {
-      await genericApi.remove("storeProducts", productId);
+      await genericApi.remove("store_products", productId);
       setProducts(curr => curr.filter(p => p.id !== productId));
       setSnackbar({ open: true, message: "Product deleted from operational system.", severity: "success" });
     } catch (error) {

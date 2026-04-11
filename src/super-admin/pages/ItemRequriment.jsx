@@ -48,11 +48,11 @@ const ItemRequirement = () => {
       const response = await genericApi.getAll("item_requirement");
       const results = response.data.results || response.data || [];
       const formattedData = results.map((item, index) => ({
-        id: item._id || index + 1,
-        storeName: item["Store Name"] || item.storeName || "Unknown Store",
-        city: item["City"] || item.city || "City",
-        mobile: item["Mobile"] || item.mobile || "N/A",
-        email: item["Email"] || item.email || "N/A",
+        id: item._id || item.id || index + 1,
+        storeName: item.store_name || item["Store Name"] || item.storeName || "Unknown Store",
+        city: item.city || item["City"] || "City",
+        mobile: item.mobile || item["Mobile"] || "N/A",
+        email: item.email || item["Email"] || "N/A",
       }));
       setRequirements(formattedData);
     } catch (error) {
